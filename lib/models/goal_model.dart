@@ -94,4 +94,38 @@ class GoalModel {
     if (date == null) return null;
     return '${_monthNames[date.month - 1]} ${date.year}';
   }
+
+/// Returns a copy with the given fields replaced. Useful for partial
+  /// updates — e.g. bumping [current] after "Adicionar Valor" — without
+  /// having to reconstruct every other field by hand.
+  GoalModel copyWith({
+    String? title,
+    String? category,
+    GoalTerm? term,
+    GoalProgressMode? progressMode,
+    double? current,
+    double? target,
+    String? imageAsset,
+    String? description,
+    DateTime? targetDate,
+    Color? progressColor,
+    String? remainingLabel,
+  }) {
+    return GoalModel(
+      id: id,
+      title: title ?? this.title,
+      category: category ?? this.category,
+      term: term ?? this.term,
+      progressMode: progressMode ?? this.progressMode,
+      current: current ?? this.current,
+      target: target ?? this.target,
+      imageAsset: imageAsset ?? this.imageAsset,
+      description: description ?? this.description,
+      targetDate: targetDate ?? this.targetDate,
+      progressColor: progressColor ?? this.progressColor,
+      remainingLabel: remainingLabel ?? this.remainingLabel,
+    );
+  }
+
 }
+

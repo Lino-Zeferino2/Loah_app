@@ -5,10 +5,11 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/goal_model.dart';
 import '../../models/task_model.dart';
+import '../../widgets/goal_image.dart';
 import '../tasks/add_task_screen.dart';
+import 'add_goal_screen.dart';
 import 'widgets/circular_progress_ring.dart';
 import 'widgets/goal_milestone_tile.dart';
-import '../../widgets/goal_image.dart';
 
 /// Detail screen for a single [GoalModel]: a photo header with a
 /// circular progress ring overlay, category/date chips, title,
@@ -24,6 +25,12 @@ class GoalDetailScreen extends StatefulWidget {
 }
 
 class _GoalDetailScreenState extends State<GoalDetailScreen> {
+  // Mutable copy so editing the goal updates this screen immediately —
+  // `widget.goal` itself can't change (it's the const passed in when
+  // this route was pushed), so we track the current version here and
+  // refresh it after returning from AddGoalScreen's edit flow.
+  late GoalModel _goal = widget.goal;
+
   void _toggleTask(TaskModel task) {
     setState(() {
       final index = MockData.tasks.indexWhere((t) => t.id == task.id);
@@ -33,16 +40,80 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
 
   Future<void> _addTask() async {
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => AddTaskScreen(relatedGoal: widget.goal)),
+      MaterialPageRoute(builder: (_) => AddTaskScreen(relatedGoal: _goal)),
     );
     setState(() {});
   }
 
+  Future<void> _editGoal() async {
+    final updated = await Navigator.of(context).push<GoalModel?>(
+      MaterialPageRoute(builder: (_) => AddGoalScreen(existingGoal: _goal)),
+    );
+    if (updated != null) setState(() => _goal = updated);
+  }
+
+Future<void> _adjustProgress() async {
+    final controller = TextEditingController();
+    final delta = await showDialog<double>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Atualizar Valor'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(prefixText: 'R\$ ', hintText: '0,00'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          OutlinedButton(
+            onPressed: () {
+              final value = double.tryParse(controller.text.trim().replaceAll(',', '.'));
+              if (value != null) Navigator.of(dialogContext).pop(-value);
+            },
+            child: const Text('Remover'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = double.tryParse(controller.text.trim().replaceAll(',', '.'));
+              if (value != null) Navigator.of(dialogContext).pop(value);
+            },
+            child: const Text('Adicionar'),
+          ),
+        ],
+      ),
+    );
+    if (delta == null || delta == 0) return;
+
+    setState(() {
+      final newCurrent = (_goal.current ?? 0) + delta;
+      // Keep it inside [0, target] — no negative progress, and don't
+      // overshoot the target visually (still "concluído" at 100%).
+      // Note: num.clamp() returns `num`, not `double`, even when both
+      // arguments are doubles — hence the explicit .toDouble() below,
+      // otherwise this wouldn't type-check against GoalModel.current.
+      final double clamped = (_goal.target != null
+              ? newCurrent.clamp(0, _goal.target!)
+              : newCurrent.clamp(0, double.infinity))
+          .toDouble();
+      _goal = _goal.copyWith(current: clamped);
+
+      final index = MockData.goals.indexWhere((g) => g.id == _goal.id);
+      if (index != -1) MockData.goals[index] = _goal;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final goal = widget.goal;
+    final goal = _goal;
     final progress = GoalProgress.of(goal, MockData.tasks);
     final progressPercent = (progress * 100).round();
+    // Any task linked to this goal counts as a "milestone" here — even
+    // for manualValue goals, where the tasks don't drive the % but are
+    // still useful sub-steps (e.g. "Guardar R$ 5.000 de entrada").
     final milestones = GoalProgress.linkedTasks(goal, MockData.tasks);
     final doneCount = milestones.where((t) => t.isDone).length;
 
@@ -96,12 +167,26 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                 ],
                 if (goal.progressMode == GoalProgressMode.manualValue) ...[
                   const SizedBox(height: 8),
-                  Text(
-                    '${CurrencyFormatter.format(goal.current ?? 0)} de ${CurrencyFormatter.format(goal.target ?? 0)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: goal.progressColor,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${CurrencyFormatter.format(goal.current ?? 0)} de ${CurrencyFormatter.format(goal.target ?? 0)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: goal.progressColor,
+                            ),
+                      ),
+                   TextButton.icon(
+                        onPressed: _adjustProgress,
+                        icon: Icon(Icons.tune, size: 16, color: goal.progressColor),
+                        label: Text(
+                          'Atualizar Valor',
+                          style: TextStyle(color: goal.progressColor, fontWeight: FontWeight.w600),
                         ),
+                        style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                      ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: 18),
@@ -109,7 +194,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: _editGoal,
                         icon: const Icon(Icons.edit_outlined, size: 18),
                         label: const Text('Editar Meta'),
                         style: ElevatedButton.styleFrom(
@@ -164,9 +249,10 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                       accentColor: goal.progressColor,
                       onToggle: () => _toggleTask(task),
                     ),
-              ]),
+              const SizedBox(height: 44),]),
             ),
           ),
+        
         ],
       ),
     );
@@ -187,7 +273,7 @@ class _GoalHeader extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-      if (goal.imageAsset != null)
+        if (goal.imageAsset != null)
           GoalImage(path: goal.imageAsset!)
         else
           DecoratedBox(

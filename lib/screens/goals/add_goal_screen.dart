@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/mock/mock_data.dart';
@@ -8,16 +7,24 @@ import '../../widgets/goal_image.dart';
 import 'widgets/chip_selector.dart';
 import 'widgets/goal_term_section.dart'; // GoalTermVisuals (icon/color/shortLabel)
 
-/// "Loah - Criar Meta": form to create a new [GoalModel].
+/// "Loah - Criar/Editar Meta": form for both creating a new [GoalModel]
+/// and editing an existing one.
 ///
-/// Leaving "Valor Alvo" empty creates a checklist-mode goal (progress
-/// comes from linked sub-tasks, added later via the Goal Detail
-/// screen); filling it in creates a manualValue goal (progress comes
-/// from current/target). This mirrors the same duality already used
-/// throughout the rest of the app — no separate "goal type" toggle
-/// needed, the presence of a target value decides it.
+/// Pass [existingGoal] to edit it in place (fields pre-filled, saving
+/// updates the same id in [MockData.goals]); leave it null to create a
+/// brand new goal instead.
+///
+/// Leaving "Valor Alvo" empty creates/keeps a checklist-mode goal
+/// (progress comes from linked sub-tasks); filling it in makes it a
+/// manualValue goal (progress comes from current/target). This mirrors
+/// the same duality used throughout the rest of the app — no separate
+/// "goal type" toggle needed, the presence of a target value decides it.
 class AddGoalScreen extends StatefulWidget {
-  const AddGoalScreen({super.key});
+  final GoalModel? existingGoal;
+
+  const AddGoalScreen({super.key, this.existingGoal});
+
+  bool get isEditing => existingGoal != null;
 
   @override
   State<AddGoalScreen> createState() => _AddGoalScreenState();
@@ -48,15 +55,30 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     ChipOption(GoalTerm.longoPrazo.shortLabel, GoalTerm.longoPrazo),
   ];
 
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _targetValueController = TextEditingController();
+  late final _titleController =
+      TextEditingController(text: widget.existingGoal?.title ?? '');
+  late final _descriptionController =
+      TextEditingController(text: widget.existingGoal?.description ?? '');
+  late final _targetValueController = TextEditingController(
+    text: widget.existingGoal?.target != null
+        ? widget.existingGoal!.target!.toStringAsFixed(2)
+        : '',
+  );
 
-  String _category = 'Financeiro';
-  GoalTerm _term = GoalTerm.curtoPrazo;
+  late String _category = widget.existingGoal?.category ?? 'Financeiro';
+  late GoalTerm _term = widget.existingGoal?.term ?? GoalTerm.curtoPrazo;
   DateTime? _targetDate;
-  File? _imageFile;
+  // Holds either a network URL (untouched existing goal image) or a
+  // freshly-picked local file path — GoalImage renders either.
+  String? _imagePath;
   String? _titleError;
+
+  @override
+  void initState() {
+    super.initState();
+    _targetDate = widget.existingGoal?.targetDate;
+    _imagePath = widget.existingGoal?.imageAsset;
+  }
 
   @override
   void dispose() {
@@ -105,7 +127,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     if (source == null) return;
 
     final picked = await ImagePicker().pickImage(source: source, imageQuality: 80);
-    if (picked != null) setState(() => _imageFile = File(picked.path));
+    if (picked != null) setState(() => _imagePath = picked.path);
   }
 
   double? _parseTargetValue() {
@@ -123,34 +145,52 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
 
     final targetValue = _parseTargetValue();
     final hasManualValue = targetValue != null && targetValue > 0;
+    final existing = widget.existingGoal;
+
+  // Preserve prior progress when possible instead of resetting it:
+    // - staying in manualValue mode keeps the old `current`
+    // - switching INTO manualValue from checklist starts at 0
+    // - switching OUT of manualValue (or creating fresh) has no current
+    final double? current = hasManualValue
+        ? (existing?.progressMode == GoalProgressMode.manualValue
+            ? (existing!.current ?? 0.0)
+            : 0.0)
+        : null;
 
     final goal = GoalModel(
-      id: 'goal_${DateTime.now().microsecondsSinceEpoch}',
+      id: existing?.id ?? 'goal_${DateTime.now().microsecondsSinceEpoch}',
       title: title,
       category: _category,
       term: _term,
       progressMode: hasManualValue ? GoalProgressMode.manualValue : GoalProgressMode.taskChecklist,
-      current: hasManualValue ? 0 : null,
+      current: current,
       target: hasManualValue ? targetValue : null,
       description: _descriptionController.text.trim().isEmpty
           ? null
           : _descriptionController.text.trim(),
       targetDate: _targetDate,
-      imageAsset: _imageFile?.path,
+      imageAsset: _imagePath,
       progressColor: _categoryColors[_category] ?? Colors.blue,
     );
 
-    MockData.goals.add(goal);
+    if (existing != null) {
+      final index = MockData.goals.indexWhere((g) => g.id == existing.id);
+      if (index != -1) MockData.goals[index] = goal;
+    } else {
+      MockData.goals.add(goal);
+    }
+
     Navigator.of(context).pop(goal);
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    final isEditing = widget.isEditing;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nova Meta'),
+        title: Text(isEditing ? 'Editar Meta' : 'Nova Meta'),
         actions: [
           IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
         ],
@@ -169,7 +209,9 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Defina seus objetivos e acompanhe sua evolução passo a passo.',
+                    isEditing
+                        ? 'Ajuste os detalhes da sua meta.'
+                        : 'Defina seus objetivos e acompanhe sua evolução passo a passo.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: colors.accentBlue,
@@ -202,9 +244,11 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
 
             _SectionLabel('Foto da Meta (Opcional)'),
             const SizedBox(height: 8),
-            _ImagePickerField(imageFile: _imageFile, onTap: _pickImage, onRemove: () {
-              setState(() => _imageFile = null);
-            }),
+            _ImagePickerField(
+              imagePath: _imagePath,
+              onTap: _pickImage,
+              onRemove: () => setState(() => _imagePath = null),
+            ),
             const SizedBox(height: 20),
 
             _SectionLabel('Categoria'),
@@ -330,7 +374,10 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
               child: ElevatedButton.icon(
                 onPressed: _submit,
                 icon: const Icon(Icons.check_circle_outline, size: 18),
-                label: const Text('Criar Meta', style: TextStyle(fontWeight: FontWeight.w700)),
+                label: Text(
+                  isEditing ? 'Salvar Alterações' : 'Criar Meta',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colors.accentBlue,
                   foregroundColor: Colors.white,
@@ -364,15 +411,15 @@ class _SectionLabel extends StatelessWidget {
 }
 
 /// Tappable cover-photo field: an empty dashed placeholder when no
-/// image is picked yet, or a preview thumbnail with a remove button
-/// once one has been chosen.
+/// image is set yet, or a preview (network URL or local file, via
+/// [GoalImage]) with remove/change buttons once one is set.
 class _ImagePickerField extends StatelessWidget {
-  final File? imageFile;
+  final String? imagePath;
   final VoidCallback onTap;
   final VoidCallback onRemove;
 
   const _ImagePickerField({
-    required this.imageFile,
+    required this.imagePath,
     required this.onTap,
     required this.onRemove,
   });
@@ -381,7 +428,7 @@ class _ImagePickerField extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.loahColors;
 
-    if (imageFile == null) {
+    if (imagePath == null) {
       return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -415,7 +462,7 @@ class _ImagePickerField extends StatelessWidget {
           child: SizedBox(
             height: 140,
             width: double.infinity,
-            child: GoalImage(path: imageFile!.path),
+            child: GoalImage(path: imagePath!),
           ),
         ),
         Positioned(
