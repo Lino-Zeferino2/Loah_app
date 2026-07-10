@@ -18,6 +18,14 @@ extension GoalTermVisuals on GoalTerm {
         GoalTerm.medioPrazo => Colors.deepOrange,
         GoalTerm.longoPrazo => Colors.indigo,
       };
+  /// Compact form for chip selectors, e.g. the Add Goal form's "Prazo"
+  /// section, where the full "Curto Prazo" label wouldn't fit as well.
+  String get shortLabel => switch (this) {
+        GoalTerm.curtoPrazo => 'Curto',
+        GoalTerm.medioPrazo => 'Médio',
+        GoalTerm.longoPrazo => 'Longo',
+      };    
+
 }
 
 /// Groups goals under a time-horizon heading, e.g.

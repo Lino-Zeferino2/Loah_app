@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>O Loah precisa da câmera para adicionar fotos às suas metas.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>O Loah precisa acessar suas fotos para adicionar imagens às suas metas.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

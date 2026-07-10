@@ -6,7 +6,7 @@ import '../../../models/goal_model.dart';
 import '../../../models/task_model.dart';
 import '../../../widgets/labeled_progress_bar.dart';
 import '../../../widgets/loah_card.dart';
-
+import '../../../widgets/goal_image.dart';
 /// A single goal entry, e.g. "Reserva de Emergência" or "Eurotrip 2024".
 /// Shows an optional cover image, category tag and progress bar.
 ///
@@ -47,13 +47,13 @@ class GoalCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (goal.imageAsset != null)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: AspectRatio(
-                aspectRatio: 16 / 8,
-                child: Image.network(goal.imageAsset!, fit: BoxFit.cover),
-              ),
-            ),
+  ClipRRect(
+    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+    child: AspectRatio(
+      aspectRatio: 16 / 8,
+      child: GoalImage(path: goal.imageAsset!),
+    ),
+  ),
           Padding(
             padding: const EdgeInsets.all(14),
             child: Column(

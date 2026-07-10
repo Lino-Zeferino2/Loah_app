@@ -62,9 +62,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     if (picked != null) setState(() => _dueDate = picked);
   }
 
-  Future<void> _pickGoal() async {
+ Future<void> _pickGoal() async {
     final goal = await showModalBottomSheet<GoalModel?>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: context.loahColors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -74,6 +75,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         onClear: () => Navigator.of(sheetContext).pop(),
       ),
     );
+    // showModalBottomSheet returns null both for "dismissed" and for
+    // "explicitly chose null" — _GoalPickerSheet distinguishes via its
+    // own pop(goal) calls, so we just accept whatever comes back here
+    // except when the sheet is swiped away without a choice.
     setState(() => _selectedGoal = goal);
   }
 
@@ -342,9 +347,12 @@ class _NoGoalCard extends StatelessWidget {
     );
   }
 }
-
 /// Bottom sheet listing every goal in [MockData.goals], plus a "remove
 /// link" option, used when picking a goal for a standalone task.
+///
+/// Capped to 70% of screen height with an internally-scrolling list —
+/// without this, a long goal list (or a small phone screen) would
+/// overflow, since a plain Column has no bound on its own height.
 class _GoalPickerSheet extends StatelessWidget {
   final GoalModel? currentSelection;
   final VoidCallback onClear;
@@ -353,38 +361,54 @@ class _GoalPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.7;
+
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Vincular a uma meta',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.close),
-              title: const Text('Nenhuma (tarefa avulsa)'),
-              onTap: () => Navigator.of(context).pop(),
-            ),
-            for (final goal in MockData.goals)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(
-                  radius: 16,
-                  backgroundColor: goal.progressColor.withValues(alpha: 0.15),
-                  child: Icon(goal.term.icon, size: 16, color: goal.progressColor),
-                ),
-                title: Text(goal.title),
-                trailing: goal.id == currentSelection?.id
-                    ? const Icon(Icons.check, size: 18)
-                    : null,
-                onTap: () => Navigator.of(context).pop(goal),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: Text(
+                'Vincular a uma meta',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
+            ),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.close),
+                    title: const Text('Nenhuma (tarefa avulsa)'),
+                    onTap: () => Navigator.of(context).pop(),
+                  ),
+                  for (final goal in MockData.goals)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: goal.progressColor.withValues(alpha: 0.15),
+                        child: Icon(goal.term.icon, size: 16, color: goal.progressColor),
+                      ),
+                      title: Text(goal.title),
+                      trailing: goal.id == currentSelection?.id
+                          ? const Icon(Icons.check, size: 18)
+                          : null,
+                      onTap: () => Navigator.of(context).pop(goal),
+                    ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
           ],
         ),
       ),

@@ -7,6 +7,7 @@ import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_avatar_action.dart';
 import '../../widgets/loah_card.dart';
 import '../../widgets/loah_drawer.dart';
+import 'add_goal_screen.dart';
 import 'goal_detail_screen.dart';
 import 'widgets/goal_term_section.dart';
 
@@ -27,9 +28,13 @@ class _GoalsScreenState extends State<GoalsScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => GoalDetailScreen(goal: goal)),
     );
-    // The detail screen mutates MockData.tasks directly (checkbox
-    // toggles), so a rebuild here is enough to reflect the new progress
-    // — no need to pass data back through the route.
+    setState(() {});
+  }
+
+  Future<void> _createGoal() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AddGoalScreen()),
+    );
     setState(() {});
   }
 
@@ -91,7 +96,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'goals_fab',
-        onPressed: () {},
+        onPressed: _createGoal,
         child: const Icon(Icons.add),
       ),
     );

@@ -8,6 +8,7 @@ import '../../models/task_model.dart';
 import '../tasks/add_task_screen.dart';
 import 'widgets/circular_progress_ring.dart';
 import 'widgets/goal_milestone_tile.dart';
+import '../../widgets/goal_image.dart';
 
 /// Detail screen for a single [GoalModel]: a photo header with a
 /// circular progress ring overlay, category/date chips, title,
@@ -186,8 +187,8 @@ class _GoalHeader extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (goal.imageAsset != null)
-          Image.network(goal.imageAsset!, fit: BoxFit.cover)
+      if (goal.imageAsset != null)
+          GoalImage(path: goal.imageAsset!)
         else
           DecoratedBox(
             decoration: BoxDecoration(
