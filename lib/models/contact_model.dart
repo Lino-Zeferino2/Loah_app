@@ -1,6 +1,9 @@
 /// A single person in the "Contatos" screen: favorites carousel and/or
 /// the alphabetical list below it.
 class ContactModel {
+  /// Stable identifier — maps to a Firestore document ID later.
+  final String id;
+
   final String name;
   final String? email;
   final String? phone;
@@ -9,6 +12,7 @@ class ContactModel {
   final bool isFavorite;
 
   const ContactModel({
+    required this.id,
     required this.name,
     this.email,
     this.phone,

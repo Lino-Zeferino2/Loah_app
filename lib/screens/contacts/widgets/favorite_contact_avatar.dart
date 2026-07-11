@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/contact_model.dart';
+import '../../../widgets/goal_image.dart'; // generic network-or-file image renderer
 
 /// One item in the horizontal "Favoritos" carousel: a ringed circular
 /// avatar (or colored initials fallback), the contact's first name and
@@ -35,15 +36,18 @@ class FavoriteContactAvatar extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: ringColor, width: 2),
               ),
-              child: CircleAvatar(
-                radius: 26,
-                backgroundColor: colors.cardBackgroundAlt,
-                backgroundImage:
-                    contact.avatarUrl != null ? NetworkImage(contact.avatarUrl!) : null,
-                child: contact.avatarUrl == null
-                    ? Text(contact.initials,
-                        style: const TextStyle(fontWeight: FontWeight.w700))
-                    : null,
+              child: ClipOval(
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  color: colors.cardBackgroundAlt,
+                  child: contact.avatarUrl == null
+                      ? Center(
+                          child: Text(contact.initials,
+                              style: const TextStyle(fontWeight: FontWeight.w700)),
+                        )
+                      : GoalImage(path: contact.avatarUrl!),
+                ),
               ),
             ),
             const SizedBox(height: 6),

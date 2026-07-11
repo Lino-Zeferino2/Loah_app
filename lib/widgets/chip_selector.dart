@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
+import '../core/theme/app_theme.dart';
 
 /// One selectable option in a [ChipSelector].
 class ChipOption<T> {
@@ -8,9 +8,10 @@ class ChipOption<T> {
   const ChipOption(this.label, this.value);
 }
 
-/// A wrap of pill-shaped, single-select chips — used for both
-/// "Categoria" and "Prazo" on the Add Goal form. Generic over [T] so it
-/// works with plain strings (category) or an enum (GoalTerm).
+/// A wrap of pill-shaped, single-select chips — used across the app
+/// wherever the user picks one option from a short list (e.g. "Prazo"
+/// on the Add Goal form, "Grau de Conexão" on Add Contact). Generic
+/// over [T] so it works with plain strings or an enum.
 class ChipSelector<T> extends StatelessWidget {
   final List<ChipOption<T>> options;
   final T selected;

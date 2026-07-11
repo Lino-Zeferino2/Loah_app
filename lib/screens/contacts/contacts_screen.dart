@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/mock/mock_data.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/contact_model.dart';
 import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_avatar_action.dart';
 import '../../widgets/loah_drawer.dart';
+import 'add_contact_screen.dart';
 import 'widgets/contact_list_tile.dart';
 import 'widgets/contact_search_bar.dart';
 import 'widgets/favorite_contact_avatar.dart';
@@ -13,6 +15,9 @@ import 'widgets/favorite_contact_avatar.dart';
 /// "Loah - Contatos": a searchable address book with a horizontal
 /// "Favoritos" carousel up top and the remaining contacts grouped
 /// alphabetically underneath.
+///
+/// Reads straight from [MockData.contacts] rather than keeping a local
+/// copy, so a contact added via [AddContactScreen] shows up immediately.
 class ContactsScreen extends StatefulWidget {
   const ContactsScreen({super.key});
 
@@ -21,38 +26,8 @@ class ContactsScreen extends StatefulWidget {
 }
 
 class _ContactsScreenState extends State<ContactsScreen> {
-  static const _contacts = [
-    ContactModel(name: 'Keeloah Ferreira', relationshipTag: 'Namorada', isFavorite: true),
-    ContactModel(name: 'Bruno Alves', relationshipTag: 'Amigo', isFavorite: true),
-    ContactModel(name: 'Carlos Souza', relationshipTag: 'Pai', isFavorite: true),
-    ContactModel(name: 'Diana Ferreira', relationshipTag: 'Mãe', isFavorite: true),
-    ContactModel(
-      name: 'Adriana Silva',
-      email: 'adriana.silva@loah.app',
-      relationshipTag: 'Colega',
-    ),
-    ContactModel(
-      name: 'Andre Martins',
-      phone: '+55 11 98877-6655',
-      relationshipTag: 'Conhecido',
-    ),
-    ContactModel(
-      name: 'Beatriz Gomes',
-      email: 'beatriz@empresa.com.br',
-      relationshipTag: 'Amiga',
-    ),
-    ContactModel(
-      name: 'Caio Castro',
-      email: 'caio.analyst@tech.io',
-      relationshipTag: 'Familiar',
-    ),
-    ContactModel(
-      name: 'Clarice Lispector',
-      email: 'clarice@letras.org',
-      relationshipTag: 'Conhecida',
-    ),
-  ];
-
+  // A fixed color rotation for avatar rings/fallback initials — keeps
+  // things visually varied without needing a color field per contact.
   static const _palette = [
     Colors.cyan,
     Colors.deepPurple,
@@ -65,10 +40,12 @@ class _ContactsScreenState extends State<ContactsScreen> {
   String _query = '';
 
   List<ContactModel> get _favorites =>
-      _contacts.where((c) => c.isFavorite).toList();
+      MockData.contacts.where((c) => c.isFavorite).toList();
 
+  /// Non-favorite contacts, filtered by [_query] and grouped by first
+  /// letter, e.g. {'A': [...], 'B': [...]}.
   Map<String, List<ContactModel>> get _groupedContacts {
-    final filtered = _contacts.where((c) {
+    final filtered = MockData.contacts.where((c) {
       if (c.isFavorite) return false;
       if (_query.isEmpty) return true;
       return c.name.toLowerCase().contains(_query.toLowerCase());
@@ -80,6 +57,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
       grouped.putIfAbsent(contact.initialLetter, () => []).add(contact);
     }
     return grouped;
+  }
+
+  Future<void> _addContact() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AddContactScreen()),
+    );
+    // AddContactScreen writes straight into MockData.contacts, so a
+    // rebuild here is enough to show the newly created contact.
+    setState(() {});
   }
 
   @override
@@ -114,7 +100,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
-                    height: 110,
+                    height: 130,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: _favorites.length,
@@ -161,10 +147,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-      heroTag: 'contacts_fab',
-      onPressed: () {},
-      child: const Icon(Icons.add),
-    ),
+        heroTag: 'contacts_fab',
+        onPressed: _addContact,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }

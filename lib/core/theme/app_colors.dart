@@ -35,8 +35,8 @@ class AppColors {
   // Light theme surfaces
   static const Color lightBackground = Color(0xFFF4F6FA);
   static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightSurfaceAlt = Color(0xFFEFF2F7);
-  static const Color lightBorder = Color(0xFFE1E5EC);
+  static const Color lightSurfaceAlt = Color.fromARGB(255, 231, 232, 233);
+  static const Color lightBorder = Color.fromARGB(255, 243, 244, 245);
   static const Color lightTextPrimary = Color(0xFF12151B);
   static const Color lightTextSecondary = Color(0xFF6B7280);
 }

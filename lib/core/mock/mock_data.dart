@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/goal_model.dart';
 import '../../models/task_model.dart';
+import '../../models/contact_model.dart';
 
 /// Single source of mock data for the whole app.
 ///
@@ -10,7 +11,62 @@ import '../../models/task_model.dart';
 /// this class, so the migration won't touch screen code.
 class MockData {
   MockData._();
-
+static final List<ContactModel> contacts = [
+    const ContactModel(
+      id: 'contact_alice',
+      name: 'Alice Ferreira',
+      relationshipTag: 'Namorada',
+      isFavorite: true,
+    ),
+    const ContactModel(
+      id: 'contact_bruno',
+      name: 'Bruno Alves',
+      relationshipTag: 'Amigo',
+      isFavorite: true,
+    ),
+    const ContactModel(
+      id: 'contact_carlos',
+      name: 'Carlos Souza',
+      relationshipTag: 'Pai',
+      isFavorite: true,
+    ),
+    const ContactModel(
+      id: 'contact_diana',
+      name: 'Diana Ferreira',
+      relationshipTag: 'Mãe',
+      isFavorite: true,
+    ),
+    const ContactModel(
+      id: 'contact_adriana',
+      name: 'Adriana Silva',
+      email: 'adriana.silva@loah.app',
+      relationshipTag: 'Colega',
+    ),
+    const ContactModel(
+      id: 'contact_andre',
+      name: 'Andre Martins',
+      phone: '+55 11 98877-6655',
+      relationshipTag: 'Conhecido',
+    ),
+    const ContactModel(
+      id: 'contact_beatriz',
+      name: 'Beatriz Gomes',
+      email: 'beatriz@empresa.com.br',
+      relationshipTag: 'Amiga',
+    ),
+    const ContactModel(
+      id: 'contact_caio',
+      name: 'Caio Castro',
+      email: 'caio.analyst@tech.io',
+      relationshipTag: 'Familiar',
+    ),
+    const ContactModel(
+      id: 'contact_clarice',
+      name: 'Clarice Lispector',
+      email: 'clarice@letras.org',
+      relationshipTag: 'Conhecida',
+    ),
+  ];
   static final List<GoalModel> goals = [
     GoalModel(
       id: 'goal_emergency_fund',

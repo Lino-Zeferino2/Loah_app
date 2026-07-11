@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/contact_model.dart';
+import '../../../widgets/goal_image.dart'; // generic network-or-file image renderer
 
 /// One row inside an alphabetical section: avatar (or colored initials
 /// fallback), name, email/phone, a relationship tag chip, and trailing
@@ -29,15 +30,18 @@ class ContactListTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: avatarColor.withValues(alpha: 0.18),
-            backgroundImage:
-                contact.avatarUrl != null ? NetworkImage(contact.avatarUrl!) : null,
-            child: contact.avatarUrl == null
-                ? Text(contact.initials,
-                    style: TextStyle(fontWeight: FontWeight.w700, color: avatarColor))
-                : null,
+          ClipOval(
+            child: Container(
+              width: 44,
+              height: 44,
+              color: avatarColor.withValues(alpha: 0.18),
+              child: contact.avatarUrl == null
+                  ? Center(
+                      child: Text(contact.initials,
+                          style: TextStyle(fontWeight: FontWeight.w700, color: avatarColor)),
+                    )
+                  : GoalImage(path: contact.avatarUrl!),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

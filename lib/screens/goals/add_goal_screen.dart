@@ -4,7 +4,7 @@ import '../../core/mock/mock_data.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/goal_model.dart';
 import '../../widgets/goal_image.dart';
-import 'widgets/chip_selector.dart';
+import '../../widgets/chip_selector.dart';
 import 'widgets/goal_term_section.dart'; // GoalTermVisuals (icon/color/shortLabel)
 
 /// "Loah - Criar/Editar Meta": form for both creating a new [GoalModel]
