@@ -84,19 +84,34 @@ class MockData {
 
   static final List<TaskModel> tasks = [
     const TaskModel(
-      id: 'task_quarterly_report',
-      title: 'Finalizar relatório trimestral',
-      subtitle: 'Hoje, 17:00',
+      id: 'task_quarterly_planning_meeting',
+      title: 'Reunião de Planejamento Trimestral',
+      description: 'Preparar apresentação e KPIs do departamento financeiro.',
+      priority: TaskPriority.alta,
+      dueLabel: '09:00',
     ),
     const TaskModel(
-      id: 'task_leg_day',
-      title: 'Treino de perna e cardio',
-      subtitle: 'Academia, 19:30',
-    ),
-    const TaskModel(
-      id: 'task_review_budget',
+      id: 'task_review_budget_today',
       title: 'Revisar orçamento mensal',
-      subtitle: 'Concluído',
+      tag: 'Finanças',
+      priority: TaskPriority.media,
+      dueLabel: 'Hoje',
+    ),
+    const TaskModel(
+      id: 'task_leg_workout',
+      title: 'Treino de pernas (Academia)',
+      description: 'Focar em resistência e alongamento.',
+      dueLabel: 'Amanhã',
+    ),
+    const TaskModel(
+      id: 'task_groceries',
+      title: 'Comprar mantimentos',
+      description: 'Lista no app de notas.',
+      dueLabel: 'Sáb, 3 Out',
+    ),
+    const TaskModel(
+      id: 'task_reply_emails',
+      title: 'Responder e-mails acumulados',
       isDone: true,
     ),
     // Sub-tasks for the Cloud Certification goal (checklist-mode) —
@@ -124,8 +139,8 @@ class MockData {
       goalId: 'goal_cloud_certification',
     ),
     // Milestones for "Comprar um Carro" — organizational only, they
-    // don't drive its % (that comes from current/target), matching the
-    // reference screenshot's "Marcos & Tarefas" list.
+    // don't drive its % alone (see GoalProgress.of: a manualValue goal
+    // WITH linked tasks averages value-progress and task-progress).
     TaskModel(
       id: 'task_car_down_payment',
       title: 'Guardar R\$ 5.000 de entrada',
@@ -133,10 +148,17 @@ class MockData {
       isDone: true,
       completedAt: DateTime(2024, 10, 15),
     ),
-    const TaskModel(
+    TaskModel(
       id: 'task_car_research_suv',
-      title: 'Pesquisar modelos (SUV vs sedã)',
+      title: 'Pesquisar modelos de SUV',
+      description:
+          'Analisar o consumo, espaço interno e custo-benefício de pelo menos '
+          '3 modelos híbridos. Focar em opções com boa revenda no mercado brasileiro.',
       goalId: 'goal_buy_car',
+      priority: TaskPriority.media,
+      status: TaskStatus.emProgresso,
+      createdAt: DateTime(2024, 10, 18),
+      dueDate: DateTime(2024, 10, 25),
     ),
     const TaskModel(
       id: 'task_car_test_drive',

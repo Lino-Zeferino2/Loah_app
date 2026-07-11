@@ -11,9 +11,9 @@ import '../../../widgets/loah_card.dart';
 class TaskListItem extends StatelessWidget {
   final TaskModel task;
   final VoidCallback onToggle;
+  final VoidCallback? onTap;
 
-  const TaskListItem({super.key, required this.task, required this.onToggle});
-
+  const TaskListItem({super.key, required this.task, required this.onToggle, this.onTap});
   Color _priorityColor(BuildContext context, TaskPriority priority) {
     final colors = context.loahColors;
     return switch (priority) {
@@ -25,8 +25,9 @@ class TaskListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoahCard(
+    return  LoahCard(
       padding: const EdgeInsets.all(14),
+      onTap: onTap,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

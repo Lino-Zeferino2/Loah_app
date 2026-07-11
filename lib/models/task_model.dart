@@ -16,6 +16,21 @@ extension TaskPriorityLabel on TaskPriority {
       };
 }
 
+/// Where a task stands. [TaskModel.isDone] still drives "concluída"
+/// everywhere else in the app (it's the field every checkbox toggles),
+/// so [status] is mainly there to distinguish "not started yet" from
+/// "already being worked on" for an *incomplete* task — see
+/// [TaskModel.effectiveStatus].
+enum TaskStatus { pendente, emProgresso, concluida }
+
+extension TaskStatusLabel on TaskStatus {
+  String get label => switch (this) {
+        TaskStatus.pendente => 'Não Iniciada',
+        TaskStatus.emProgresso => 'Em Progresso',
+        TaskStatus.concluida => 'Concluída',
+      };
+}
+
 /// A to-do item shown on the Dashboard and Tarefas screens.
 class TaskModel {
   /// Stable identifier — maps to a Firestore document ID later.
@@ -38,9 +53,9 @@ class TaskModel {
   final DateTime? completedAt;
 
   /// Longer free-text notes, e.g. "Detalhes importantes para esta
-  /// etapa..." — shown on the Add/Edit Task form and (later) a task
-  /// detail screen. Separate from [subtitle], which stays a short
-  /// metadata line (e.g. "Hoje, 17:00") used in compact list rows.
+  /// etapa..." — shown on the Add/Edit Task form and the Task Detail
+  /// screen. Separate from [subtitle], which stays a short metadata
+  /// line (e.g. "Hoje, 17:00") used in compact list rows.
   final String? description;
 
   /// The actual due date, used for sorting/reminders. [dueLabel] is
@@ -49,6 +64,14 @@ class TaskModel {
   /// string from [dueDate] via [TaskModel.shortDate] when creating a
   /// task from a raw date picker value.
   final DateTime? dueDate;
+
+  /// When the task itself was created — shown as "Criada em 18 de
+  /// Outubro, 2024" on the Task Detail screen.
+  final DateTime? createdAt;
+
+  /// Explicit status for an *incomplete* task (pendente vs em
+  /// progresso). Ignored once [isDone] is true — see [effectiveStatus].
+  final TaskStatus? status;
 
   const TaskModel({
     required this.id,
@@ -62,7 +85,17 @@ class TaskModel {
     this.completedAt,
     this.description,
     this.dueDate,
+    this.createdAt,
+    this.status,
   });
+
+  /// The status actually shown in the UI: [isDone] always wins
+  /// ("Concluída"), otherwise falls back to [status] (defaulting to
+  /// "Não Iniciada" if it was never set explicitly).
+  TaskStatus get effectiveStatus {
+    if (isDone) return TaskStatus.concluida;
+    return status ?? TaskStatus.pendente;
+  }
 
   TaskModel copyWith({
     bool? isDone,
@@ -72,6 +105,7 @@ class TaskModel {
     String? dueLabel,
     TaskPriority? priority,
     String? goalId,
+    TaskStatus? status,
   }) {
     final newIsDone = isDone ?? this.isDone;
     return TaskModel(
@@ -88,6 +122,8 @@ class TaskModel {
           : null, // cleared if un-checked
       description: description ?? this.description,
       dueDate: dueDate ?? this.dueDate,
+      createdAt: createdAt,
+      status: status ?? this.status,
     );
   }
 
@@ -96,9 +132,19 @@ class TaskModel {
     'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
   ];
 
+  static const _monthFull = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  ];
+
   /// e.g. "15 Out" — used to turn a raw [DateTime] (from a date picker)
   /// into the short display format used across the app.
   static String shortDate(DateTime date) => '${date.day} ${_monthAbbrev[date.month - 1]}';
+
+  /// e.g. "18 de Outubro, 2024" — used for the longer labels on the
+  /// Task Detail screen ("Criada em..." / "Data de Entrega").
+  static String longDate(DateTime date) =>
+      '${date.day} de ${_monthFull[date.month - 1]}, ${date.year}';
 
   /// e.g. "Concluído em 15 Out". Null if not done or no timestamp.
   String? get completedLabel {
@@ -106,4 +152,10 @@ class TaskModel {
     if (!isDone || date == null) return null;
     return 'Concluído em ${shortDate(date)}';
   }
+
+  /// e.g. "Criada em 18 de Outubro, 2024". Null if [createdAt] wasn't set.
+  String? get createdAtLongLabel => createdAt == null ? null : 'Criada em ${longDate(createdAt!)}';
+
+  /// e.g. "18 de Outubro, 2024". Null if [dueDate] wasn't set.
+  String? get dueDateLongLabel => dueDate == null ? null : longDate(dueDate!);
 }

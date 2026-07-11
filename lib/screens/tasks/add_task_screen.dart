@@ -3,34 +3,46 @@ import '../../core/mock/mock_data.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/goal_model.dart';
 import '../../models/task_model.dart';
-import '../../widgets/loah_card.dart';
-import '../goals/widgets/goal_term_section.dart'; // GoalTermVisuals (icon/color)
+import 'widgets/goal_picker_sheet.dart';
 import 'widgets/priority_selector.dart';
+import 'widgets/related_goal_card.dart';
 
-/// "Loah - Adicionar Tarefa": a single form that covers two use cases:
+/// "Loah - Adicionar/Editar Tarefa": a single form covering three use
+/// cases:
 ///
-/// 1. **Sub-task of a goal** — pass [relatedGoal] (e.g. from the Goal
-///    Detail screen's "Adicionar Tarefa" button). The goal shows as a
-///    locked, non-editable card at the top and every created task is
-///    automatically linked via `goalId`.
-/// 2. **Standalone task** — leave [relatedGoal] null (e.g. from the
-///    Tarefas tab's FAB). The user can optionally attach a goal via a
-///    picker, or leave it avulsa (unlinked).
+/// 1. **New sub-task of a goal** — pass [relatedGoal] (e.g. from the
+///    Goal Detail screen's "Adicionar Tarefa" button). The goal shows
+///    as a locked, non-editable card at the top.
+/// 2. **New standalone task** — leave both [relatedGoal] and
+///    [existingTask] null (e.g. from the Tarefas tab's FAB). The user
+///    can optionally attach a goal via a picker, or leave it avulsa.
+/// 3. **Editing an existing task** — pass [existingTask]. Every field
+///    pre-fills, the related goal becomes editable (even if the task
+///    was originally created locked to one), and a "Excluir Tarefa"
+///    action appears.
 ///
-/// On success, pops with the created [TaskModel]; pops with `null` if
-/// cancelled.
+/// On success, pops with the created/updated [TaskModel]. Pops with
+/// `null` if cancelled. Pops with the *same task marked deleted*
+/// (`isDone` untouched, but removed from [MockData.tasks]) when the
+/// user deletes it — callers should treat any non-null result as "the
+/// list may have changed, refresh".
 class AddTaskScreen extends StatefulWidget {
   final GoalModel? relatedGoal;
+  final TaskModel? existingTask;
 
-  const AddTaskScreen({super.key, this.relatedGoal});
+  const AddTaskScreen({super.key, this.relatedGoal, this.existingTask});
+
+  bool get isEditing => existingTask != null;
 
   @override
   State<AddTaskScreen> createState() => _AddTaskScreenState();
 }
 
 class _AddTaskScreenState extends State<AddTaskScreen> {
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  late final _titleController =
+      TextEditingController(text: widget.existingTask?.title ?? '');
+  late final _descriptionController =
+      TextEditingController(text: widget.existingTask?.description ?? '');
 
   GoalModel? _selectedGoal;
   DateTime? _dueDate;
@@ -40,7 +52,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedGoal = widget.relatedGoal;
+    _dueDate = widget.existingTask?.dueDate;
+    _priority = widget.existingTask?.priority ?? TaskPriority.baixa;
+
+    final existingGoalId = widget.existingTask?.goalId ?? widget.relatedGoal?.id;
+    if (existingGoalId != null) {
+      _selectedGoal = MockData.goals.where((g) => g.id == existingGoalId).firstOrNull;
+    }
   }
 
   @override
@@ -50,7 +68,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     super.dispose();
   }
 
-  bool get _goalIsLocked => widget.relatedGoal != null;
+  /// The goal card is only locked when *creating* a fresh task directly
+  /// from a Goal Detail screen — editing always allows changing (or
+  /// removing) the link, even if the task was originally locked.
+  bool get _goalIsLocked => !widget.isEditing && widget.relatedGoal != null;
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -62,7 +83,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     if (picked != null) setState(() => _dueDate = picked);
   }
 
- Future<void> _pickGoal() async {
+  Future<void> _pickGoal() async {
     final goal = await showModalBottomSheet<GoalModel?>(
       context: context,
       isScrollControlled: true,
@@ -70,15 +91,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (sheetContext) => _GoalPickerSheet(
-        currentSelection: _selectedGoal,
-        onClear: () => Navigator.of(sheetContext).pop(),
-      ),
+      builder: (_) => GoalPickerSheet(currentSelection: _selectedGoal),
     );
-    // showModalBottomSheet returns null both for "dismissed" and for
-    // "explicitly chose null" — _GoalPickerSheet distinguishes via its
-    // own pop(goal) calls, so we just accept whatever comes back here
-    // except when the sheet is swiped away without a choice.
     setState(() => _selectedGoal = goal);
   }
 
@@ -89,8 +103,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       return;
     }
 
+    final existing = widget.existingTask;
+
     final task = TaskModel(
-      id: 'task_${DateTime.now().microsecondsSinceEpoch}',
+      id: existing?.id ?? 'task_${DateTime.now().microsecondsSinceEpoch}',
       title: title,
       description: _descriptionController.text.trim().isEmpty
           ? null
@@ -99,36 +115,100 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       dueLabel: _dueDate != null ? TaskModel.shortDate(_dueDate!) : null,
       priority: _priority,
       goalId: _selectedGoal?.id,
+      // Preserve state that this form doesn't edit directly.
+      isDone: existing?.isDone ?? false,
+      completedAt: existing?.completedAt,
+      createdAt: existing?.createdAt ?? DateTime.now(),
+      status: existing?.status,
     );
 
-    MockData.tasks.add(task);
+    if (existing != null) {
+      final index = MockData.tasks.indexWhere((t) => t.id == existing.id);
+      if (index != -1) MockData.tasks[index] = task;
+    } else {
+      MockData.tasks.add(task);
+    }
+
     Navigator.of(context).pop(task);
   }
 
+Future<void> _delete() async {
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: context.loahColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Excluir Tarefa',
+                style: Theme.of(sheetContext)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tem certeza? Essa ação não pode ser desfeita.',
+                style: Theme.of(sheetContext).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Cancelar'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => Navigator.of(sheetContext).pop(true),
+                      child: const Text('Excluir'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    MockData.tasks.removeWhere((t) => t.id == widget.existingTask!.id);
+    Navigator.of(context).pop(widget.existingTask); // signal "list changed"
+  }
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    final isEditing = widget.isEditing;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Adicionar Tarefa')),
+      appBar: AppBar(title: Text(isEditing ? 'Editar Tarefa' : 'Adicionar Tarefa')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _SectionLabel('META RELACIONADA'),
-            const SizedBox(height: 8),
-            if (_selectedGoal != null)
-              _RelatedGoalCard(
-                goal: _selectedGoal!,
-                locked: _goalIsLocked,
-                onTap: _goalIsLocked ? null : _pickGoal,
-                onClear: _goalIsLocked ? null : () => setState(() => _selectedGoal = null),
-              )
-            else
-              _NoGoalCard(onTap: _pickGoal),
-            const SizedBox(height: 22),
-
-            _SectionLabel('NOME DA TAREFA'),
+            const _SectionLabel('NOME DA TAREFA'),
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
@@ -148,7 +228,19 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('DESCRIÇÃO'),
+            const _SectionLabel('META RELACIONADA'),
+            const SizedBox(height: 8),
+            if (_selectedGoal != null)
+              RelatedGoalCard(
+                goal: _selectedGoal!,
+                trailingIcon: _goalIsLocked ? Icons.lock_outline : Icons.close,
+                onTap: _goalIsLocked ? null : _pickGoal,
+              )
+            else
+              NoGoalCard(onTap: _pickGoal),
+            const SizedBox(height: 20),
+
+            const _SectionLabel('DESCRIÇÃO'),
             const SizedBox(height: 8),
             TextField(
               controller: _descriptionController,
@@ -165,7 +257,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('DATA DE CONCLUSÃO'),
+            const _SectionLabel('DATA DE ENTREGA'),
             const SizedBox(height: 8),
             InkWell(
               onTap: _pickDate,
@@ -196,7 +288,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('PRIORIDADE'),
+            const _SectionLabel('PRIORIDADE'),
             const SizedBox(height: 8),
             PrioritySelector(
               selected: _priority,
@@ -204,28 +296,41 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             const SizedBox(height: 20),
 
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: colors.accentBlue.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.auto_awesome, size: 18, color: colors.accentBlue),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Lembre-se: pequenas tarefas são mais fáceis de completar. '
-                      'Tente dividir metas grandes em passos de 15 a 30 minutos.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4),
+            if (!isEditing)
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: colors.accentBlue.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.auto_awesome, size: 18, color: colors.accentBlue),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Lembre-se: pequenas tarefas são mais fáceis de completar. '
+                        'Tente dividir metas grandes em passos de 15 a 30 minutos.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
+            if (isEditing) ...[
+              Center(
+                child: TextButton.icon(
+                  onPressed: _delete,
+                  icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                  label: const Text(
+                    'Excluir Tarefa',
+                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
 
             SizedBox(
               width: double.infinity,
@@ -237,7 +342,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Criar Tarefa', style: TextStyle(fontWeight: FontWeight.w700)),
+                child: Text(
+                  isEditing ? 'Salvar Alterações' : 'Criar Tarefa',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -270,148 +378,6 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// The related-goal card, shown either locked (task created from within
-/// a Goal Detail screen) or tappable (task created standalone, with an
-/// optional goal already picked).
-class _RelatedGoalCard extends StatelessWidget {
-  final GoalModel goal;
-  final bool locked;
-  final VoidCallback? onTap;
-  final VoidCallback? onClear;
-
-  const _RelatedGoalCard({
-    required this.goal,
-    required this.locked,
-    this.onTap,
-    this.onClear,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return LoahCard(
-      onTap: onTap,
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: goal.progressColor.withValues(alpha: 0.15),
-            child: Icon(goal.term.icon, size: 18, color: goal.progressColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(goal.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                Text(
-                  'Meta de ${goal.term.label}',
-                  style: TextStyle(fontSize: 12, color: goal.progressColor),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            locked ? Icons.lock_outline : Icons.close,
-            size: 18,
-            color: context.textSecondary,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Shown when no goal is attached yet (only reachable in the
-/// standalone-task flow, since the goal-linked flow always has one).
-class _NoGoalCard extends StatelessWidget {
-  final VoidCallback onTap;
-  const _NoGoalCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return LoahCard(
-      onTap: onTap,
-      child: Row(
-        children: [
-          Icon(Icons.link_outlined, size: 18, color: context.textSecondary),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Nenhuma meta selecionada (tarefa avulsa)',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
-          Icon(Icons.chevron_right, size: 18, color: context.textSecondary),
-        ],
-      ),
-    );
-  }
-}
-/// Bottom sheet listing every goal in [MockData.goals], plus a "remove
-/// link" option, used when picking a goal for a standalone task.
-///
-/// Capped to 70% of screen height with an internally-scrolling list —
-/// without this, a long goal list (or a small phone screen) would
-/// overflow, since a plain Column has no bound on its own height.
-class _GoalPickerSheet extends StatelessWidget {
-  final GoalModel? currentSelection;
-  final VoidCallback onClear;
-
-  const _GoalPickerSheet({required this.currentSelection, required this.onClear});
-
-  @override
-  Widget build(BuildContext context) {
-    final maxHeight = MediaQuery.of(context).size.height * 0.7;
-
-    return SafeArea(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxHeight),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-              child: Text(
-                'Vincular a uma meta',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.close),
-                    title: const Text('Nenhuma (tarefa avulsa)'),
-                    onTap: () => Navigator.of(context).pop(),
-                  ),
-                  for (final goal in MockData.goals)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: goal.progressColor.withValues(alpha: 0.15),
-                        child: Icon(goal.term.icon, size: 16, color: goal.progressColor),
-                      ),
-                      title: Text(goal.title),
-                      trailing: goal.id == currentSelection?.id
-                          ? const Icon(Icons.check, size: 18)
-                          : null,
-                      onTap: () => Navigator.of(context).pop(goal),
-                    ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+extension _FirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
 }

@@ -10,12 +10,14 @@ class GoalMilestoneTile extends StatelessWidget {
   final TaskModel task;
   final Color accentColor;
   final VoidCallback onToggle;
+  final VoidCallback? onTap;
 
   const GoalMilestoneTile({
     super.key,
     required this.task,
     required this.accentColor,
     required this.onToggle,
+    this.onTap,
   });
 
   @override
@@ -39,44 +41,40 @@ class GoalMilestoneTile extends StatelessWidget {
                 borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Checkbox(
+                value: task.isDone,
+                onChanged: (_) => onToggle(),
+                activeColor: accentColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+              ),
+            ),
             Expanded(
               child: InkWell(
-                onTap: onToggle,
+                onTap: onTap,
                 borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  child: Row(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Checkbox(
-                        value: task.isDone,
-                        onChanged: (_) => onToggle(),
-                        activeColor: accentColor,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              task.title,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                decoration: task.isDone ? TextDecoration.lineThrough : null,
-                                color: task.isDone ? context.textSecondary : null,
-                              ),
-                            ),
-                            if (task.completedLabel != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: Text(
-                                  task.completedLabel!,
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ),
-                          ],
+                      Text(
+                        task.title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          decoration: task.isDone ? TextDecoration.lineThrough : null,
+                          color: task.isDone ? context.textSecondary : null,
                         ),
                       ),
+                      if (task.completedLabel != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            task.completedLabel!,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
                     ],
                   ),
                 ),

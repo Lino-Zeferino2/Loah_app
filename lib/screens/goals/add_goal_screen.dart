@@ -222,7 +222,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 26),
 
-            _SectionLabel('Nome da Meta'),
+            const _SectionLabel('Nome da Meta'),
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
@@ -242,7 +242,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('Foto da Meta (Opcional)'),
+            const _SectionLabel('Foto da Meta (Opcional)'),
             const SizedBox(height: 8),
             _ImagePickerField(
               imagePath: _imagePath,
@@ -251,7 +251,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('Categoria'),
+            const _SectionLabel('Categoria'),
             const SizedBox(height: 8),
             ChipSelector<String>(
               options: _categories,
@@ -260,7 +260,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('Prazo'),
+            const _SectionLabel('Prazo'),
             const SizedBox(height: 8),
             ChipSelector<GoalTerm>(
               options: _terms,
@@ -269,7 +269,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('Descrição'),
+            const _SectionLabel('Descrição'),
             const SizedBox(height: 8),
             TextField(
               controller: _descriptionController,
@@ -286,7 +286,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('Data Alvo'),
+            const _SectionLabel('Data Alvo'),
             const SizedBox(height: 8),
             InkWell(
               onTap: _pickDate,
@@ -317,7 +317,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('Valor Alvo (Opcional)'),
+            const _SectionLabel('Valor Alvo (Opcional)'),
             const SizedBox(height: 8),
             TextField(
               controller: _targetValueController,

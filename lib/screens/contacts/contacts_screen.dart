@@ -22,7 +22,7 @@ class ContactsScreen extends StatefulWidget {
 
 class _ContactsScreenState extends State<ContactsScreen> {
   static const _contacts = [
-    ContactModel(name: 'Alice Ferreira', relationshipTag: 'Namorada', isFavorite: true),
+    ContactModel(name: 'Keeloah Ferreira', relationshipTag: 'Namorada', isFavorite: true),
     ContactModel(name: 'Bruno Alves', relationshipTag: 'Amigo', isFavorite: true),
     ContactModel(name: 'Carlos Souza', relationshipTag: 'Pai', isFavorite: true),
     ContactModel(name: 'Diana Ferreira', relationshipTag: 'Mãe', isFavorite: true),

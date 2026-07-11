@@ -7,6 +7,7 @@ import '../../models/goal_model.dart';
 import '../../models/task_model.dart';
 import '../../widgets/goal_image.dart';
 import '../tasks/add_task_screen.dart';
+import '../tasks/task_detail_screen.dart';
 import 'add_goal_screen.dart';
 import 'widgets/circular_progress_ring.dart';
 import 'widgets/goal_milestone_tile.dart';
@@ -42,6 +43,17 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => AddTaskScreen(relatedGoal: _goal)),
     );
+    // AddTaskScreen writes straight into MockData.tasks, so a rebuild
+    // here is enough to show the newly created milestone.
+    setState(() {});
+  }
+
+  Future<void> _openTask(TaskModel task) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task)),
+    );
+    // TaskDetailScreen writes straight into MockData.tasks (toggle,
+    // edit, delete), so a rebuild here is enough to reflect changes.
     setState(() {});
   }
 
@@ -52,38 +64,97 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     if (updated != null) setState(() => _goal = updated);
   }
 
-Future<void> _adjustProgress() async {
+ Future<void> _adjustProgress() async {
     final controller = TextEditingController();
-    final delta = await showDialog<double>(
+    final delta = await showModalBottomSheet<double>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Atualizar Valor'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(prefixText: 'R\$ ', hintText: '0,00'),
+      isScrollControlled: true,
+      backgroundColor: context.loahColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancelar'),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Atualizar Valor',
+                style: Theme.of(sheetContext)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  prefixText: 'R\$ ',
+                  hintText: '0,00',
+                  filled: true,
+                  fillColor: context.loahColors.cardBackgroundAlt,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        final value =
+                            double.tryParse(controller.text.trim().replaceAll(',', '.'));
+                        if (value != null) Navigator.of(sheetContext).pop(-value);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Remover'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () {
+                        final value =
+                            double.tryParse(controller.text.trim().replaceAll(',', '.'));
+                        if (value != null) Navigator.of(sheetContext).pop(value);
+                      },
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Adicionar'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.of(sheetContext).pop(),
+                  child: const Text('Cancelar'),
+                ),
+              ),
+            ],
           ),
-          OutlinedButton(
-            onPressed: () {
-              final value = double.tryParse(controller.text.trim().replaceAll(',', '.'));
-              if (value != null) Navigator.of(dialogContext).pop(-value);
-            },
-            child: const Text('Remover'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final value = double.tryParse(controller.text.trim().replaceAll(',', '.'));
-              if (value != null) Navigator.of(dialogContext).pop(value);
-            },
-            child: const Text('Adicionar'),
-          ),
-        ],
+        ),
       ),
     );
     if (delta == null || delta == 0) return;
@@ -105,7 +176,6 @@ Future<void> _adjustProgress() async {
       if (index != -1) MockData.goals[index] = _goal;
     });
   }
-
   @override
   Widget build(BuildContext context) {
     final goal = _goal;
@@ -177,7 +247,7 @@ Future<void> _adjustProgress() async {
                               color: goal.progressColor,
                             ),
                       ),
-                   TextButton.icon(
+                      TextButton.icon(
                         onPressed: _adjustProgress,
                         icon: Icon(Icons.tune, size: 16, color: goal.progressColor),
                         label: Text(
@@ -248,11 +318,11 @@ Future<void> _adjustProgress() async {
                       task: task,
                       accentColor: goal.progressColor,
                       onToggle: () => _toggleTask(task),
+                      onTap: () => _openTask(task),
                     ),
-              const SizedBox(height: 44),]),
+              ]),
             ),
           ),
-        
         ],
       ),
     );

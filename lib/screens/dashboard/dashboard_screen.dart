@@ -70,7 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             Text(
-              'Olá, Arthur',
+              'Olá, Lino',
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall
