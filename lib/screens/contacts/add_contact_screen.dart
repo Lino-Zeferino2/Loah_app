@@ -5,6 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/contact_model.dart';
 import '../../widgets/chip_selector.dart';
 import '../../widgets/goal_image.dart'; // generic network-or-file image renderer
+import 'widgets/country_code_picker_sheet.dart';
 
 /// "Loah - Novo Contato": form to create a new [ContactModel].
 ///
@@ -34,6 +35,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
   final _phoneController = TextEditingController();
 
   String _relationship = 'Amigo';
+  String _countryFlag = '🇧🇷';
+  String _countryDialCode = '+55';
   String? _avatarPath;
   String? _nameError;
 
@@ -77,6 +80,33 @@ class _AddContactScreenState extends State<AddContactScreen> {
     if (picked != null) setState(() => _avatarPath = picked.path);
   }
 
+  Future<void> _pickCountryCode() async {
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.loahColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const CountryCodePickerSheet(),
+    );
+    if (result == null) return;
+
+    // From the list: "🇧🇷|+55". From manual entry: just "+000" (no flag).
+    if (result.contains('|')) {
+      final parts = result.split('|');
+      setState(() {
+        _countryFlag = parts[0];
+        _countryDialCode = parts[1];
+      });
+    } else {
+      setState(() {
+        _countryFlag = '🏳️';
+        _countryDialCode = result;
+      });
+    }
+  }
+
   void _submit() {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
@@ -88,7 +118,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
       id: 'contact_${DateTime.now().microsecondsSinceEpoch}',
       name: name,
       email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-      phone: _phoneController.text.trim().isEmpty ? null : '+55 ${_phoneController.text.trim()}',
+      phone: _phoneController.text.trim().isEmpty
+          ? null
+          : '$_countryDialCode ${_phoneController.text.trim()}',
       relationshipTag: _relationship,
       avatarUrl: _avatarPath,
     );
@@ -198,19 +230,25 @@ class _AddContactScreenState extends State<AddContactScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: colors.cardBackgroundAlt,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('🇧🇷', style: TextStyle(fontSize: 16)),
-                      SizedBox(width: 6),
-                      Text('+55', style: TextStyle(fontWeight: FontWeight.w600)),
-                    ],
+                InkWell(
+                  onTap: _pickCountryCode,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: colors.cardBackgroundAlt,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_countryFlag, style: const TextStyle(fontSize: 16)),
+                        const SizedBox(width: 6),
+                        Text(_countryDialCode, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        const SizedBox(width: 4),
+                        Icon(Icons.keyboard_arrow_down, size: 16, color: context.textSecondary),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),

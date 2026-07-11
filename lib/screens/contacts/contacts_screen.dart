@@ -8,13 +8,14 @@ import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_avatar_action.dart';
 import '../../widgets/loah_drawer.dart';
 import 'add_contact_screen.dart';
+import 'widgets/contact_filter_sheet.dart';
 import 'widgets/contact_list_tile.dart';
 import 'widgets/contact_search_bar.dart';
 import 'widgets/favorite_contact_avatar.dart';
 
-/// "Loah - Contatos": a searchable address book with a horizontal
-/// "Favoritos" carousel up top and the remaining contacts grouped
-/// alphabetically underneath.
+/// "Loah - Contatos": a searchable, filterable address book with a
+/// horizontal "Favoritos" carousel up top and the remaining contacts
+/// grouped alphabetically underneath.
 ///
 /// Reads straight from [MockData.contacts] rather than keeping a local
 /// copy, so a contact added via [AddContactScreen] shows up immediately.
@@ -38,18 +39,32 @@ class _ContactsScreenState extends State<ContactsScreen> {
   ];
 
   String _query = '';
+  ContactFilters _filters = const ContactFilters();
+
+  /// Every relationship tag currently in use, so the filter sheet only
+  /// ever shows options that actually exist (no empty categories).
+  List<String> get _availableRelationships =>
+      MockData.contacts.map((c) => c.relationshipTag).toSet().toList()..sort();
+
+  bool _passesFilters(ContactModel c) {
+    if (_filters.favoritesOnly && !c.isFavorite) return false;
+    if (_filters.relationships.isNotEmpty &&
+        !_filters.relationships.contains(c.relationshipTag)) {
+      return false;
+    }
+    if (_query.isNotEmpty && !c.name.toLowerCase().contains(_query.toLowerCase())) {
+      return false;
+    }
+    return true;
+  }
 
   List<ContactModel> get _favorites =>
-      MockData.contacts.where((c) => c.isFavorite).toList();
+      MockData.contacts.where((c) => c.isFavorite && _passesFilters(c)).toList();
 
-  /// Non-favorite contacts, filtered by [_query] and grouped by first
-  /// letter, e.g. {'A': [...], 'B': [...]}.
+  /// Non-favorite contacts, filtered by search + [_filters] and grouped
+  /// by first letter, e.g. {'A': [...], 'B': [...]}.
   Map<String, List<ContactModel>> get _groupedContacts {
-    final filtered = MockData.contacts.where((c) {
-      if (c.isFavorite) return false;
-      if (_query.isEmpty) return true;
-      return c.name.toLowerCase().contains(_query.toLowerCase());
-    }).toList()
+    final filtered = MockData.contacts.where((c) => !c.isFavorite && _passesFilters(c)).toList()
       ..sort((a, b) => a.name.compareTo(b.name));
 
     final grouped = <String, List<ContactModel>>{};
@@ -66,6 +81,22 @@ class _ContactsScreenState extends State<ContactsScreen> {
     // AddContactScreen writes straight into MockData.contacts, so a
     // rebuild here is enough to show the newly created contact.
     setState(() {});
+  }
+
+  Future<void> _openFilters() async {
+    final result = await showModalBottomSheet<ContactFilters>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.loahColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => ContactFilterSheet(
+        availableRelationships: _availableRelationships,
+        initialFilters: _filters,
+      ),
+    );
+    if (result != null) setState(() => _filters = result);
   }
 
   @override
@@ -87,7 +118,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
-                ContactSearchBar(onChanged: (v) => setState(() => _query = v)),
+                ContactSearchBar(
+                  onChanged: (v) => setState(() => _query = v),
+                  onFilterTap: _openFilters,
+                  hasActiveFilters: _filters.isActive,
+                ),
                 const SizedBox(height: AppSpacing.xl),
 
                 if (_favorites.isNotEmpty) ...[
@@ -113,6 +148,17 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   ),
                   const SizedBox(height: AppSpacing.xl),
                 ],
+
+                if (grouped.isEmpty && _favorites.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 40),
+                    child: Center(
+                      child: Text(
+                        'Nenhum contato encontrado com esses filtros.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ),
 
                 for (final letter in sortedLetters) ...[
                   Text(
