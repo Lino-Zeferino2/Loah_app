@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../models/goal_model.dart';
 import '../../models/task_model.dart';
 import '../../models/contact_model.dart';
+import '../../models/transaction_model.dart';
+import '../../models/asset_model.dart';
 
 /// Single source of mock data for the whole app.
 ///
@@ -11,6 +13,80 @@ import '../../models/contact_model.dart';
 /// this class, so the migration won't touch screen code.
 class MockData {
   MockData._();
+  static final List<AssetModel> assets = [
+    AssetModel(
+      id: 'asset_emergency_fund',
+      name: 'Reserva de Emergência',
+      type: AssetType.emergencyFund,
+      currentValue: 4250,
+      updatedAt: DateTime.now().subtract(const Duration(days: 2)),
+    ),
+    AssetModel(
+      id: 'asset_stocks_b3',
+      name: 'Carteira B3',
+      type: AssetType.stocks,
+      currentValue: 8600,
+      notes: 'PETR4, VALE3, ITUB4',
+      updatedAt: DateTime.now().subtract(const Duration(days: 5)),
+    ),
+    AssetModel(
+      id: 'asset_apartment',
+      name: 'Apartamento',
+      type: AssetType.realEstate,
+      currentValue: 320000,
+      notes: 'Imóvel residencial, financiado',
+      updatedAt: DateTime.now().subtract(const Duration(days: 30)),
+    ),
+    AssetModel(
+      id: 'asset_checking_account',
+      name: 'Conta Corrente',
+      type: AssetType.cash,
+      currentValue: 1850,
+      updatedAt: DateTime.now().subtract(const Duration(hours: 6)),
+    ),
+  ];
+  static final List<TransactionModel> transactions = [
+    TransactionModel(
+      id: 'txn_market',
+      title: 'Mercado Central',
+      category: 'Alimentação',
+      amount: 146.20,
+      type: TransactionType.expense,
+      date: DateTime.now().subtract(const Duration(hours: 3)),
+    ),
+    TransactionModel(
+      id: 'txn_salary',
+      title: 'Salário Mensal',
+      category: 'Salário',
+      amount: 4200.00,
+      type: TransactionType.income,
+      date: DateTime.now().subtract(const Duration(days: 1)),
+    ),
+    TransactionModel(
+      id: 'txn_uber',
+      title: 'Uber',
+      category: 'Transporte',
+      amount: 32.50,
+      type: TransactionType.expense,
+      date: DateTime.now().subtract(const Duration(days: 4)),
+    ),
+    TransactionModel(
+      id: 'txn_clothes',
+      title: 'Loja de Roupas',
+      category: 'Compras',
+      amount: 210.00,
+      type: TransactionType.expense,
+      date: DateTime.now().subtract(const Duration(days: 5)),
+    ),
+    TransactionModel(
+      id: 'txn_rent',
+      title: 'Aluguel',
+      category: 'Moradia',
+      amount: 1200.00,
+      type: TransactionType.expense,
+      date: DateTime.now().subtract(const Duration(days: 8)),
+    ),
+  ];
 static final List<ContactModel> contacts = [
     const ContactModel(
       id: 'contact_alice',
