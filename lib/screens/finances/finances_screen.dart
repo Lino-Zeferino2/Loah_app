@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/mock/account_balance.dart';
 import '../../core/mock/finance_summary.dart';
 import '../../core/mock/goal_progress.dart';
 import '../../core/mock/mock_data.dart';
@@ -10,6 +11,7 @@ import '../../models/transaction_model.dart';
 import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_drawer.dart';
 import '../../widgets/section_header.dart';
+import 'accounts_screen.dart';
 import 'add_transaction_screen.dart';
 import 'assets_screen.dart';
 import 'widgets/emergency_goal_card.dart';
@@ -17,11 +19,12 @@ import 'widgets/expense_distribution_card.dart';
 import 'widgets/total_balance_card.dart';
 import 'widgets/transaction_list_item.dart';
 
-/// "Loah - Finanças": total balance, emergency-fund goal, expense
-/// distribution donut chart and recent transaction history.
+/// "Loah - Finanças": total balance, quick links to Contas/Patrimônio,
+/// the emergency-fund goal, expense distribution donut chart and
+/// recent transaction history.
 ///
-/// All figures are derived live from [MockData.transactions] via
-/// [FinanceSummary] — nothing here is a hardcoded number anymore.
+/// All figures are derived live from [MockData.transactions] and
+/// [MockData.accounts] — nothing here is a hardcoded number anymore.
 class FinancesScreen extends StatefulWidget {
   const FinancesScreen({super.key});
 
@@ -53,13 +56,26 @@ class _FinancesScreenState extends State<FinancesScreen> {
     setState(() {});
   }
 
+  Future<void> _openAccounts() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AccountsScreen()),
+    );
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
     final nav = LoahNavigationController.of(context);
 
     final transactions = MockData.transactions;
-    final total = FinanceSummary.totalBalance(transactions);
+    final accounts = MockData.accounts;
+
+    // "Saldo total" is now the sum of every account's live balance
+    // (initial balance + its linked transactions) rather than a raw
+    // sum of all transactions — this correctly accounts for money that
+    // was already in an account before Loah started tracking it.
+    final total = AccountBalance.totalOf(accounts, transactions);
     final income = FinanceSummary.monthlyIncome(transactions);
     final expense = FinanceSummary.monthlyExpense(transactions);
     final distribution = FinanceSummary.expenseDistribution(transactions);
@@ -96,7 +112,29 @@ class _FinancesScreenState extends State<FinancesScreen> {
           children: [
             TotalBalanceCard(total: total, income: income, expense: expense),
             const SizedBox(height: AppSpacing.md),
-            _PatrimonioEntryCard(onTap: _openAssets),
+            Row(
+              children: [
+                Expanded(
+                  child: _FinanceEntryCard(
+                    icon: Icons.account_balance_wallet_outlined,
+                    label: 'Contas',
+                    value: CurrencyFormatter.format(total),
+                    onTap: _openAccounts,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _FinanceEntryCard(
+                    icon: Icons.account_balance_outlined,
+                    label: 'Patrimônio',
+                    value: CurrencyFormatter.format(
+                      MockData.assets.fold<double>(0, (sum, a) => sum + a.currentValue),
+                    ),
+                    onTap: _openAssets,
+                  ),
+                ),
+              ],
+            ),
             if (emergencyGoal != null) ...[
               const SizedBox(height: AppSpacing.md),
               EmergencyGoalCard(
@@ -180,16 +218,24 @@ extension _FirstOrNull<T> on Iterable<T> {
   T? get firstOrNull => isEmpty ? null : first;
 }
 
-/// Compact tappable card summarizing net worth, linking into the full
-/// [AssetsScreen] breakdown.
-class _PatrimonioEntryCard extends StatelessWidget {
+/// Compact tappable card used for both the "Contas" and "Patrimônio"
+/// quick-link entries — icon, label, value, chevron.
+class _FinanceEntryCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
   final VoidCallback onTap;
-  const _PatrimonioEntryCard({required this.onTap});
+
+  const _FinanceEntryCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
-    final total = MockData.assets.fold<double>(0, (sum, a) => sum + a.currentValue);
 
     return Material(
       color: colors.cardBackground,
@@ -198,32 +244,29 @@ class _PatrimonioEntryCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: colors.border),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: colors.accentBlue.withValues(alpha: 0.15),
-                child: Icon(Icons.account_balance_outlined, size: 18, color: colors.accentBlue),
+              Row(
+                children: [
+                  Icon(icon, size: 18, color: colors.accentBlue),
+                  const Spacer(),
+                  Icon(Icons.chevron_right, size: 16, color: context.textSecondary),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Patrimônio', style: Theme.of(context).textTheme.bodySmall),
-                    Text(
-                      CurrencyFormatter.format(total),
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: 8),
+              Text(label, style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
-              Icon(Icons.chevron_right, color: context.textSecondary),
             ],
           ),
         ),

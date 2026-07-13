@@ -15,6 +15,11 @@ class TransactionModel {
   final TransactionType type;
   final DateTime date;
 
+  /// Which [AccountModel] this transaction affects — required for new
+  /// transactions (the Add/Edit form always asks), used by
+  /// `AccountBalance.of` to compute each account's live balance.
+  final String? accountId;
+
   const TransactionModel({
     required this.id,
     required this.title,
@@ -22,9 +27,29 @@ class TransactionModel {
     required this.amount,
     required this.type,
     required this.date,
+    this.accountId,
   });
 
   bool get isIncome => type == TransactionType.income;
+
+  TransactionModel copyWith({
+    String? title,
+    String? category,
+    double? amount,
+    TransactionType? type,
+    DateTime? date,
+    String? accountId,
+  }) {
+    return TransactionModel(
+      id: id,
+      title: title ?? this.title,
+      category: category ?? this.category,
+      amount: amount ?? this.amount,
+      type: type ?? this.type,
+      date: date ?? this.date,
+      accountId: accountId ?? this.accountId,
+    );
+  }
 
   static const _monthAbbrev = [
     'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',

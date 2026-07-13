@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loah_app/screens/finances/widgets/asset_card.dart';
 import '../../core/mock/asset_visuals.dart';
 import '../../core/mock/mock_data.dart';
 import '../../core/theme/app_theme.dart';
@@ -7,7 +8,7 @@ import '../../models/asset_model.dart';
 import '../../widgets/labeled_progress_bar.dart';
 import '../../widgets/loah_card.dart';
 import 'add_asset_screen.dart';
-import 'widgets/asset_card.dart';
+import '../../widgets/loah_app_bar_simple.dart';
 
 /// "Loah - Patrimônio": total net worth plus a breakdown by asset type
 /// (Reserva de Emergência, Ações, Imóveis, Dinheiro em Conta...) and
@@ -210,17 +211,4 @@ class _AssetsScreenState extends State<AssetsScreen> {
       ),
     );
   }
-}
-
-/// Minimal app bar for pushed sub-screens that aren't one of the four
-/// main tabs (so no drawer/menu icon — just a back arrow + title).
-class LoahAppBarSimple extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
-  const LoahAppBarSimple({super.key, required this.title});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(56);
-
-  @override
-  Widget build(BuildContext context) => AppBar(title: Text(title));
 }

@@ -4,6 +4,7 @@ import '../../models/task_model.dart';
 import '../../models/contact_model.dart';
 import '../../models/transaction_model.dart';
 import '../../models/asset_model.dart';
+import '../../models/account_model.dart';
 
 /// Single source of mock data for the whole app.
 ///
@@ -13,6 +14,31 @@ import '../../models/asset_model.dart';
 /// this class, so the migration won't touch screen code.
 class MockData {
   MockData._();
+  static final List<AccountModel> accounts = [
+    const AccountModel(
+      id: 'acc_checking',
+      name: 'Conta Corrente',
+      type: AccountType.corrente,
+      initialBalance: 500,
+    ),
+    const AccountModel(
+      id: 'acc_savings',
+      name: 'Poupança',
+      type: AccountType.poupanca,
+      initialBalance: 3750,
+    ),
+    const AccountModel(
+      id: 'acc_credit_card',
+      name: 'Cartão de Crédito',
+      type: AccountType.cartaoCredito,
+    ),
+    const AccountModel(
+      id: 'acc_wallet',
+      name: 'Carteira',
+      type: AccountType.carteira,
+      initialBalance: 150,
+    ),
+  ];
   static final List<AssetModel> assets = [
     AssetModel(
       id: 'asset_emergency_fund',
@@ -45,7 +71,8 @@ class MockData {
       updatedAt: DateTime.now().subtract(const Duration(hours: 6)),
     ),
   ];
-  static final List<TransactionModel> transactions = [
+ 
+static final List<TransactionModel> transactions = [
     TransactionModel(
       id: 'txn_market',
       title: 'Mercado Central',
@@ -53,6 +80,7 @@ class MockData {
       amount: 146.20,
       type: TransactionType.expense,
       date: DateTime.now().subtract(const Duration(hours: 3)),
+      accountId: 'acc_checking',
     ),
     TransactionModel(
       id: 'txn_salary',
@@ -61,6 +89,7 @@ class MockData {
       amount: 4200.00,
       type: TransactionType.income,
       date: DateTime.now().subtract(const Duration(days: 1)),
+      accountId: 'acc_checking',
     ),
     TransactionModel(
       id: 'txn_uber',
@@ -69,6 +98,7 @@ class MockData {
       amount: 32.50,
       type: TransactionType.expense,
       date: DateTime.now().subtract(const Duration(days: 4)),
+      accountId: 'acc_credit_card',
     ),
     TransactionModel(
       id: 'txn_clothes',
@@ -77,6 +107,7 @@ class MockData {
       amount: 210.00,
       type: TransactionType.expense,
       date: DateTime.now().subtract(const Duration(days: 5)),
+      accountId: 'acc_credit_card',
     ),
     TransactionModel(
       id: 'txn_rent',
@@ -85,8 +116,10 @@ class MockData {
       amount: 1200.00,
       type: TransactionType.expense,
       date: DateTime.now().subtract(const Duration(days: 8)),
+      accountId: 'acc_checking',
     ),
   ];
+
 static final List<ContactModel> contacts = [
     const ContactModel(
       id: 'contact_alice',

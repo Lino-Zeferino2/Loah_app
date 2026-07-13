@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/mock/mock_data.dart';
 import '../../core/mock/transaction_categories.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
 import '../../widgets/chip_selector.dart';
 
@@ -33,9 +34,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   late String _category = widget.existingTransaction?.category ??
       TransactionCategories.forType(_type).first;
   late DateTime _date = widget.existingTransaction?.date ?? DateTime.now();
+  late AccountModel? _account = _initialAccount();
 
   String? _titleError;
   String? _amountError;
+
+  AccountModel? _initialAccount() {
+    final id = widget.existingTransaction?.accountId;
+    final matches = MockData.accounts.where((a) => a.id == id);
+    if (matches.isNotEmpty) return matches.first;
+    return MockData.accounts.isNotEmpty ? MockData.accounts.first : null;
+  }
 
   @override
   void dispose() {
@@ -95,6 +104,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       amount: amount!,
       type: _type,
       date: _date,
+      accountId: _account?.id,
     );
 
     if (existing != null) {
@@ -244,6 +254,21 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               selected: _category,
               onChanged: (v) => setState(() => _category = v),
             ),
+            const SizedBox(height: 20),
+
+            _SectionLabel('CONTA'),
+            const SizedBox(height: 8),
+            if (MockData.accounts.isEmpty)
+              Text(
+                'Nenhuma conta cadastrada — crie uma na tela de Contas antes de lançar transações.',
+                style: Theme.of(context).textTheme.bodySmall,
+              )
+            else
+              ChipSelector<AccountModel>(
+                options: [for (final a in MockData.accounts) ChipOption(a.name, a)],
+                selected: _account!,
+                onChanged: (v) => setState(() => _account = v),
+              ),
             const SizedBox(height: 20),
 
             _SectionLabel('DATA'),
