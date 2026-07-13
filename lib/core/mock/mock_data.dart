@@ -5,6 +5,7 @@ import '../../models/contact_model.dart';
 import '../../models/transaction_model.dart';
 import '../../models/asset_model.dart';
 import '../../models/account_model.dart';
+import '../../models/budget_model.dart';
 
 /// Single source of mock data for the whole app.
 ///
@@ -14,6 +15,12 @@ import '../../models/account_model.dart';
 /// this class, so the migration won't touch screen code.
 class MockData {
   MockData._();
+  static final List<BudgetModel> budgets = [
+    const BudgetModel(id: 'budget_food', category: 'Alimentação', monthlyLimit: 800),
+    const BudgetModel(id: 'budget_transport', category: 'Transporte', monthlyLimit: 250),
+    const BudgetModel(id: 'budget_shopping', category: 'Compras', monthlyLimit: 300),
+    const BudgetModel(id: 'budget_housing', category: 'Moradia', monthlyLimit: 1200),
+  ];
   static final List<AccountModel> accounts = [
     const AccountModel(
       id: 'acc_checking',

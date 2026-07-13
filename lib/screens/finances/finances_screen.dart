@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/mock/account_balance.dart';
+import '../../core/mock/budget_summary.dart';
 import '../../core/mock/finance_summary.dart';
 import '../../core/mock/goal_progress.dart';
 import '../../core/mock/mock_data.dart';
@@ -14,6 +15,7 @@ import '../../widgets/section_header.dart';
 import 'accounts_screen.dart';
 import 'add_transaction_screen.dart';
 import 'assets_screen.dart';
+import 'budgets_screen.dart';
 import 'widgets/emergency_goal_card.dart';
 import 'widgets/expense_distribution_card.dart';
 import 'widgets/total_balance_card.dart';
@@ -59,6 +61,13 @@ class _FinancesScreenState extends State<FinancesScreen> {
   Future<void> _openAccounts() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const AccountsScreen()),
+    );
+    setState(() {});
+  }
+
+  Future<void> _openBudgets() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const BudgetsScreen()),
     );
     setState(() {});
   }
@@ -112,28 +121,46 @@ class _FinancesScreenState extends State<FinancesScreen> {
           children: [
             TotalBalanceCard(total: total, income: income, expense: expense),
             const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: _FinanceEntryCard(
-                    icon: Icons.account_balance_wallet_outlined,
-                    label: 'Contas',
-                    value: CurrencyFormatter.format(total),
-                    onTap: _openAccounts,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _FinanceEntryCard(
-                    icon: Icons.account_balance_outlined,
-                    label: 'Patrimônio',
-                    value: CurrencyFormatter.format(
-                      MockData.assets.fold<double>(0, (sum, a) => sum + a.currentValue),
+            SizedBox(
+              height: 120,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  SizedBox(
+                    width: 150,
+                    child: _FinanceEntryCard(
+                      icon: Icons.account_balance_wallet_outlined,
+                      label: 'Contas',
+                      value: CurrencyFormatter.format(total),
+                      onTap: _openAccounts,
                     ),
-                    onTap: _openAssets,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 150,
+                    child: _FinanceEntryCard(
+                      icon: Icons.account_balance_outlined,
+                      label: 'Patrimônio',
+                      value: CurrencyFormatter.format(
+                        MockData.assets.fold<double>(0, (sum, a) => sum + a.currentValue),
+                      ),
+                      onTap: _openAssets,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 150,
+                    child: _FinanceEntryCard(
+                      icon: Icons.pie_chart_outline,
+                      label: 'Orçamento',
+                      value:
+                          '${CurrencyFormatter.format(BudgetSummary.totalSpent(MockData.budgets, transactions))} '
+                          'de ${CurrencyFormatter.format(BudgetSummary.totalBudgeted(MockData.budgets))}',
+                      onTap: _openBudgets,
+                    ),
+                  ),
+                ],
+              ),
             ),
             if (emergencyGoal != null) ...[
               const SizedBox(height: AppSpacing.md),
