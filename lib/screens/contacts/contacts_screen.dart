@@ -171,19 +171,33 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   ),
                   const SizedBox(height: 4),
                   for (var i = 0; i < grouped[letter]!.length; i++) ...[
-                    ContactListTile(
-                      contact: grouped[letter]![i],
-                      avatarColor: _palette[i % _palette.length],
-                      onMessage: () {},
-                      onCall: () {},
-                    ),
-                    if (i != grouped[letter]!.length - 1)
-                      Divider(
-                        height: 1,
-                        thickness: 1,
-                        indent: 56, // aligns with the text, past the avatar
-                        color: colors.border.withValues(alpha: 0.6),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: colors.cardBackground,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: colors.border.withValues(alpha: 0.35)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: ContactListTile(
+                          contact: grouped[letter]![i],
+                          avatarColor: _palette[i % _palette.length],
+                          onMessage: () {},
+                          onCall: () {},
+                        ),
                       ),
+                    ),
+
+
                   ],
                   const SizedBox(height: AppSpacing.md),
                 ],
