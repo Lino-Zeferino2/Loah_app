@@ -160,7 +160,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _SectionLabel('NOME'),
+            const _SectionLabel('NOME'),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
@@ -180,7 +180,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('TIPO'),
+            const _SectionLabel('TIPO'),
             const SizedBox(height: 8),
             ChipSelector<AssetType>(
               options: [for (final t in AssetType.values) ChipOption(t.label, t)],
@@ -189,7 +189,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('VALOR ATUAL'),
+            const _SectionLabel('VALOR ATUAL'),
             const SizedBox(height: 8),
             TextField(
               controller: _valueController,
@@ -211,7 +211,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('NOTAS (OPCIONAL)'),
+            const _SectionLabel('NOTAS (OPCIONAL)'),
             const SizedBox(height: 8),
             TextField(
               controller: _notesController,

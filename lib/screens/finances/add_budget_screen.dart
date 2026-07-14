@@ -154,7 +154,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _SectionLabel('CATEGORIA'),
+            const _SectionLabel('CATEGORIA'),
             const SizedBox(height: 8),
             if (available.isEmpty && _category == null)
               Text(
@@ -169,7 +169,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
               ),
             const SizedBox(height: 20),
 
-            _SectionLabel('LIMITE MENSAL'),
+            const _SectionLabel('LIMITE MENSAL'),
             const SizedBox(height: 8),
             TextField(
               controller: _limitController,

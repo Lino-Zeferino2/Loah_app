@@ -189,7 +189,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 26),
 
-            _SectionLabel('NOME COMPLETO'),
+            const _SectionLabel('NOME COMPLETO'),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
@@ -209,7 +209,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('E-MAIL (OPCIONAL)'),
+            const _SectionLabel('E-MAIL (OPCIONAL)'),
             const SizedBox(height: 8),
             TextField(
               controller: _emailController,
@@ -226,7 +226,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('TELEFONE'),
+            const _SectionLabel('TELEFONE'),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -271,7 +271,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('GRAU DE CONEXÃO'),
+            const _SectionLabel('GRAU DE CONEXÃO'),
             const SizedBox(height: 8),
             ChipSelector<String>(
               options: _relationships,

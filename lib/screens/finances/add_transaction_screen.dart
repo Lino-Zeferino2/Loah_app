@@ -193,7 +193,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _SectionLabel('TIPO'),
+            const _SectionLabel('TIPO'),
             const SizedBox(height: 8),
             ChipSelector<TransactionType>(
               options: const [
@@ -205,7 +205,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('VALOR'),
+            const _SectionLabel('VALOR'),
             const SizedBox(height: 8),
             TextField(
               controller: _amountController,
@@ -227,7 +227,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('NOME'),
+            const _SectionLabel('NOME'),
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
@@ -247,7 +247,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('CATEGORIA'),
+            const _SectionLabel('CATEGORIA'),
             const SizedBox(height: 8),
             ChipSelector<String>(
               options: [for (final c in categories) ChipOption(c, c)],
@@ -256,7 +256,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('CONTA'),
+            const _SectionLabel('CONTA'),
             const SizedBox(height: 8),
             if (MockData.accounts.isEmpty)
               Text(
@@ -271,7 +271,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
             const SizedBox(height: 20),
 
-            _SectionLabel('DATA'),
+            const _SectionLabel('DATA'),
             const SizedBox(height: 8),
             InkWell(
               onTap: _pickDate,

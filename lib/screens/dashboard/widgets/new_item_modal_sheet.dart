@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../models/contact_model.dart';
 import '../../contacts/add_contact_screen.dart';
 import '../../finances/add_asset_screen.dart';
 import '../../finances/add_budget_screen.dart';
