@@ -6,6 +6,7 @@ import '../../models/transaction_model.dart';
 import '../../models/asset_model.dart';
 import '../../models/account_model.dart';
 import '../../models/budget_model.dart';
+import '../../models/recurring_transaction_model.dart';
 
 /// Single source of mock data for the whole app.
 ///
@@ -15,6 +16,44 @@ import '../../models/budget_model.dart';
 /// this class, so the migration won't touch screen code.
 class MockData {
   MockData._();
+  static final List<RecurringTransactionModel> recurringTransactions = [
+    const RecurringTransactionModel(
+      id: 'recurring_salary',
+      title: 'Salário Mensal',
+      category: 'Salário',
+      amount: 4200,
+      type: TransactionType.income,
+      accountId: 'acc_checking',
+      dayOfMonth: 5,
+    ),
+    const RecurringTransactionModel(
+      id: 'recurring_rent',
+      title: 'Aluguel',
+      category: 'Moradia',
+      amount: 1200,
+      type: TransactionType.expense,
+      accountId: 'acc_checking',
+      dayOfMonth: 10,
+    ),
+    const RecurringTransactionModel(
+      id: 'recurring_netflix',
+      title: 'Netflix',
+      category: 'Lazer',
+      amount: 44.90,
+      type: TransactionType.expense,
+      accountId: 'acc_credit_card',
+      dayOfMonth: 15,
+    ),
+    const RecurringTransactionModel(
+      id: 'recurring_spotify',
+      title: 'Spotify',
+      category: 'Lazer',
+      amount: 21.90,
+      type: TransactionType.expense,
+      accountId: 'acc_credit_card',
+      dayOfMonth: 20,
+    ),
+  ];
   static final List<BudgetModel> budgets = [
     const BudgetModel(id: 'budget_food', category: 'Alimentação', monthlyLimit: 800),
     const BudgetModel(id: 'budget_transport', category: 'Transporte', monthlyLimit: 250),

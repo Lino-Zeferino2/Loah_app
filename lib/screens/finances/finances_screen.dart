@@ -16,6 +16,9 @@ import 'accounts_screen.dart';
 import 'add_transaction_screen.dart';
 import 'assets_screen.dart';
 import 'budgets_screen.dart';
+import '../../core/mock/recurring_engine.dart';
+import 'recurring_transactions_screen.dart';
+import 'reports_screen.dart';
 import 'widgets/emergency_goal_card.dart';
 import 'widgets/expense_distribution_card.dart';
 import 'widgets/total_balance_card.dart';
@@ -35,6 +38,15 @@ class FinancesScreen extends StatefulWidget {
 }
 
 class _FinancesScreenState extends State<FinancesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Turns any due salary/rent/subscription into a real transaction —
+    // safe to call every time the screen loads, since RecurringEngine
+    // stamps each item with the month it already generated for.
+    RecurringEngine.processDue(MockData.recurringTransactions, MockData.transactions);
+  }
+
   Future<void> _addTransaction() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
@@ -70,6 +82,19 @@ class _FinancesScreenState extends State<FinancesScreen> {
       MaterialPageRoute(builder: (_) => const BudgetsScreen()),
     );
     setState(() {});
+  }
+
+  Future<void> _openRecurring() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const RecurringTransactionsScreen()),
+    );
+    setState(() {});
+  }
+
+  Future<void> _openReports() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ReportsScreen()),
+    );
   }
 
   @override
@@ -122,7 +147,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
             TotalBalanceCard(total: total, income: income, expense: expense),
             const SizedBox(height: AppSpacing.md),
             SizedBox(
-              height: 120,
+              height: 92,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
@@ -157,6 +182,26 @@ class _FinancesScreenState extends State<FinancesScreen> {
                           '${CurrencyFormatter.format(BudgetSummary.totalSpent(MockData.budgets, transactions))} '
                           'de ${CurrencyFormatter.format(BudgetSummary.totalBudgeted(MockData.budgets))}',
                       onTap: _openBudgets,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 150,
+                    child: _FinanceEntryCard(
+                      icon: Icons.autorenew,
+                      label: 'Recorrentes',
+                      value: '${MockData.recurringTransactions.where((r) => r.active).length} ativas',
+                      onTap: _openRecurring,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 150,
+                    child: _FinanceEntryCard(
+                      icon: Icons.bar_chart_outlined,
+                      label: 'Relatórios',
+                      value: 'Ver evolução',
+                      onTap: _openReports,
                     ),
                   ),
                 ],
