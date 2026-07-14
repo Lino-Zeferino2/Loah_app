@@ -180,7 +180,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _SectionLabel('TIPO'),
+            const _SectionLabel('TIPO'),
             const SizedBox(height: 8),
             ChipSelector<TransactionType>(
               options: const [
@@ -192,7 +192,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('NOME'),
+            const _SectionLabel('NOME'),
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
@@ -212,7 +212,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('VALOR'),
+            const _SectionLabel('VALOR'),
             const SizedBox(height: 8),
             TextField(
               controller: _amountController,
@@ -234,7 +234,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('CATEGORIA'),
+            const _SectionLabel('CATEGORIA'),
             const SizedBox(height: 8),
             ChipSelector<String>(
               options: [for (final c in categories) ChipOption(c, c)],
@@ -243,7 +243,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('CONTA'),
+            const _SectionLabel('CONTA'),
             const SizedBox(height: 8),
             if (MockData.accounts.isEmpty)
               Text(
@@ -258,7 +258,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
               ),
             const SizedBox(height: 20),
 
-            _SectionLabel('DIA DO MÊS'),
+            const _SectionLabel('DIA DO MÊS'),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -302,7 +302,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               value: _active,
-              activeColor: colors.accentBlue,
+              activeThumbColor: colors.accentBlue,
               onChanged: (v) => setState(() => _active = v),
             ),
             const SizedBox(height: 20),

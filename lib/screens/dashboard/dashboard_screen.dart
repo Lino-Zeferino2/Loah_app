@@ -3,9 +3,14 @@ import '../../core/constants/app_spacing.dart';
 import '../../core/mock/mock_data.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/theme/theme_controller.dart';
-import '../../models/task_model.dart';
+import '../../core/theme/app_theme.dart';
+
 import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_drawer.dart';
+import 'widgets/new_item_modal_sheet.dart';
+
+import '../../models/task_model.dart';
+
 import 'widgets/balance_card.dart';
 import 'widgets/daily_reflection_card.dart';
 import 'widgets/goals_summary_card.dart';
@@ -89,7 +94,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onToggle: (i) => _toggleTask(standalone[i].mockDataIndex),
             ),
             const SizedBox(height: AppSpacing.lg),
-            NewItemCard(onCreate: () {}),
+            NewItemCard(
+              onCreate: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: false,
+                  backgroundColor: context.loahColors.cardBackground,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  builder: (_) => const NewItemModalSheet(),
+                );
+              },
+            ),
             const SizedBox(height: AppSpacing.lg),
             GoalsSummaryCard(
               goals: MockData.goals.take(3).toList(),

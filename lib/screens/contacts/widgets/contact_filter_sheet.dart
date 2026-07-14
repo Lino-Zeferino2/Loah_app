@@ -77,7 +77,7 @@ class _ContactFilterSheetState extends State<ContactFilterSheet> {
               contentPadding: EdgeInsets.zero,
               title: const Text('Somente favoritos'),
               value: _favoritesOnly,
-              activeColor: colors.accentBlue,
+              activeThumbColor: colors.accentBlue,
               onChanged: (v) => setState(() => _favoritesOnly = v),
             ),
             const SizedBox(height: 8),

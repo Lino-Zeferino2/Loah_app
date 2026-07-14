@@ -143,7 +143,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _SectionLabel('NOME'),
+            const _SectionLabel('NOME'),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
@@ -163,7 +163,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('TIPO'),
+            const _SectionLabel('TIPO'),
             const SizedBox(height: 8),
             ChipSelector<AccountType>(
               options: [for (final t in AccountType.values) ChipOption(t.label, t)],
@@ -172,7 +172,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel('SALDO INICIAL'),
+            const _SectionLabel('SALDO INICIAL'),
             const SizedBox(height: 8),
             TextField(
               controller: _initialBalanceController,
