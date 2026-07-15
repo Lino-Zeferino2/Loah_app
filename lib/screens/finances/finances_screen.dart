@@ -24,6 +24,7 @@ import 'widgets/expense_distribution_card.dart';
 import 'widgets/total_balance_card.dart';
 import 'widgets/transaction_list_item.dart';
 import 'expense_distribution_detail_screen.dart';
+import 'transaction_history_screen.dart';
 
 
 /// "Loah - Finanças": total balance, quick links to Contas/Patrimônio,
@@ -149,7 +150,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
             TotalBalanceCard(total: total, income: income, expense: expense),
             const SizedBox(height: AppSpacing.md),
             SizedBox(
-              height: 92,
+              height: 120,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
@@ -249,8 +250,13 @@ class _FinancesScreenState extends State<FinancesScreen> {
                 const SizedBox(height: AppSpacing.sm),
               ],
             const SizedBox(height: 4),
-            OutlinedButton(
-              onPressed: () {},
+           OutlinedButton(
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const TransactionHistoryScreen()),
+                );
+                setState(() {});
+              },
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(44),
                 shape: RoundedRectangleBorder(

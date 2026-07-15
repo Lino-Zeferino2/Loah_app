@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../core/mock/transaction_categories.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../models/transaction_model.dart';
 import '../../../widgets/labeled_progress_bar.dart';

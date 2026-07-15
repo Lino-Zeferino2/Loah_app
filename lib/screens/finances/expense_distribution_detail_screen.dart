@@ -3,7 +3,6 @@ import '../../core/mock/finance_summary.dart';
 import '../../core/mock/mock_data.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
-import '../../models/transaction_model.dart';
 import '../../widgets/loah_app_bar_simple.dart';
 import '../../widgets/loah_card.dart';
 import 'widgets/category_detail_row.dart';
