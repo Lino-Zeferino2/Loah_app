@@ -10,24 +10,32 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
+
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   static final _emailRegex = RegExp(
     r'^[a-zA-Z0-9.!#$%&*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$',
   );
 
-  bool _obscure = true;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
   bool _acceptedTerms = false;
   bool _showTermsError = false;
+
   bool _submitting = false;
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -45,10 +53,27 @@ class _SignupScreenState extends State<SignupScreen> {
     return null;
   }
 
+  String? _validatePhone(String? value) {
+    final raw = (value ?? '').trim();
+    if (raw.isEmpty) return 'Informe seu número de telemóvel';
+
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 8) return 'Número de telemóvel inválido';
+
+    return null;
+  }
+
   String? _validatePassword(String? value) {
     final v = value ?? '';
     if (v.isEmpty) return 'Informe sua senha';
     if (v.length < 8) return 'A senha deve ter pelo menos 8 caracteres';
+    return null;
+  }
+
+  String? _validateConfirmPassword(String? value) {
+    final v = value ?? '';
+    if (v.isEmpty) return 'Confirme sua senha';
+    if (v != _passwordController.text) return 'As senhas não coincidem';
     return null;
   }
 
@@ -68,6 +93,37 @@ class _SignupScreenState extends State<SignupScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Conta (mock) criada com sucesso')),
+    );
+  }
+
+  InputDecoration _fieldDecoration({
+    required String hint,
+    required IconData icon,
+    required ColorScheme scheme,
+    required Color border,
+    required Color fillColor,
+    Widget? suffixIcon,
+    TextInputType? keyboardType,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: Icon(icon),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: fillColor,
+      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: scheme.primary),
+      ),
     );
   }
 
@@ -163,13 +219,31 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    _FieldLabel(text: 'Número de telemóvel', color: textSecondary),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _phoneController,
+                      enabled: !_submitting,
+                      keyboardType: TextInputType.phone,
+                      textInputAction: TextInputAction.next,
+                      decoration: _fieldDecoration(
+                        hint: 'Ex: +351 9xx xxx xxx',
+                        icon: Icons.phone_android_outlined,
+                        scheme: scheme,
+                        border: border,
+                        fillColor: cardBackground,
+                      ),
+                      validator: _validatePhone,
+                    ),
+                    const SizedBox(height: 16),
+
                     _FieldLabel(text: 'Senha', color: textSecondary),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _passwordController,
                       enabled: !_submitting,
-                      obscureText: _obscure,
-                      textInputAction: TextInputAction.done,
+                      obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.next,
                       decoration: _fieldDecoration(
                         hint: 'Mínimo 8 caracteres',
                         icon: Icons.lock_outline_rounded,
@@ -178,14 +252,45 @@ class _SignupScreenState extends State<SignupScreen> {
                         fillColor: cardBackground,
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscure
+                            _obscurePassword
                                 ? Icons.visibility_outlined
                                 : Icons.visibility_off_outlined,
                           ),
-                          onPressed: () => setState(() => _obscure = !_obscure),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
                         ),
                       ),
                       validator: _validatePassword,
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).nextFocus();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    _FieldLabel(text: 'Confirmar senha', color: textSecondary),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      enabled: !_submitting,
+                      obscureText: _obscureConfirmPassword,
+                      textInputAction: TextInputAction.done,
+                      decoration: _fieldDecoration(
+                        hint: 'Digite novamente',
+                        icon: Icons.lock_outline_rounded,
+                        scheme: scheme,
+                        border: border,
+                        fillColor: cardBackground,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                          onPressed: () => setState(() =>
+                              _obscureConfirmPassword = !_obscureConfirmPassword),
+                        ),
+                      ),
+                      validator: _validateConfirmPassword,
                       onFieldSubmitted: (_) => _onSubmit(),
                     ),
                     const SizedBox(height: 16),
@@ -203,12 +308,16 @@ class _SignupScreenState extends State<SignupScreen> {
                       },
                       onTermsTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Termos e condições (mock)')),
+                          const SnackBar(
+                            content: Text('Termos e condições (mock)'),
+                          ),
                         );
                       },
                       onPrivacyTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Política de privacidade (mock)')),
+                          const SnackBar(
+                            content: Text('Política de privacidade (mock)'),
+                          ),
                         );
                       },
                     ),
@@ -233,9 +342,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               )
                             : Row(
@@ -259,7 +367,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
                     Row(
                       children: [
-                        Expanded(child: Divider(thickness: 1, height: 1, color: border)),
+                        Expanded(
+                          child: Divider(
+                            thickness: 1,
+                            height: 1,
+                            color: border,
+                          ),
+                        ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
@@ -271,7 +385,13 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                           ),
                         ),
-                        Expanded(child: Divider(thickness: 1, height: 1, color: border)),
+                        Expanded(
+                          child: Divider(
+                            thickness: 1,
+                            height: 1,
+                            color: border,
+                          ),
+                        ),
                       ],
                     ),
 
@@ -282,14 +402,14 @@ class _SignupScreenState extends State<SignupScreen> {
                         Expanded(
                           child: _SocialButton(
                             icon: Icons.g_mobiledata_rounded,
-                            
                             label: 'Google',
                             scheme: scheme,
                             border: border,
-                            
                             onTap: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Cadastro Google (mock)')),
+                                const SnackBar(
+                                  content: Text('Cadastro Google (mock)'),
+                                ),
                               );
                             },
                           ),
@@ -303,7 +423,9 @@ class _SignupScreenState extends State<SignupScreen> {
                             border: border,
                             onTap: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Cadastro apple (mock)')),
+                                const SnackBar(
+                                  content: Text('Cadastro Apple (mock)'),
+                                ),
                               );
                             },
                           ),
@@ -351,36 +473,6 @@ class _SignupScreenState extends State<SignupScreen> {
             );
           },
         ),
-      ),
-    );
-  }
-
-  InputDecoration _fieldDecoration({
-    required String hint,
-    required IconData icon,
-    required ColorScheme scheme,
-    required Color border,
-    required Color fillColor,
-    Widget? suffixIcon,
-  }) {
-    return InputDecoration(
-      hintText: hint,
-      prefixIcon: Icon(icon),
-      suffixIcon: suffixIcon,
-      filled: true,
-      fillColor: fillColor,
-      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: border),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: scheme.primary),
       ),
     );
   }
@@ -449,7 +541,8 @@ class _TermsCheckbox extends StatelessWidget {
                       TextSpan(
                         text: 'termos e condições',
                         style: linkStyle,
-                        recognizer: TapGestureRecognizer()..onTap = onTermsTap,
+                        recognizer:
+                            TapGestureRecognizer()..onTap = onTermsTap,
                       ),
                       const TextSpan(text: ' e a política de privacidade da Loah.'),
                     ],
@@ -509,8 +602,6 @@ class _SocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -528,7 +619,7 @@ class _SocialButton extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               label,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: scheme.onSurface,
               ),
