@@ -23,6 +23,8 @@ import 'widgets/emergency_goal_card.dart';
 import 'widgets/expense_distribution_card.dart';
 import 'widgets/total_balance_card.dart';
 import 'widgets/transaction_list_item.dart';
+import 'expense_distribution_detail_screen.dart';
+
 
 /// "Loah - Finanças": total balance, quick links to Contas/Patrimônio,
 /// the emergency-fund goal, expense distribution donut chart and
@@ -218,7 +220,12 @@ class _FinancesScreenState extends State<FinancesScreen> {
             if (distribution.isEmpty)
               _EmptyDistributionHint(colors: colors)
             else
-              ExpenseDistributionCard(categories: distribution, onDetails: () {}),
+            ExpenseDistributionCard(
+                categories: distribution,
+                onDetails: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ExpenseDistributionDetailScreen()),
+                ),
+              ),
             const SizedBox(height: AppSpacing.lg),
             SectionHeader(
               title: 'Transações Recentes',

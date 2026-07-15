@@ -30,7 +30,29 @@ class FinanceSummary {
         .where((t) => !t.isIncome && _isCurrentMonth(t.date))
         .fold<double>(0, (sum, t) => sum + t.amount);
   }
+static bool _isPreviousMonth(DateTime date) {
+    final now = DateTime.now();
+    final prev = DateTime(now.year, now.month - 1, 1);
+    return date.year == prev.year && date.month == prev.month;
+  }
 
+  /// Sum of expenses in the calendar month right before this one —
+  /// used to compute the "X% a mais/menos que o mês passado" comparison.
+  static double previousMonthExpense(List<TransactionModel> transactions) {
+    return transactions
+        .where((t) => !t.isIncome && _isPreviousMonth(t.date))
+        .fold<double>(0, (sum, t) => sum + t.amount);
+  }
+
+  /// % change in total expenses vs. last month. Null if last month had
+  /// no expenses to compare against (avoids a divide-by-zero / an
+  /// infinite-looking percentage).
+  static double? monthlyExpenseChangePercent(List<TransactionModel> transactions) {
+    final previous = previousMonthExpense(transactions);
+    if (previous == 0) return null;
+    final current = monthlyExpense(transactions);
+    return ((current - previous) / previous) * 100;
+  }
   /// This month's expenses grouped by category, for the donut chart —
   /// each category becomes one [ExpenseCategoryModel] slice.
   static List<ExpenseCategoryModel> expenseDistribution(List<TransactionModel> transactions) {
