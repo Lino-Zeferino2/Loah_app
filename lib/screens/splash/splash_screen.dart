@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../main.dart';
+import '../auth/login_screen.dart';
 
 class SplashScreenVistoso extends StatefulWidget {
   const SplashScreenVistoso({super.key});
+
 
   @override
   State<SplashScreenVistoso> createState() => _SplashScreenVistosoState();
@@ -58,7 +60,7 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             transitionDuration: const Duration(milliseconds: 400),
-            pageBuilder: (_, anim, __) => const RootShell(),
+            pageBuilder: (_, anim, __) => const LoginScreen(),
             transitionsBuilder: (_, anim, __, child) =>
                 FadeTransition(opacity: anim, child: child),
           ),
