@@ -16,7 +16,9 @@ class LoahBottomNav extends StatelessWidget {
     (icon: Icons.flag_outlined, label: 'Metas'),
     (icon: Icons.check_circle_outline, label: 'Tarefas'),
     (icon: Icons.account_balance_wallet_outlined, label: 'Finanças'),
+    (icon: Icons.contacts_outlined, label: 'Contatos'),
   ];
+
 
   @override
   Widget build(BuildContext context) {
