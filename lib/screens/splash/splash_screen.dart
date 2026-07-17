@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
-import '../../main.dart';
 import '../auth/login_screen.dart';
 
 class SplashScreenVistoso extends StatefulWidget {

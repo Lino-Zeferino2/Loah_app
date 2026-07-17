@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:loah_app/screens/contacts/widgets/country_code_picker_sheet.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -13,7 +14,10 @@ class _SignupScreenState extends State<SignupScreen> {
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
+
+  final _phoneNumberController = TextEditingController();
+  String _dialCode = '+351';
+
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -33,7 +37,7 @@ class _SignupScreenState extends State<SignupScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
+    _phoneNumberController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -77,6 +81,23 @@ class _SignupScreenState extends State<SignupScreen> {
     return null;
   }
 
+  Future<void> _onPickDialCode() async {
+    final res = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (_) => const CountryCodePickerSheet(),
+    );
+
+    if (res == null || !mounted) return;
+
+    // Sheet returns: "flag|+dialCode"
+    final parts = res.split('|');
+    if (parts.length == 2) {
+      setState(() => _dialCode = parts[1]);
+    }
+  }
+
   Future<void> _onSubmit() async {
     final form = _formKey.currentState;
     final formValid = form?.validate() ?? false;
@@ -103,7 +124,6 @@ class _SignupScreenState extends State<SignupScreen> {
     required Color border,
     required Color fillColor,
     Widget? suffixIcon,
-    TextInputType? keyboardType,
   }) {
     return InputDecoration(
       hintText: hint,
@@ -131,8 +151,8 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final textSecondary = scheme.onSurface.withOpacity(0.65);
-    final border = scheme.onSurface.withOpacity(0.14);
+    final textSecondary = scheme.onSurface.withValues(alpha: 0.65);
+    final border = scheme.onSurface.withValues(alpha: 0.14);
     final cardBackground = scheme.surface;
 
     return Scaffold(
@@ -221,19 +241,58 @@ class _SignupScreenState extends State<SignupScreen> {
 
                     _FieldLabel(text: 'Número de telemóvel', color: textSecondary),
                     const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _phoneController,
-                      enabled: !_submitting,
-                      keyboardType: TextInputType.phone,
-                      textInputAction: TextInputAction.next,
-                      decoration: _fieldDecoration(
-                        hint: 'Ex: +351 9xx xxx xxx',
-                        icon: Icons.phone_android_outlined,
-                        scheme: scheme,
-                        border: border,
-                        fillColor: cardBackground,
-                      ),
-                      validator: _validatePhone,
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 128,
+                          child: InkWell(
+                            onTap: _onPickDialCode,
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              decoration: BoxDecoration(
+                                color: cardBackground,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: border),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.flag_outlined, size: 18),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _dialCode,
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.arrow_drop_down_rounded),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _phoneNumberController,
+                            enabled: !_submitting,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
+                            decoration: _fieldDecoration(
+                              hint: 'Ex: 9xx xxx xxx',
+                              icon: Icons.phone_android_outlined,
+                              scheme: scheme,
+                              border: border,
+                              fillColor: cardBackground,
+                            ),
+                            validator: _validatePhone,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
 
@@ -522,7 +581,9 @@ class _TermsCheckbox extends StatelessWidget {
                 ),
                 side: BorderSide(
                   width: 1.5,
-                  color: showError ? scheme.error : scheme.onSurface.withOpacity(0.4),
+                  color: showError
+                      ? scheme.error
+                      : scheme.onSurface.withValues(alpha: 0.4),
                 ),
               ),
             ),
@@ -544,7 +605,8 @@ class _TermsCheckbox extends StatelessWidget {
                         recognizer:
                             TapGestureRecognizer()..onTap = onTermsTap,
                       ),
-                      const TextSpan(text: ' e a política de privacidade da Loah.'),
+                      const TextSpan(
+                          text: ' e a política de privacidade da Loah.'),
                     ],
                   ),
                 ),

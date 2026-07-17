@@ -7,13 +7,18 @@ import '../../widgets/chip_selector.dart';
 import '../../widgets/goal_image.dart'; // generic network-or-file image renderer
 import 'widgets/country_code_picker_sheet.dart';
 
-/// "Loah - Novo Contato": form to create a new [ContactModel].
+/// "Loah - Novo/Editar Contato": form to create a new [ContactModel] or
+/// edit an existing one (pass [existingContact]).
 ///
 /// Only "Nome Completo" is required — photo and e-mail are explicitly
 /// optional, matching how [ContactModel.email]/[avatarUrl] are already
 /// nullable.
 class AddContactScreen extends StatefulWidget {
-  const AddContactScreen({super.key});
+  final ContactModel? existingContact;
+
+  const AddContactScreen({super.key, this.existingContact});
+
+  bool get isEditing => existingContact != null;
 
   @override
   State<AddContactScreen> createState() => _AddContactScreenState();
@@ -30,15 +35,37 @@ class _AddContactScreenState extends State<AddContactScreen> {
     ChipOption('Colega', 'Colega'),
   ];
 
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
+  late final _nameController =
+      TextEditingController(text: widget.existingContact?.name ?? '');
+  late final _emailController =
+      TextEditingController(text: widget.existingContact?.email ?? '');
+  late final _phoneController = TextEditingController(text: _initialPhoneDigits());
 
-  String _relationship = 'Amigo';
+  late String _relationship = widget.existingContact?.relationshipTag ?? 'Amigo';
   String _countryFlag = '🇧🇷';
   String _countryDialCode = '+55';
   String? _avatarPath;
   String? _nameError;
+
+  @override
+  void initState() {
+    super.initState();
+    _avatarPath = widget.existingContact?.avatarUrl;
+    // Split a stored "+55 11 99999-9999" into dial code + rest, so the
+    // form re-populates both the flag box and the number field.
+    final phone = widget.existingContact?.phone;
+    if (phone != null && phone.startsWith('+')) {
+      final spaceIndex = phone.indexOf(' ');
+      if (spaceIndex != -1) _countryDialCode = phone.substring(0, spaceIndex);
+    }
+  }
+
+  String _initialPhoneDigits() {
+    final phone = widget.existingContact?.phone;
+    if (phone == null) return '';
+    final spaceIndex = phone.indexOf(' ');
+    return spaceIndex == -1 ? phone : phone.substring(spaceIndex + 1);
+  }
 
   @override
   void dispose() {
@@ -114,8 +141,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
       return;
     }
 
+    final existing = widget.existingContact;
     final contact = ContactModel(
-      id: 'contact_${DateTime.now().microsecondsSinceEpoch}',
+      id: existing?.id ?? 'contact_${DateTime.now().microsecondsSinceEpoch}',
       name: name,
       email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
       phone: _phoneController.text.trim().isEmpty
@@ -123,19 +151,29 @@ class _AddContactScreenState extends State<AddContactScreen> {
           : '$_countryDialCode ${_phoneController.text.trim()}',
       relationshipTag: _relationship,
       avatarUrl: _avatarPath,
+      isFavorite: existing?.isFavorite ?? false,
+      desiredContactFrequencyDays: existing?.desiredContactFrequencyDays,
+      interactions: existing?.interactions ?? const [],
     );
 
-    MockData.contacts.add(contact);
+    if (existing != null) {
+      final index = MockData.contacts.indexWhere((c) => c.id == existing.id);
+      if (index != -1) MockData.contacts[index] = contact;
+    } else {
+      MockData.contacts.add(contact);
+    }
+
     Navigator.of(context).pop(contact);
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    final isEditing = widget.isEditing;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Novo Contato'),
+        title: Text(isEditing ? 'Editar Contato' : 'Novo Contato'),
         actions: [
           TextButton(
             onPressed: _submit,
@@ -189,7 +227,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 26),
 
-            const _SectionLabel('NOME COMPLETO'),
+            _SectionLabel('NOME COMPLETO'),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
@@ -209,7 +247,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('E-MAIL (OPCIONAL)'),
+            _SectionLabel('E-MAIL (OPCIONAL)'),
             const SizedBox(height: 8),
             TextField(
               controller: _emailController,
@@ -226,7 +264,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('TELEFONE'),
+            _SectionLabel('TELEFONE'),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -271,7 +309,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('GRAU DE CONEXÃO'),
+            _SectionLabel('GRAU DE CONEXÃO'),
             const SizedBox(height: 8),
             ChipSelector<String>(
               options: _relationships,
@@ -285,7 +323,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
               child: ElevatedButton.icon(
                 onPressed: _submit,
                 icon: const Icon(Icons.save_outlined, size: 18),
-                label: const Text('Salvar Contato', style: TextStyle(fontWeight: FontWeight.w700)),
+                label: Text(
+                  isEditing ? 'Salvar Alterações' : 'Salvar Contato',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colors.accentBlue,
                   foregroundColor: Colors.white,

@@ -8,6 +8,7 @@ import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_avatar_action.dart';
 import '../../widgets/loah_drawer.dart';
 import 'add_contact_screen.dart';
+import 'contact_detail_screen.dart';
 import 'widgets/contact_filter_sheet.dart';
 import 'widgets/contact_list_tile.dart';
 import 'widgets/contact_search_bar.dart';
@@ -143,6 +144,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
                       itemBuilder: (context, i) => FavoriteContactAvatar(
                         contact: _favorites[i],
                         ringColor: _palette[i % _palette.length],
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ContactDetailScreen(
+                                contact: _favorites[i],
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -191,6 +201,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
                         child: ContactListTile(
                           contact: grouped[letter]![i],
                           avatarColor: _palette[i % _palette.length],
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ContactDetailScreen(
+                                  contact: grouped[letter]![i],
+                                ),
+                              ),
+                            );
+                          },
                           onMessage: () {},
                           onCall: () {},
                         ),

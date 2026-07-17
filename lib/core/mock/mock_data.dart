@@ -167,11 +167,16 @@ static final List<TransactionModel> transactions = [
   ];
 
 static final List<ContactModel> contacts = [
-    const ContactModel(
+    ContactModel(
       id: 'contact_alice',
       name: 'Alice Ferreira',
       relationshipTag: 'Namorada',
       isFavorite: true,
+      desiredContactFrequencyDays: 2,
+      interactions: [
+        ContactInteraction(date: DateTime.now().subtract(const Duration(hours: 5)), type: InteractionType.message),
+        ContactInteraction(date: DateTime.now().subtract(const Duration(days: 1)), type: InteractionType.call),
+      ],
     ),
     const ContactModel(
       id: 'contact_bruno',
@@ -179,11 +184,15 @@ static final List<ContactModel> contacts = [
       relationshipTag: 'Amigo',
       isFavorite: true,
     ),
-    const ContactModel(
+    ContactModel(
       id: 'contact_carlos',
       name: 'Carlos Souza',
       relationshipTag: 'Pai',
       isFavorite: true,
+      desiredContactFrequencyDays: 7,
+      interactions: [
+        ContactInteraction(date: DateTime.now().subtract(const Duration(days: 12)), type: InteractionType.call),
+      ],
     ),
     const ContactModel(
       id: 'contact_diana',

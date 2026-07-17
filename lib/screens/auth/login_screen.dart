@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:loah_app/main.dart';
+
 
 import 'signup_screen.dart';
 
@@ -60,15 +62,20 @@ class _LoginScreenState extends State<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Login (mock) realizado com sucesso')),
     );
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => const RootShell(),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-    final textSecondary = scheme.onSurface.withOpacity(0.65);
-    final border = scheme.onSurface.withOpacity(0.14);
+    final textSecondary = scheme.onSurface.withValues(alpha: 0.65);
+    final border = scheme.onSurface.withValues(alpha: 0.14);
     final cardBackground = scheme.surface;
 
     return Scaffold(
@@ -401,7 +408,6 @@ class _FieldLabel extends StatelessWidget {
 class _SocialButton extends StatelessWidget {
   final Widget icon;
 
-  static const double _iconSize = 20;
 
   final String label;
 
