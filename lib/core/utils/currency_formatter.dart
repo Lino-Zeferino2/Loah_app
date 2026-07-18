@@ -6,7 +6,7 @@ class CurrencyFormatter {
 
   static final _formatter = NumberFormat.currency(
     locale: 'pt_BR',
-    symbol: 'R\$',
+    symbol: '€',
     decimalDigits: 2,
   );
 
