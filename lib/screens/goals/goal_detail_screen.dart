@@ -206,7 +206,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
             ],
           ),
           SliverPadding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 Row(
@@ -320,9 +320,11 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                       onToggle: () => _toggleTask(task),
                       onTap: () => _openTask(task),
                     ),
+                    const SizedBox(height: 38),
               ]),
             ),
           ),
+         
         ],
       ),
     );

@@ -5,10 +5,10 @@ class TopWaveClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     final path = Path();
 
-    // Base line
+    // Base rect
     path.lineTo(0, size.height * 0.65);
 
-    // Wave top boundary (match painter)
+    // Wave
     path.quadraticBezierTo(
       size.width * 0.25,
       size.height * 0.55,
@@ -24,6 +24,7 @@ class TopWaveClipper extends CustomClipper<Path> {
 
     path.lineTo(size.width, 0);
     path.close();
+
 
     return path;
   }

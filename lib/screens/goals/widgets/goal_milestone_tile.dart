@@ -25,6 +25,7 @@ class GoalMilestoneTile extends StatelessWidget {
     final colors = context.loahColors;
 
     return Container(
+     
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: colors.cardBackground,

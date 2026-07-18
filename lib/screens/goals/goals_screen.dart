@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/theme/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/mock/mock_data.dart';
 import '../../core/navigation/navigation_controller.dart';
@@ -95,6 +96,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primary ,
         heroTag: 'goals_fab',
         onPressed: _createGoal,
         child: const Icon(Icons.add),

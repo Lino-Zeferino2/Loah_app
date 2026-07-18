@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/theme/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/mock/mock_data.dart';
 import '../../core/navigation/navigation_controller.dart';
@@ -154,6 +155,7 @@ class _TasksScreenState extends State<TasksScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primary ,
         heroTag: 'tasks_fab',
         onPressed: _addStandaloneTask,
         child: const Icon(Icons.add),

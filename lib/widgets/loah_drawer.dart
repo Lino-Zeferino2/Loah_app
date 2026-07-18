@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:loah_app/widgets/loah_app_bar.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/theme_controller.dart';
+import '../screens/support/about_loah_screen.dart';
+import '../screens/support/help_center_screen.dart';
 import 'drawer_nav_item.dart';
 import 'theme_toggle_switch.dart';
 
@@ -43,157 +45,246 @@ class LoahDrawer extends StatelessWidget {
     return Drawer(
       backgroundColor: colors.cardBackground,
       child: SafeArea(
-        child: Column(
-          children: [
-            // --- Profile header ---
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Row(
-                children: [
-                  const LoahAvatar(radius: 26),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          userName,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                        Text(
-                          userEmail,
-                          style: TextStyle(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // --- Profile header ---
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                child: Row(
+                  children: [
+                    const LoahAvatar(radius: 26),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userName,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                          Text(
+                            userEmail,
+                            style: TextStyle(
+                              color: colors.accentBlue,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // --- Main navigation ---
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  children: [
+                    for (var i = 0; i < _navItems.length; i++)
+                      DrawerNavItem(
+                        icon: _navItems[i].icon,
+                        label: _navItems[i].label,
+                        selected: i == currentIndex,
+                        onTap: () {
+                          Navigator.of(context).pop(); // close drawer
+                          onNavigate(i);
+                        },
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // --- Settings + Support ---
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
+                    Divider(color: colors.border),
+                    const SizedBox(height: 8),
+                    Text(
+                      'CONFIGURAÇÕES',
+                      style: TextStyle(
+                        fontSize: 11,
+                        letterSpacing: 0.6,
+                        fontWeight: FontWeight.w600,
+                        color: context.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.cardBackgroundAlt,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isDark
+                                ? Icons.dark_mode_outlined
+                                : Icons.light_mode_outlined,
+                            size: 18,
+                            color: context.textSecondary,
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              'Tema',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          ThemeToggleSwitch(
+                            isDark: isDark,
+                            onChanged: themeController.toggleTheme,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.language,
+                            size: 18,
+                            color: context.textSecondary,
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              'Idioma',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          Text(
+                            'Português',
+                            style: TextStyle(
+                              color: colors.accentBlue,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 18,
                             color: colors.accentBlue,
-                            fontSize: 12.5,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+const SizedBox(height: 8),
+                    Divider(color: colors.border),
+                    const SizedBox(height: 8),
+                    // --- Support section ---
+                    Text(
+                      'SUPORTE',
+                      style: TextStyle(
+                        fontSize: 11,
+                        letterSpacing: 0.6,
+                        fontWeight: FontWeight.w600,
+                        color: context.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    Column(
+                      children: [
+                        DrawerNavItem(
+                          icon: Icons.help_center_outlined,
+                          label: 'Central de Ajuda',
+                          selected: false,
+                          onTap: () {
+                            Navigator.of(context).pop(); // close drawer
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const HelpCenterScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        DrawerNavItem(
+                          icon: Icons.info_outline,
+                          label: 'Sobre Loah',
+                          selected: false,
+                          onTap: () {
+                            Navigator.of(context).pop(); // close drawer
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const AboutLoahScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop(); // close drawer
+                          // TODO: hook up real sign-out logic here.
+                        },
+                        icon: const Icon(
+                          Icons.logout,
+                          size: 18,
+                          color: Colors.redAccent,
+                        ),
+                        label: const Text(
+                          'Sair',
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ],
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.redAccent),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
 
-            // --- Main navigation ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                children: [
-                  for (var i = 0; i < _navItems.length; i++)
-                    DrawerNavItem(
-                      icon: _navItems[i].icon,
-                      label: _navItems[i].label,
-                      selected: i == currentIndex,
-                      onTap: () {
-                        Navigator.of(context).pop(); // close drawer
-                        onNavigate(i);
-                      },
-                    ),
-                ],
-              ),
-            ),
+                    const SizedBox(height: 14),
 
-            const Spacer(),
-
-            // --- Settings ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Divider(color: colors.border),
-                  const SizedBox(height: 8),
-                  Text(
-                    'CONFIGURAÇÕES',
-                    style: TextStyle(
-                      fontSize: 11,
-                      letterSpacing: 0.6,
-                      fontWeight: FontWeight.w600,
-                      color: context.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: colors.cardBackgroundAlt,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-                          size: 18,
+                    Center(
+                      child: Text(
+                        'Loah v2.4.0 • Made with Precision',
+                        style: TextStyle(
+                          fontSize: 10.5,
                           color: context.textSecondary,
                         ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Text('Tema', style: TextStyle(fontWeight: FontWeight.w600)),
-                        ),
-                        ThemeToggleSwitch(
-                          isDark: isDark,
-                          onChanged: themeController.toggleTheme,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Row(
-                      children: [
-                        Icon(Icons.language, size: 18, color: context.textSecondary),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Text('Idioma', style: TextStyle(fontWeight: FontWeight.w600)),
-                        ),
-                        Text(
-                          'Português',
-                          style: TextStyle(color: colors.accentBlue, fontWeight: FontWeight.w600),
-                        ),
-                        Icon(Icons.chevron_right, size: 18, color: colors.accentBlue),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop(); // close drawer
-                        // TODO: hook up real sign-out logic here.
-                      },
-                      icon: const Icon(Icons.logout, size: 18, color: Colors.redAccent),
-                      label: const Text(
-                        'Sair',
-                        style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.redAccent),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  Center(
-                    child: Text(
-                      'Loah v2.4.0 • Made with Precision',
-                      style: TextStyle(fontSize: 10.5, color: context.textSecondary),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
+                    const SizedBox(height: 12),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
+

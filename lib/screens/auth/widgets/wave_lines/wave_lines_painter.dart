@@ -11,9 +11,16 @@ class WaveLinesPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final path = Path();
-   
+    path.moveTo(0, size.height * 0.6);
+    path.quadraticBezierTo(
+      size.width * 0.3,
+      size.height * 0.5,
+      size.width,
+      size.height * 0.7,
+    );
 
     canvas.drawPath(path, paint);
+
 
     final path2 = Path();
     path2.moveTo(0, size.height * 0.75);
@@ -23,6 +30,7 @@ class WaveLinesPainter extends CustomPainter {
       size.width,
       size.height * 0.85,
     );
+
 
     canvas.drawPath(path2, paint);
   }

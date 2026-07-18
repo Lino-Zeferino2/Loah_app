@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/theme/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/mock/account_balance.dart';
 import '../../core/mock/budget_summary.dart';
@@ -269,6 +270,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primary ,
         heroTag: 'finances_fab',
         onPressed: _addTransaction,
         child: const Icon(Icons.add),
