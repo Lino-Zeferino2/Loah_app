@@ -129,7 +129,7 @@ class _ContactFilterSheetState extends State<ContactFilterSheet> {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Aplicar Filtros', style: TextStyle(fontWeight: FontWeight.w700)),
+                child: const Text('Aplicar Filtros', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
               ),
             ),
           ],

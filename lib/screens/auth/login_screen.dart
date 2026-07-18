@@ -5,10 +5,14 @@ import 'package:loah_app/main.dart';
 
 import 'signup_screen.dart';
 
+import 'widgets/wave_lines/wave_card_header.dart';
+
+
+
 class LoginScreen extends StatefulWidget {
 
-
   const LoginScreen({super.key});
+
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -92,17 +96,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 18),
-                      Align(
-                        alignment: Alignment.center,
+                     
+                      WaveCardHeader(
+                        backgroundColor: scheme.primary,
                         child: Column(
+                          mainAxisSize: MainAxisSize.max,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const SizedBox(height: 32),
+                           const SizedBox(height: 12,),
                             Text(
                               'Bem-vindo de Volta',
                               style: theme.textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.4,
+                                color: Colors.white,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -110,14 +117,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               'Entre com suas credencias para aceder a sua conta Loah.',
                               textAlign: TextAlign.center,
                               style: theme.textTheme.bodyMedium?.copyWith(
-                                color: textSecondary,
+                                color: Colors.white.withValues(alpha: 0.85),
                                 height: 1.4,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 64),
+                      const SizedBox(height: 20),
 
                       Form(
                         key: _formKey,

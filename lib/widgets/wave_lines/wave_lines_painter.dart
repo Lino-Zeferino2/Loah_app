@@ -1,0 +1,47 @@
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+
+class WaveLinesPainter extends CustomPainter {
+  final Color color;
+  final double opacity;
+  final double strokeWidth;
+
+  WaveLinesPainter({
+    this.color = Colors.white,
+    this.opacity = 0.15,
+    this.strokeWidth = 2,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withOpacity(opacity)
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    path.moveTo(0, size.height * 0.6);
+    path.quadraticBezierTo(
+      size.width * 0.3,
+      size.height * 0.5,
+      size.width,
+      size.height * 0.7,
+    );
+    canvas.drawPath(path, paint);
+
+    final path2 = Path();
+    path2.moveTo(0, size.height * 0.75);
+    path2.quadraticBezierTo(
+      size.width * 0.4,
+      size.height * 0.65,
+      size.width,
+      size.height * 0.85,
+    );
+    canvas.drawPath(path2, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+

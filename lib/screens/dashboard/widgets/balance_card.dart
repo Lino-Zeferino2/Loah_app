@@ -25,7 +25,7 @@ class BalanceCard extends StatelessWidget {
     // with the dark surfaces around it) and a vivid, brighter blue for
     // light mode (stands out against the light background).
     final backgroundColor =
-        isDark ? const Color.fromARGB(255, 29, 77, 167) :const Color.fromARGB(255, 29, 77, 167);
+        isDark ?  const Color.fromARGB(255, 39, 151, 199) :const Color.fromARGB(255, 39, 151, 199);
 
     return Container(
       width: double.infinity,

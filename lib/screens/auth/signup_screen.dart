@@ -1,6 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/screens/contacts/widgets/country_code_picker_sheet.dart';
+import 'widgets/wave_lines/wave_card_header.dart';
+
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -156,23 +158,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final cardBackground = scheme.surface;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: scheme.primary),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        title: Text(
-          'Loah',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: scheme.primary,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.4,
-          ),
-        ),
-        centerTitle: true,
-      ),
+    
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -180,28 +166,47 @@ class _SignupScreenState extends State<SignupScreen> {
 
             return SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-              child: Form(
+      child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 8),
-                    Text(
-                      'Crie sua conta',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
+                    const SizedBox(height: 0),
+                    
+
+                    // Cabeçalho com ondas (mesma identidade visual do Login)
+                    WaveCardHeader(
+                      backgroundColor: scheme.primary,
+                      lineColor: Colors.white,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.max,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                           const SizedBox(height: 12),
+                          Text(
+                            'Crie sua conta',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.4,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Junte-se à comunidade Loah e comece sua jornada hoje.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Junte-se à comunidade Loah e comece sua jornada hoje.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: textSecondary,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 26),
+
+                    const SizedBox(height: 12),
+
+
 
                     _FieldLabel(text: 'Nome completo', color: textSecondary),
                     const SizedBox(height: 8),

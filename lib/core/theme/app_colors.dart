@@ -10,8 +10,8 @@ class AppColors {
   AppColors._();
 
   // Brand
-  static const Color primary = Color(0xFF38BDF8); // Loah blue
-  static const Color primaryLight = Color(0xFF38BDF8);
+  static const Color primary = Color.fromARGB(255, 39, 151, 199); // Loah blue
+  static const Color primaryLight = Color.fromARGB(255, 39, 151, 199);
 
   // Status / semantic
   static const Color success = Color(0xFF2ECC71);
