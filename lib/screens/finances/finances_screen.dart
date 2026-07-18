@@ -119,7 +119,6 @@ class _FinancesScreenState extends State<FinancesScreen> {
     final distribution = FinanceSummary.expenseDistribution(transactions);
 
     // Recent transactions, most recent first, capped to keep the
-    // screen from growing unbounded — "VER TODO O HISTÓRICO" is where
     // a full paginated list would live once we have more entries.
     final recent = [...transactions]..sort((a, b) => b.date.compareTo(a.date));
     final recentCapped = recent.take(10).toList();

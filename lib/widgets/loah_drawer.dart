@@ -188,12 +188,13 @@ class LoahDrawer extends StatelessWidget {
                     ),
 
                     const SizedBox(height: 14),
-const SizedBox(height: 8),
+
                     Divider(color: colors.border),
                     const SizedBox(height: 8),
                     // --- Support section ---
                     Text(
                       'SUPORTE',
+
                       style: TextStyle(
                         fontSize: 11,
                         letterSpacing: 0.6,
@@ -229,6 +230,33 @@ const SizedBox(height: 8),
                                 builder: (_) => const AboutLoahScreen(),
                               ),
                             );
+                          },
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+                    Divider(color: colors.border),
+                    const SizedBox(height: 8),
+                    Text(
+                      'CONTA',
+                      style: TextStyle(
+                        fontSize: 11,
+                        letterSpacing: 0.6,
+                        fontWeight: FontWeight.w600,
+                        color: context.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Column(
+                      children: [
+                        DrawerNavItem(
+                          icon: Icons.lock_outline,
+                          label: 'Alterar senha',
+                          selected: false,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            // Placeholder: no navigation yet.
                           },
                         ),
                       ],
