@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/mock/mock_data.dart';
+import '../../core/mock/notification_generator.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../core/theme/app_theme.dart';
+import '../notifications/notifications_screen.dart';
 
 import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_drawer.dart';
@@ -46,11 +48,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+  Future<void> _openNotifications() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+    );
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    final themeController = LoahThemeController.of(context);
     final nav = LoahNavigationController.of(context);
     final standalone = _standaloneTasks;
+    final notificationCount = NotificationGenerator.generate().length;
 
     return Scaffold(
       drawer: LoahDrawer(
@@ -59,14 +68,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       appBar: LoahAppBar(
         actions: [
-          IconButton(
-            tooltip: 'Alternar tema',
-            onPressed: themeController.toggleTheme,
-            icon: Icon(
-              themeController.themeMode == ThemeMode.dark
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
-            ),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                tooltip: 'Notificações',
+                onPressed: _openNotifications,
+                icon: const Icon(Icons.notifications_none_rounded),
+              ),
+              if (notificationCount > 0)
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    decoration: const BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$notificationCount',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),

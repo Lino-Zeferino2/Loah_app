@@ -16,6 +16,11 @@ import '../../models/recurring_transaction_model.dart';
 /// this class, so the migration won't touch screen code.
 class MockData {
   MockData._();
+    /// Ids of notifications the user has dismissed ("Limpar tudo" or an
+  /// individual action) — excluded next time `NotificationGenerator`
+  /// runs. Kept separate from the generated list itself since
+  /// notifications aren't stored, only derived.
+  static final Set<String> dismissedNotificationIds = {};
   static final List<RecurringTransactionModel> recurringTransactions = [
     const RecurringTransactionModel(
       id: 'recurring_salary',
