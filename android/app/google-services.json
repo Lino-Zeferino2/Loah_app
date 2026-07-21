@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "475079305382",
+    "project_id": "loahapp",
+    "storage_bucket": "loahapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:475079305382:android:7d59765359c740bbc22c67",
+        "android_client_info": {
+          "package_name": "com.portifolio.linozeferino.loahapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPN6DupgR7U4utriCeK-wognVEx28YGV4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

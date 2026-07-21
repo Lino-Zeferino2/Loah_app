@@ -1,4 +1,6 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'firebase_options.dart';
 import 'core/navigation/navigation_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
@@ -10,7 +12,13 @@ import 'screens/tasks/tasks_screen.dart';
 import 'widgets/loah_bottom_nav.dart';
 import 'screens/splash/splash_screen.dart';
 
-void main() => runApp(const LoahApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const LoahApp());
+}
 
 /// Root widget: owns the [ThemeMode] and exposes a way for descendants
 /// to toggle between light and dark (see [LoahThemeController]).
