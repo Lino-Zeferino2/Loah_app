@@ -1,31 +1,13 @@
-# ✅ Firebase Setup - Concluído
+# Plano de Correção - Erro ao entrar com Google (PERMISSION_DENIED no Firestore)
 
-## O que foi feito
+## ✅ Ação 1: Melhorar tratamento de erro no login/signup Google e Apple
+- [x] Adicionar captura de `FirebaseException` do Firestore no `login_screen.dart` (`_handleGoogleLogin`)
+- [x] Adicionar captura de `FirebaseException` do Firestore no `login_screen.dart` (`_handleAppleLogin`)
+- [x] Adicionar captura de `FirebaseException` do Firestore no `signup_screen.dart` (`_handleGoogleSignUp`)
+- [x] Adicionar captura de `FirebaseException` do Firestore no `signup_screen.dart` (`_handleAppleSignUp`)
+- [x] Adicionar import `package:firebase_core/firebase_core.dart` em ambos os arquivos
+- [x] Mensagens exibidas em português com orientação clara
 
-- [x] **`pubspec.yaml`** - Adicionadas dependências Firebase:
-  - `firebase_core`
-  - `firebase_auth`
-  - `cloud_firestore`
-  - `firebase_storage`
-  - `firebase_messaging`
-  - `google_sign_in`
-  - `sign_in_with_apple`
-
-- [x] **`flutter pub get`** - Dependências instaladas com sucesso
-
-- [x] **`lib/firebase_options.dart`** - Gerado pelo FlutterFire CLI ✅ (Android, iOS e Web)
-
-- [x] **`lib/main.dart`** - `Firebase.initializeApp()` adicionado antes do `runApp()`
-
-- [x] **`android/app/google-services.json`** - Configurado ✅
-
-- [x] **`ios/Runner/GoogleService-Info.plist`** - Adicionado ✅
-
-## Próximos passos
-
-- [ ] Usar os plugins Firebase no código:
-  - `firebase_auth` para autenticação (login, cadastro, Google, Apple)
-  - `cloud_firestore` para banco de dados
-  - `firebase_storage` para upload de imagens
-  - `firebase_messaging` para notificações push
+## ❓ Ação 2: Instalar Firebase CLI e implantar regras do Firestore
+- [ ] Pendente - Necessário instalar Firebase CLI e executar `firebase deploy --only firestore:rules`
 

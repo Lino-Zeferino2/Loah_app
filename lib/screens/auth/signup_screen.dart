@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/auth_service.dart';
@@ -210,10 +211,23 @@ class _SignupScreenState extends State<SignupScreen> {
           SnackBar(content: Text('Erro Google: ${e.message}')),
         );
       }
+    } on FirebaseException catch (e) {
+      if (!mounted) return;
+      String message;
+      if (e.code == 'permission-denied') {
+        message = 'Erro de permissao ao acessar seus dados. '
+            'As regras de seguranca do Firestore podem nao ter sido '
+            'implantadas ainda. Contate o administrador.';
+      } else {
+        message = 'Erro no Firestore: ${e.message}';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: $e')),
+        SnackBar(content: Text('Erro inesperado: $e')),
       );
     }
   }
@@ -242,10 +256,23 @@ class _SignupScreenState extends State<SignupScreen> {
           SnackBar(content: Text('Erro Apple: ${e.message}')),
         );
       }
+    } on FirebaseException catch (e) {
+      if (!mounted) return;
+      String message;
+      if (e.code == 'permission-denied') {
+        message = 'Erro de permissao ao acessar seus dados. '
+            'As regras de seguranca do Firestore podem nao ter sido '
+            'implantadas ainda. Contate o administrador.';
+      } else {
+        message = 'Erro no Firestore: ${e.message}';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: $e')),
+        SnackBar(content: Text('Erro inesperado: $e')),
       );
     }
   }
