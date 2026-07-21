@@ -1,5 +1,10 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import 'package:loah_app/core/services/auth_service.dart';
+import 'package:loah_app/core/theme/app_theme.dart';
+import 'package:loah_app/main.dart';
 import '../auth/login_screen.dart';
 
 class SplashScreenVistoso extends StatefulWidget {
@@ -22,6 +27,9 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
   late final Animation<double> _progress;
 
   bool _leaving = false;
+  bool _navigated = false; // Evita navegação duplicada
+  final AuthService _authService = AuthService();
+  StreamSubscription<User?>? _authSubscription;
 
   @override
   void initState() {
@@ -51,25 +59,72 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
     _progress = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
 
     _controller.forward();
-    _controller.addStatusListener((status) async {
-      if (status == AnimationStatus.completed && mounted) {
-        setState(() => _leaving = true);
-        await Future.delayed(const Duration(milliseconds: 260));
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 400),
-            pageBuilder: (_, anim, __) => const LoginScreen(),
-            transitionsBuilder: (_, anim, __, child) =>
-                FadeTransition(opacity: anim, child: child),
-          ),
-        );
+
+    // Escuta alterações no estado de autenticação.
+    // O Firebase Auth persiste automaticamente o refresh token no
+    // dispositivo, restaurando a sessão entre aberturas do app.
+    _authSubscription = _authService.authStateChanges.listen((user) {
+      if (!mounted || _navigated) return;
+      if (user != null) {
+        // Utilizador já tem sessão ativa → navega para o dashboard
+        _navigateToRoot();
       }
+    });
+
+    // Fallback: quando a animação terminar, se ninguém estiver
+    // autenticado → navega para o ecrã de login.
+    _controller.addStatusListener((status) async {
+      if (status == AnimationStatus.completed && mounted && !_navigated) {
+        final user = _authService.currentUser;
+        if (user != null) {
+          _navigateToRoot();
+        } else {
+          _navigateToLogin();
+        }
+      }
+    });
+  }
+
+  void _navigateToRoot() {
+    if (_navigated) return;
+    _navigated = true;
+    _authSubscription?.cancel();
+    setState(() => _leaving = true);
+    Future.delayed(const Duration(milliseconds: 260), () {
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 400),
+          pageBuilder: (_, anim, __) => const RootShell(),
+          transitionsBuilder: (_, anim, __, child) =>
+              FadeTransition(opacity: anim, child: child),
+        ),
+        (route) => false,
+      );
+    });
+  }
+
+  void _navigateToLogin() {
+    if (_navigated) return;
+    _navigated = true;
+    _authSubscription?.cancel();
+    setState(() => _leaving = true);
+    Future.delayed(const Duration(milliseconds: 260), () {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 400),
+          pageBuilder: (_, anim, __) => const LoginScreen(),
+          transitionsBuilder: (_, anim, __, child) =>
+              FadeTransition(opacity: anim, child: child),
+        ),
+      );
     });
   }
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -267,3 +322,4 @@ class _DotGridPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _DotGridPainter oldDelegate) => oldDelegate.color != color;
 }
+

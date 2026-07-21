@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // === REGRA GERAL: bloquear tudo por padrao ===
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // === USUARIOS: cada usuario so ve/altera o proprio perfil ===
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // === METAS (goals): cada usuario ve as proprias metas ===
+    match /users/{userId}/goals/{goalId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // === TAREFAS (tasks): cada usuario ve as proprias tarefas ===
+    match /users/{userId}/tasks/{taskId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // === TRANSACOES FINANCEIRAS: cada usuario ve as suas ===
+    match /users/{userId}/transactions/{transactionId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // === CONTAS BANCARIAS: cada usuario ve as suas ===
+    match /users/{userId}/accounts/{accountId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // === ATIVOS (assets): cada usuario ve os seus ===
+    match /users/{userId}/assets/{assetId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // === ORCAMENTOS (budgets): cada usuario ve os seus ===
+    match /users/{userId}/budgets/{budgetId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // === TRANSACOES RECORRENTES: cada usuario ve as suas ===
+    match /users/{userId}/recurringTransactions/{recurringId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // === CONTATOS: cada usuario ve os seus ===
+    match /users/{userId}/contacts/{contactId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // === NOTIFICACOES: cada usuario ve as suas ===
+    match /users/{userId}/notifications/{notificationId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

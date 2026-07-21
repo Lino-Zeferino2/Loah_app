@@ -1,18 +1,14 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:loah_app/core/services/auth_service.dart';
+import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/main.dart';
-
-
 import 'signup_screen.dart';
-
 import 'widgets/wave_lines/wave_card_header.dart';
 
-
-
 class LoginScreen extends StatefulWidget {
-
   const LoginScreen({super.key});
-
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -30,6 +26,9 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscure = true;
   bool _submitting = false;
 
+  final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -40,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _validateEmail(String? value) {
     final v = value?.trim() ?? '';
     if (v.isEmpty) return 'Informe seu email';
-    if (!_emailRegex.hasMatch(v)) return 'Email inválido';
+    if (!_emailRegex.hasMatch(v)) return 'Email invalido';
     return null;
   }
 
@@ -52,26 +51,146 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _onSubmit() async {
-
     final form = _formKey.currentState;
     if (form == null) return;
     if (!form.validate()) return;
 
     setState(() => _submitting = true);
-    await Future<void>.delayed(const Duration(milliseconds: 700));
 
-    if (!mounted) return;
-    setState(() => _submitting = false);
+    try {
+      await _authService.signInWithEmail(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Login (mock) realizado com sucesso')),
-    );
+      if (!mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => const RootShell(),
-      ),
-    );
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const RootShell()),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'Usuario nao encontrado';
+          break;
+        case 'wrong-password':
+          message = 'Senha incorreta';
+          break;
+        case 'invalid-email':
+          message = 'Email invalido';
+          break;
+        case 'invalid-credential':
+          message = 'Email ou senha incorretos';
+          break;
+        default:
+          message = 'Erro ao entrar: ${e.message}';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro inesperado: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _handlePasswordReset() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe seu email primeiro')),
+      );
+      return;
+    }
+    try {
+      await _authService.sendPasswordResetEmail(email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Email de redefinicao enviado para $email')),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: ${e.message}')),
+      );
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    try {
+      final userCredential = await _authService.signInWithGoogle();
+      if (!mounted) return;
+      final user = userCredential.user;
+      if (user != null) {
+        final doc = await _userService.getUserProfile(user.uid);
+        if (!doc.exists) {
+          await _userService.createUserProfile(
+            uid: user.uid,
+            name: user.displayName ?? 'Usuario',
+            email: user.email ?? '',
+          );
+        }
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const RootShell()),
+          (route) => false,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      if (e.code != 'canceled') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro Google: ${e.message}')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
+    }
+  }
+
+  Future<void> _handleAppleLogin() async {
+    try {
+      final userCredential = await _authService.signInWithApple();
+      if (!mounted) return;
+      final user = userCredential.user;
+      if (user != null) {
+        final doc = await _userService.getUserProfile(user.uid);
+        if (!doc.exists) {
+          await _userService.createUserProfile(
+            uid: user.uid,
+            name: user.displayName ?? 'Usuario Apple',
+            email: user.email ?? '',
+          );
+        }
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const RootShell()),
+          (route) => false,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      if (e.code != 'canceled') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro Apple: ${e.message}')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
+    }
   }
 
   @override
@@ -96,14 +215,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                     
                       WaveCardHeader(
                         backgroundColor: scheme.primary,
                         child: Column(
                           mainAxisSize: MainAxisSize.max,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                           const SizedBox(height: 12,),
+                            const SizedBox(height: 12),
                             Text(
                               'Bem-vindo de Volta',
                               style: theme.textTheme.headlineMedium?.copyWith(
@@ -114,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Entre com suas credencias para aceder a sua conta Loah.',
+                              'Entre com suas credenciais para aceder a sua conta Loah.',
                               textAlign: TextAlign.center,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.85),
@@ -125,7 +243,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-
                       Form(
                         key: _formKey,
                         child: Column(
@@ -160,7 +277,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               validator: _validateEmail,
                             ),
                             const SizedBox(height: 16),
-
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -171,13 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     minimumSize: Size.zero,
                                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   ),
-                                  onPressed: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Função "Esqueci minha senha" (mock)'),
-                                      ),
-                                    );
-                                  },
+                                  onPressed: _submitting ? null : _handlePasswordReset,
                                   child: Text(
                                     'Esqueci minha senha',
                                     style: theme.textTheme.bodySmall?.copyWith(
@@ -195,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               obscureText: _obscure,
                               textInputAction: TextInputAction.done,
                               decoration: InputDecoration(
-                                hintText: '••••••••',
+                                hintText: '*******',
                                 prefixIcon: const Icon(Icons.lock_outline_rounded),
                                 suffixIcon: IconButton(
                                   icon: Icon(
@@ -203,8 +313,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ? Icons.visibility_outlined
                                         : Icons.visibility_off_outlined,
                                   ),
-                                  onPressed: () =>
-                                      setState(() => _obscure = !_obscure),
+                                  onPressed: () => setState(() => _obscure = !_obscure),
                                 ),
                                 filled: true,
                                 fillColor: cardBackground,
@@ -225,9 +334,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               validator: _validatePassword,
                               onFieldSubmitted: (_) => _onSubmit(),
                             ),
-
                             const SizedBox(height: 24),
-
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
@@ -246,9 +353,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         height: 20,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(
-                                            Colors.white,
-                                          ),
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                         ),
                                       )
                                     : Row(
@@ -267,14 +372,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                               ),
                             ),
-
                             const SizedBox(height: 32),
-
                             Row(
                               children: [
-                                Expanded(
-                                  child: Divider(thickness: 1, height: 1, color: border),
-                                ),
+                                Expanded(child: Divider(thickness: 1, height: 1, color: border)),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 12),
                                   child: Text(
@@ -286,57 +387,30 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                 ),
-                                Expanded(
-                                  child: Divider(thickness: 1, height: 1, color: border),
-                                ),
+                                Expanded(child: Divider(thickness: 1, height: 1, color: border)),
                               ],
                             ),
-
                             const SizedBox(height: 18),
-
-                            // NOTA: Material Icons não tem logo oficial do Google/Apple.
-                            // Os ícones abaixo são placeholders (não são as marcas reais)
-                            // — trocar por SVG/asset oficial de cada marca antes de ir
-                            // pra produção.
                             Row(
                               children: [
                                 Expanded(
                                   child: _SocialButton(
-                                    icon:const FaIcon(
-                                      FontAwesomeIcons.google,
-                                     size: 16,
-                                    ),
-
+                                    icon: const FaIcon(FontAwesomeIcons.google, size: 16),
                                     label: 'Google',
-
-                                    scheme: scheme,
-                                    border: border,
-                                    onTap: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Login Google (mock)')),
-                                      );
-                                    },
+                                    onTap: _submitting ? null : _handleGoogleLogin,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: _SocialButton(
-                                    icon:  const FaIcon(FontAwesomeIcons.apple,  size: 18,),
+                                    icon: const FaIcon(FontAwesomeIcons.apple, size: 18),
                                     label: 'Apple',
-                                    scheme: scheme,
-                                    border: border,
-                                    onTap: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Login Apple (mock)')),
-                                      );
-                                    },
+                                    onTap: _submitting ? null : _handleAppleLogin,
                                   ),
                                 ),
                               ],
                             ),
-
                             const SizedBox(height: 28),
-
                             Center(
                               child: Wrap(
                                 crossAxisAlignment: WrapCrossAlignment.center,
@@ -344,18 +418,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                 spacing: 6,
                                 children: [
                                   Text(
-                                    'Não tem uma conta?',
+                                    'Nao tem uma conta?',
                                     style: theme.textTheme.bodyMedium?.copyWith(
                                       color: scheme.onSurface,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   TextButton(
-                                  onPressed: () {
+                                    onPressed: () {
                                       Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => const SignupScreen(),
-                                        ),
+                                        MaterialPageRoute(builder: (_) => const SignupScreen()),
                                       );
                                     },
                                     style: TextButton.styleFrom(
@@ -377,7 +449,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                       ),
-
                       const Spacer(),
                       const SizedBox(height: 18),
                     ],
@@ -414,27 +485,20 @@ class _FieldLabel extends StatelessWidget {
 
 class _SocialButton extends StatelessWidget {
   final Widget icon;
-
-
   final String label;
-
-
-
-  final ColorScheme scheme;
-  final Color border;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _SocialButton({
     required this.icon,
     required this.label,
-    required this.scheme,
-    required this.border,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final border = scheme.onSurface.withValues(alpha: 0.14);
 
     return InkWell(
       onTap: onTap,
@@ -450,8 +514,6 @@ class _SocialButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             icon,
-
-
             const SizedBox(width: 8),
             Text(
               label,

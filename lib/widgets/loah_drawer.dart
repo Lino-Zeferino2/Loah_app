@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/services/auth_service.dart';
+import 'package:loah_app/screens/auth/login_screen.dart';
 import 'package:loah_app/widgets/loah_app_bar.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/theme_controller.dart';
@@ -267,9 +269,21 @@ class LoahDrawer extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.of(context).pop(); // close drawer
-                          // TODO: hook up real sign-out logic here.
+                          // Faz logout no Firebase Auth, eliminando o token
+                          // de refresh persistido no dispositivo. Isto força
+                          // o utilizador a fazer login novamente na próxima
+                          // vez que abrir o app.
+                          await AuthService().signOut();
+                          if (!context.mounted) return;
+                          // Remove todo o stack de navegação e volta ao login
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                            (route) => false,
+                          );
                         },
                         icon: const Icon(
                           Icons.logout,

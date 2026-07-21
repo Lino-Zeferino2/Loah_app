@@ -1,8 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/services/auth_service.dart';
+import 'package:loah_app/core/services/user_service.dart';
+import 'package:loah_app/main.dart';
 import 'package:loah_app/screens/contacts/widgets/country_code_picker_sheet.dart';
 import 'widgets/wave_lines/wave_card_header.dart';
-
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -16,10 +19,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-
   final _phoneNumberController = TextEditingController();
   String _dialCode = '+351';
-
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -29,11 +30,12 @@ class _SignupScreenState extends State<SignupScreen> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-
   bool _acceptedTerms = false;
   bool _showTermsError = false;
-
   bool _submitting = false;
+
+  final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
 
   @override
   void dispose() {
@@ -55,17 +57,15 @@ class _SignupScreenState extends State<SignupScreen> {
   String? _validateEmail(String? value) {
     final v = value?.trim() ?? '';
     if (v.isEmpty) return 'Informe seu email';
-    if (!_emailRegex.hasMatch(v)) return 'Email inválido';
+    if (!_emailRegex.hasMatch(v)) return 'Email invalido';
     return null;
   }
 
   String? _validatePhone(String? value) {
     final raw = (value ?? '').trim();
-    if (raw.isEmpty) return 'Informe seu número de telemóvel';
-
+    if (raw.isEmpty) return 'Informe seu numero de telemovel';
     final digits = raw.replaceAll(RegExp(r'\D'), '');
-    if (digits.length < 8) return 'Número de telemóvel inválido';
-
+    if (digits.length < 8) return 'Numero de telemovel invalido';
     return null;
   }
 
@@ -79,7 +79,7 @@ class _SignupScreenState extends State<SignupScreen> {
   String? _validateConfirmPassword(String? value) {
     final v = value ?? '';
     if (v.isEmpty) return 'Confirme sua senha';
-    if (v != _passwordController.text) return 'As senhas não coincidem';
+    if (v != _passwordController.text) return 'As senhas nao coincidem';
     return null;
   }
 
@@ -90,10 +90,7 @@ class _SignupScreenState extends State<SignupScreen> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (_) => const CountryCodePickerSheet(),
     );
-
     if (res == null || !mounted) return;
-
-    // Sheet returns: "flag|+dialCode"
     final parts = res.split('|');
     if (parts.length == 2) {
       setState(() => _dialCode = parts[1]);
@@ -103,20 +100,60 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _onSubmit() async {
     final form = _formKey.currentState;
     final formValid = form?.validate() ?? false;
-
     setState(() => _showTermsError = !_acceptedTerms);
-
     if (!formValid || !_acceptedTerms) return;
 
     setState(() => _submitting = true);
-    await Future<void>.delayed(const Duration(milliseconds: 700));
 
-    if (!mounted) return;
-    setState(() => _submitting = false);
+    try {
+      final userCredential = await _authService.signUpWithEmail(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Conta (mock) criada com sucesso')),
-    );
+      await _userService.updateDisplayName(_nameController.text.trim());
+
+      await _userService.createUserProfile(
+        uid: userCredential.user!.uid,
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        phoneNumber: _phoneNumberController.text.trim(),
+        dialCode: _dialCode,
+      );
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const RootShell()),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      String message;
+      switch (e.code) {
+        case 'email-already-in-use':
+          message = 'Este email ja esta em uso';
+          break;
+        case 'weak-password':
+          message = 'Senha muito fraca';
+          break;
+        case 'invalid-email':
+          message = 'Email invalido';
+          break;
+        default:
+          message = 'Erro ao criar conta: ${e.message}';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro inesperado: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   InputDecoration _fieldDecoration({
@@ -149,6 +186,70 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
+  Future<void> _handleGoogleSignUp() async {
+    try {
+      final userCredential = await _authService.signInWithGoogle();
+      if (!mounted) return;
+      final user = userCredential.user;
+      if (user != null) {
+        await _userService.createUserProfile(
+          uid: user.uid,
+          name: user.displayName ?? 'Usuario',
+          email: user.email ?? '',
+        );
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const RootShell()),
+          (route) => false,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      if (e.code != 'canceled') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro Google: ${e.message}')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
+    }
+  }
+
+  Future<void> _handleAppleSignUp() async {
+    try {
+      final userCredential = await _authService.signInWithApple();
+      if (!mounted) return;
+      final user = userCredential.user;
+      if (user != null) {
+        await _userService.createUserProfile(
+          uid: user.uid,
+          name: user.displayName ?? 'Usuario Apple',
+          email: user.email ?? '',
+        );
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const RootShell()),
+          (route) => false,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      if (e.code != 'canceled') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro Apple: ${e.message}')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -158,7 +259,6 @@ class _SignupScreenState extends State<SignupScreen> {
     final cardBackground = scheme.surface;
 
     return Scaffold(
-    
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -166,15 +266,12 @@ class _SignupScreenState extends State<SignupScreen> {
 
             return SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-      child: Form(
+              child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 0),
-                    
-
-                    // Cabeçalho com ondas (mesma identidade visual do Login)
                     WaveCardHeader(
                       backgroundColor: scheme.primary,
                       lineColor: Colors.white,
@@ -182,7 +279,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         mainAxisSize: MainAxisSize.max,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                           const SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           Text(
                             'Crie sua conta',
                             style: theme.textTheme.headlineSmall?.copyWith(
@@ -193,7 +290,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Junte-se à comunidade Loah e comece sua jornada hoje.',
+                            'Junte-se a comunidade Loah e comece sua jornada hoje.',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withValues(alpha: 0.85),
@@ -203,11 +300,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
-
-
                     _FieldLabel(text: 'Nome completo', color: textSecondary),
                     const SizedBox(height: 8),
                     TextFormField(
@@ -225,7 +318,6 @@ class _SignupScreenState extends State<SignupScreen> {
                       validator: _validateName,
                     ),
                     const SizedBox(height: 16),
-
                     _FieldLabel(text: 'E-mail', color: textSecondary),
                     const SizedBox(height: 8),
                     TextFormField(
@@ -243,8 +335,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       validator: _validateEmail,
                     ),
                     const SizedBox(height: 16),
-
-                    _FieldLabel(text: 'Número de telemóvel', color: textSecondary),
+                    _FieldLabel(text: 'Numero de telemovel', color: textSecondary),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -268,8 +359,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                     child: Text(
                                       _dialCode,
                                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
@@ -300,7 +391,6 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-
                     _FieldLabel(text: 'Senha', color: textSecondary),
                     const SizedBox(height: 8),
                     TextFormField(
@@ -309,7 +399,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       obscureText: _obscurePassword,
                       textInputAction: TextInputAction.next,
                       decoration: _fieldDecoration(
-                        hint: 'Mínimo 8 caracteres',
+                        hint: 'Minimo 8 caracteres',
                         icon: Icons.lock_outline_rounded,
                         scheme: scheme,
                         border: border,
@@ -321,7 +411,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                 : Icons.visibility_off_outlined,
                           ),
                           onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword),
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
                         ),
                       ),
                       validator: _validatePassword,
@@ -330,7 +421,6 @@ class _SignupScreenState extends State<SignupScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-
                     _FieldLabel(text: 'Confirmar senha', color: textSecondary),
                     const SizedBox(height: 8),
                     TextFormField(
@@ -350,15 +440,15 @@ class _SignupScreenState extends State<SignupScreen> {
                                 ? Icons.visibility_outlined
                                 : Icons.visibility_off_outlined,
                           ),
-                          onPressed: () => setState(() =>
-                              _obscureConfirmPassword = !_obscureConfirmPassword),
+                          onPressed: () => setState(
+                            () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                          ),
                         ),
                       ),
                       validator: _validateConfirmPassword,
                       onFieldSubmitted: (_) => _onSubmit(),
                     ),
                     const SizedBox(height: 16),
-
                     _TermsCheckbox(
                       value: _acceptedTerms,
                       showError: _showTermsError,
@@ -372,22 +462,16 @@ class _SignupScreenState extends State<SignupScreen> {
                       },
                       onTermsTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Termos e condições (mock)'),
-                          ),
+                          const SnackBar(content: Text('Termos e condicoes')),
                         );
                       },
                       onPrivacyTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Política de privacidade (mock)'),
-                          ),
+                          const SnackBar(content: Text('Politica de privacidade')),
                         );
                       },
                     ),
-
                     const SizedBox(height: 22),
-
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -406,8 +490,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor:
-                                      AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               )
                             : Row(
@@ -426,18 +509,10 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                       ),
                     ),
-
                     const SizedBox(height: 22),
-
                     Row(
                       children: [
-                        Expanded(
-                          child: Divider(
-                            thickness: 1,
-                            height: 1,
-                            color: border,
-                          ),
-                        ),
+                        Expanded(child: Divider(thickness: 1, height: 1, color: border)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
@@ -449,18 +524,10 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                           ),
                         ),
-                        Expanded(
-                          child: Divider(
-                            thickness: 1,
-                            height: 1,
-                            color: border,
-                          ),
-                        ),
+                        Expanded(child: Divider(thickness: 1, height: 1, color: border)),
                       ],
                     ),
-
                     const SizedBox(height: 18),
-
                     Row(
                       children: [
                         Expanded(
@@ -469,13 +536,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             label: 'Google',
                             scheme: scheme,
                             border: border,
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Cadastro Google (mock)'),
-                                ),
-                              );
-                            },
+                            onTap: _submitting ? null : _handleGoogleSignUp,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -485,20 +546,12 @@ class _SignupScreenState extends State<SignupScreen> {
                             label: 'Apple',
                             scheme: scheme,
                             border: border,
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Cadastro Apple (mock)'),
-                                ),
-                              );
-                            },
+                            onTap: _submitting ? null : _handleAppleSignUp,
                           ),
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 28),
-
                     Center(
                       child: Wrap(
                         crossAxisAlignment: WrapCrossAlignment.center,
@@ -506,7 +559,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         spacing: 6,
                         children: [
                           Text(
-                            'Já tem uma conta?',
+                            'Ja tem uma conta?',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: scheme.onSurface,
                               fontWeight: FontWeight.w600,
@@ -605,13 +658,11 @@ class _TermsCheckbox extends StatelessWidget {
                     children: [
                       const TextSpan(text: 'Aceito os '),
                       TextSpan(
-                        text: 'termos e condições',
+                        text: 'termos e condicoes',
                         style: linkStyle,
-                        recognizer:
-                            TapGestureRecognizer()..onTap = onTermsTap,
+                        recognizer: TapGestureRecognizer()..onTap = onTermsTap,
                       ),
-                      const TextSpan(
-                          text: ' e a política de privacidade da Loah.'),
+                      const TextSpan(text: ' e a politica de privacidade da Loah.'),
                     ],
                   ),
                 ),
@@ -623,7 +674,7 @@ class _TermsCheckbox extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 34, top: 4),
             child: Text(
-              'É preciso aceitar os termos para continuar',
+              'E preciso aceitar os termos para continuar',
               style: theme.textTheme.bodySmall?.copyWith(color: scheme.error),
             ),
           ),
@@ -657,14 +708,14 @@ class _SocialButton extends StatelessWidget {
   final String label;
   final ColorScheme scheme;
   final Color border;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _SocialButton({
     required this.icon,
     required this.label,
     required this.scheme,
     required this.border,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
@@ -697,4 +748,3 @@ class _SocialButton extends StatelessWidget {
     );
   }
 }
-
