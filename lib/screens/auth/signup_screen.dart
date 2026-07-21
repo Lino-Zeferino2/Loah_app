@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/auth_service.dart';
@@ -233,6 +233,18 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _handleAppleSignUp() async {
+    // Verifica se a plataforma é Android
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('O login com Apple está disponível apenas para iOS'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     try {
       final userCredential = await _authService.signInWithApple();
       if (!mounted) return;

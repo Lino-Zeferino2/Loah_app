@@ -1,10 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/main.dart';
+import 'password_recovery_screen.dart';
 import 'signup_screen.dart';
 import 'widgets/wave_lines/wave_card_header.dart';
 
@@ -102,28 +103,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _handlePasswordReset() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe seu email primeiro')),
-      );
-      return;
-    }
-    try {
-      await _authService.sendPasswordResetEmail(email);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Email de redefinicao enviado para $email')),
-      );
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: ${e.message}')),
-      );
-    }
-  }
-
   Future<void> _handleGoogleLogin() async {
     try {
       final userCredential = await _authService.signInWithGoogle();
@@ -173,6 +152,18 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleAppleLogin() async {
+    // Verifica se a plataforma é Android
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('O login com Apple está disponível apenas para iOS'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     try {
       final userCredential = await _authService.signInWithApple();
       if (!mounted) return;
@@ -314,7 +305,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                     minimumSize: Size.zero,
                                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   ),
-                                  onPressed: _submitting ? null : _handlePasswordReset,
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (_) => const PasswordRecoveryScreen()),
+                                    );
+                                  },
                                   child: Text(
                                     'Esqueci minha senha',
                                     style: theme.textTheme.bodySmall?.copyWith(
@@ -555,3 +550,4 @@ class _SocialButton extends StatelessWidget {
     );
   }
 }
+

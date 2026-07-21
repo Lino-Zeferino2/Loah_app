@@ -187,7 +187,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final older = all.where((n) => DateTime.now().difference(n.timestamp).inHours >= 24).toList();
 
     return Scaffold(
-      appBar: LoahAppBarSimple(title: 'Notificações'),
+      appBar: const LoahAppBarSimple(title: 'Notificações'),
       body: SafeArea(
         child: all.isEmpty
             ? Center(
