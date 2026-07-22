@@ -3,6 +3,7 @@ import '../../core/constants/app_spacing.dart';
 import '../../core/mock/mock_data.dart';
 import '../../core/mock/notification_generator.dart';
 import '../../core/navigation/navigation_controller.dart';
+import '../../core/services/auth_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../notifications/notifications_screen.dart';
 
@@ -106,7 +107,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             Text(
-              'Olá, Lino',
+              'Olá, ${AuthService().currentUser?.displayName?.split(' ').first ?? 'Utilizador'}',
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall

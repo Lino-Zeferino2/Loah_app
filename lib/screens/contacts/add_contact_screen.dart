@@ -42,8 +42,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
   late final _phoneController = TextEditingController(text: _initialPhoneDigits());
 
   late String _relationship = widget.existingContact?.relationshipTag ?? 'Amigo';
-  String _countryFlag = '🇧🇷';
-  String _countryDialCode = '+55';
+  String _countryFlag = '🇵🇹';
+  String _countryDialCode = '+351';
   String? _avatarPath;
   String? _nameError;
 
@@ -235,7 +235,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                 if (_nameError != null) setState(() => _nameError = null);
               },
               decoration: InputDecoration(
-                hintText: 'Ex: Lucas Silva',
+                hintText: 'Nome completo',
                 errorText: _nameError,
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
@@ -253,7 +253,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
-                hintText: 'lucas@exemplo.com',
+                hintText: 'email@exemplo.com',
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
                 border: OutlineInputBorder(
@@ -295,7 +295,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
-                      hintText: '11 99999-9999',
+                      hintText: '9xxxxxxxx',
                       filled: true,
                       fillColor: colors.cardBackgroundAlt,
                       border: OutlineInputBorder(
