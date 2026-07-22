@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/call_utils.dart';
 import '../../../models/contact_model.dart';
 import '../../../widgets/goal_image.dart'; // generic network-or-file image renderer
 
@@ -12,7 +13,6 @@ class ContactListTile extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onToggleFavorite;
   final VoidCallback? onMessage;
-  final VoidCallback? onCall;
 
   const ContactListTile({
     super.key,
@@ -21,7 +21,6 @@ class ContactListTile extends StatelessWidget {
     this.onTap,
     this.onToggleFavorite,
     this.onMessage,
-    this.onCall,
   });
 
   @override
@@ -111,28 +110,28 @@ class ContactListTile extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               icon: Icon(
                 contact.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
-                size: 30,
-color: contact.isFavorite ? Colors.amber : colors.accentBlue,
+                size: 20,
+                color: contact.isFavorite ? Colors.amber : colors.accentBlue,
               ),
             ),
-      
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  onPressed: onMessage,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                  icon: Icon(Icons.chat_bubble_outline, size: 19, color: colors.accentBlue),
+            // Ícone de telefone — abre modal WhatsApp / Chamada normal
+            if (contact.phone != null)
+              IconButton(
+                onPressed: () => showCallOptions(
+                  context,
+                  contact.phone!,
+                  contactName: contact.name.split(' ').first,
                 ),
-                if (contact.phone != null)
-                  IconButton(
-                    onPressed: onCall,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                    icon: Icon(Icons.call_outlined, size: 19, color: colors.accentBlue),
-                  ),
-              ],
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                icon: Icon(Icons.call_outlined, size: 19, color: colors.accentBlue),
+              ),
+            // Ícone de mensagem
+            IconButton(
+              onPressed: onMessage,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              icon: Icon(Icons.chat_bubble_outline, size: 19, color: colors.accentBlue),
             ),
           ],
         ),

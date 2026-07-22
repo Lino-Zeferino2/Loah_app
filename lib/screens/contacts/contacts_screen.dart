@@ -214,23 +214,22 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   ],
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: ContactListTile(
-                  contact: grouped[letter]![i],
-                  avatarColor: _palette[i % _palette.length],
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ContactDetailScreen(
-                          contact: grouped[letter]![i],
+child: ContactListTile(
+                    contact: grouped[letter]![i],
+                    avatarColor: _palette[i % _palette.length],
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ContactDetailScreen(
+                            contact: grouped[letter]![i],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  onToggleFavorite: () =>
-                      _toggleFavorite(grouped[letter]![i]),
-                  onMessage: () {},
-                  onCall: () {},
-                ),
+                      );
+                    },
+                    onToggleFavorite: () =>
+                        _toggleFavorite(grouped[letter]![i]),
+                    onMessage: () {},
+                  ),
               ),
             ),
           ],

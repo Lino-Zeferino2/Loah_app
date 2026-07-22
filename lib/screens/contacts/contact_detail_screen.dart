@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/services/contact_service.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/call_utils.dart';
 import '../../models/contact_model.dart';
 import '../../widgets/goal_image.dart';
 import '../../widgets/loah_app_bar_simple.dart';
@@ -171,6 +172,38 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         InteractionType.other => Icons.more_horiz,
       };
 
+/// Abre o modal de chamada e também regista a interação.
+  Future<void> _onCallButtonPressed() async {
+    if (_contact.phone == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhum número de telefone')),
+      );
+      return;
+    }
+
+    // Abre o modal WhatsApp/Chamada
+    if (!mounted) return;
+    try {
+      await showCallOptions(
+        context,
+        _contact.phone!,
+        contactName: _contact.name.split(' ').first,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint('call_utils: Erro em showCallOptions: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
+      return;
+    }
+
+    // Regista a interação de chamada
+    if (!mounted) return;
+    await _logInteraction(InteractionType.call);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
@@ -326,7 +359,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                   child: _QuickLogButton(
                     icon: Icons.call_outlined,
                     label: 'Ligação',
-                    onTap: () => _logInteraction(InteractionType.call),
+                    onTap: _onCallButtonPressed,
                   ),
                 ),
                 const SizedBox(width: 10),
