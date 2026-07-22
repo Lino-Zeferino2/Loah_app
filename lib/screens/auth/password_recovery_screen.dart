@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
-import 'package:loah_app/screens/auth/widgets/wave_lines/custom_input_field.dart';
-import 'package:loah_app/screens/auth/widgets/wave_lines/primary_button.dart';
+import 'package:loah_app/screens/auth/widgets/custom_input_field.dart';
+import 'package:loah_app/screens/auth/widgets/primary_button.dart';
 
 class PasswordRecoveryScreen extends StatefulWidget {
   const PasswordRecoveryScreen({super.key});
