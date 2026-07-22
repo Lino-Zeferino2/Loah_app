@@ -6,11 +6,13 @@ import 'package:flutter/material.dart';
 /// from Finanças, not a top-level destination of their own.
 class LoahAppBarSimple extends StatelessWidget implements PreferredSizeWidget {
   final String title;
-  const LoahAppBarSimple({super.key, required this.title});
+  final List<Widget>? actions;
+
+  const LoahAppBarSimple({super.key, required this.title, this.actions});
 
   @override
   Size get preferredSize => const Size.fromHeight(56);
 
   @override
-  Widget build(BuildContext context) => AppBar(title: Text(title));
+  Widget build(BuildContext context) => AppBar(title: Text(title), actions: actions);
 }

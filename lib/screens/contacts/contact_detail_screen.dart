@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/mock/mock_data.dart';
+import '../../core/services/contact_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/contact_model.dart';
 import '../../widgets/goal_image.dart';
@@ -9,7 +9,8 @@ import 'add_contact_screen.dart';
 
 /// "Loah - Detalhes do Contato": profile info, an overdue banner when
 /// it's been too long since the last touchpoint, quick buttons to log
-/// a new interaction, and the full interaction history.
+/// a new interaction, the full interaction history, and a favorite
+/// toggle with confirmation dialog.
 class ContactDetailScreen extends StatefulWidget {
   final ContactModel contact;
 
@@ -27,18 +28,65 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
   ];
 
-  void _logInteraction(InteractionType type) {
-    setState(() {
-      final updated = _contact.copyWith(
-        interactions: [
-          ..._contact.interactions,
-          ContactInteraction(date: DateTime.now(), type: type),
+  final ContactService _contactService = ContactService();
+
+  /// Alterna o estado de favorito com confirmação por AlertDialog.
+  Future<void> _toggleFavorite() async {
+    final newStatus = !_contact.isFavorite;
+    final acao = newStatus ? 'adicionar' : 'remover';
+    final titulo = newStatus ? 'Adicionar aos favoritos' : 'Remover dos favoritos';
+    final mensagem = 'Deseja $acao ${_contact.name.split(' ').first} '
+        '${newStatus ? 'aos' : 'dos'} favoritos?';
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(titulo),
+        content: Text(mensagem),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Confirmar'),
+          ),
         ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final updated = _contact.copyWith(isFavorite: newStatus);
+    try {
+      await _contactService.updateContact(updated);
+      if (!mounted) return;
+      setState(() => _contact = updated);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao atualizar favorito: $e')),
       );
-      _contact = updated;
-      final index = MockData.contacts.indexWhere((c) => c.id == updated.id);
-      if (index != -1) MockData.contacts[index] = updated;
-    });
+    }
+  }
+
+  Future<void> _logInteraction(InteractionType type) async {
+    final updated = _contact.copyWith(
+      interactions: [
+        ..._contact.interactions,
+        ContactInteraction(date: DateTime.now(), type: type),
+      ],
+    );
+    try {
+      await _contactService.updateContact(updated);
+      if (!mounted) return;
+      setState(() => _contact = updated);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao registrar interação: $e')),
+      );
+    }
   }
 
   Future<void> _editContact() async {
@@ -82,14 +130,20 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     );
     if (result == null) return;
 
-    setState(() {
-      final updated = result == -1
-          ? _contact.copyWith(clearFrequency: true)
-          : _contact.copyWith(desiredContactFrequencyDays: result);
-      _contact = updated;
-      final index = MockData.contacts.indexWhere((c) => c.id == updated.id);
-      if (index != -1) MockData.contacts[index] = updated;
-    });
+    final updated = result == -1
+        ? _contact.copyWith(clearFrequency: true)
+        : _contact.copyWith(desiredContactFrequencyDays: result);
+
+    try {
+      await _contactService.updateContact(updated);
+      if (!mounted) return;
+      setState(() => _contact = updated);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao atualizar frequência: $e')),
+      );
+    }
   }
 
   String _frequencyLabel(int? days) => switch (days) {
@@ -124,7 +178,19 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     final sortedInteractions = [...contact.interactions]..sort((a, b) => b.date.compareTo(a.date));
 
     return Scaffold(
-      appBar: LoahAppBarSimple(title: contact.name),
+      appBar: LoahAppBarSimple(
+        title: contact.name,
+        actions: [
+          IconButton(
+            tooltip: contact.isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos',
+            onPressed: _toggleFavorite,
+            icon: Icon(
+              contact.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
+              color: contact.isFavorite ? Colors.amber : null,
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),

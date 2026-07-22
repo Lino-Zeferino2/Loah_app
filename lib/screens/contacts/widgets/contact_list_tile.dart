@@ -4,13 +4,13 @@ import '../../../models/contact_model.dart';
 import '../../../widgets/goal_image.dart'; // generic network-or-file image renderer
 
 /// One row inside an alphabetical section: avatar (or colored initials
-/// fallback), name, email/phone, a relationship tag chip, and trailing
-/// message/call icon buttons. Tap the row (outside the icons) to open
-/// the contact's detail screen.
+/// fallback), name, email/phone, a relationship tag chip, a favorite
+/// star button, and trailing message/call icon buttons.
 class ContactListTile extends StatelessWidget {
   final ContactModel contact;
   final Color avatarColor;
   final VoidCallback? onTap;
+  final VoidCallback? onToggleFavorite;
   final VoidCallback? onMessage;
   final VoidCallback? onCall;
 
@@ -19,6 +19,7 @@ class ContactListTile extends StatelessWidget {
     required this.contact,
     required this.avatarColor,
     this.onTap,
+    this.onToggleFavorite,
     this.onMessage,
     this.onCall,
   });
@@ -101,6 +102,17 @@ class ContactListTile extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+            // Ícone de favorito (estrela)
+            IconButton(
+              onPressed: onToggleFavorite,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              icon: Icon(
+                contact.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
+                size: 20,
+color: contact.isFavorite ? Colors.amber : colors.border,
               ),
             ),
             // Tight constraints keep both icons comfortably on-screen even

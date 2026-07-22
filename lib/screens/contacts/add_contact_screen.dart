@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../core/mock/mock_data.dart';
+import '../../core/services/contact_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/contact_model.dart';
 import '../../widgets/chip_selector.dart';
@@ -134,36 +134,48 @@ class _AddContactScreenState extends State<AddContactScreen> {
     }
   }
 
-  void _submit() {
+
+  Future<void> _submit() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       setState(() => _nameError = 'Dê um nome para o contato.');
       return;
     }
 
-    final existing = widget.existingContact;
-    final contact = ContactModel(
-      id: existing?.id ?? 'contact_${DateTime.now().microsecondsSinceEpoch}',
-      name: name,
-      email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-      phone: _phoneController.text.trim().isEmpty
-          ? null
-          : '$_countryDialCode ${_phoneController.text.trim()}',
-      relationshipTag: _relationship,
-      avatarUrl: _avatarPath,
-      isFavorite: existing?.isFavorite ?? false,
-      desiredContactFrequencyDays: existing?.desiredContactFrequencyDays,
-      interactions: existing?.interactions ?? const [],
-    );
 
-    if (existing != null) {
-      final index = MockData.contacts.indexWhere((c) => c.id == existing.id);
-      if (index != -1) MockData.contacts[index] = contact;
-    } else {
-      MockData.contacts.add(contact);
+    try {
+      final existing = widget.existingContact;
+      final contact = ContactModel(
+        id: existing?.id ?? 'contact_${DateTime.now().microsecondsSinceEpoch}',
+        name: name,
+        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+        phone: _phoneController.text.trim().isEmpty
+            ? null
+            : '$_countryDialCode ${_phoneController.text.trim()}',
+        relationshipTag: _relationship,
+        avatarUrl: _avatarPath,
+        isFavorite: existing?.isFavorite ?? false,
+        desiredContactFrequencyDays: existing?.desiredContactFrequencyDays,
+        interactions: existing?.interactions ?? const [],
+      );
+
+      final contactService = ContactService();
+      if (existing != null) {
+        await contactService.updateContact(contact);
+      } else {
+        await contactService.addContact(contact);
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pop(contact);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao salvar contato: $e')),
+      );
+    } finally {
+      if (mounted) {}
     }
-
-    Navigator.of(context).pop(contact);
   }
 
   @override
