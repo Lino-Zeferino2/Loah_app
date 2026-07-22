@@ -5,6 +5,7 @@ import '../../core/constants/app_spacing.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/services/contact_service.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/call_utils.dart';
 import '../../models/contact_model.dart';
 import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_avatar_action.dart';
@@ -74,6 +75,22 @@ class _ContactsScreenState extends State<ContactsScreen> {
         note: map['note'],
       );
     }).toList();
+  }
+
+  /// Abre o modal de opções de mensagem (WhatsApp ou SMS normal).
+  Future<void> _onMessage(ContactModel contact) async {
+    if (contact.phone == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhum número de telefone')),
+      );
+      return;
+    }
+    await showMessageOptions(
+      context,
+      contact.phone!,
+      contactName: contact.name.split(' ').first,
+    );
   }
 
   /// Alterna o estado de favorito de um contacto no Firestore.
@@ -228,7 +245,7 @@ child: ContactListTile(
                     },
                     onToggleFavorite: () =>
                         _toggleFavorite(grouped[letter]![i]),
-                    onMessage: () {},
+                    onMessage: () => _onMessage(grouped[letter]![i]),
                   ),
               ),
             ),

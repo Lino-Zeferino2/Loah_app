@@ -367,7 +367,22 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                   child: _QuickLogButton(
                     icon: Icons.chat_bubble_outline,
                     label: 'Mensagem',
-                    onTap: () => _logInteraction(InteractionType.message),
+                    onTap: () async {
+                      if (_contact.phone != null) {
+                        await showMessageOptions(
+                          context,
+                          _contact.phone!,
+                          contactName: _contact.name.split(' ').first,
+                        );
+                        if (!mounted) return;
+                        await _logInteraction(InteractionType.message);
+                      } else {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Nenhum número de telefone')),
+                        );
+                      }
+                    },
                   ),
                 ),
                 const SizedBox(width: 10),
