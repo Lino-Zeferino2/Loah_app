@@ -111,13 +111,11 @@ class ContactListTile extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               icon: Icon(
                 contact.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
-                size: 20,
-color: contact.isFavorite ? Colors.amber : colors.border,
+                size: 30,
+color: contact.isFavorite ? Colors.amber : colors.accentBlue,
               ),
             ),
-            // Tight constraints keep both icons comfortably on-screen even
-            // on narrow phones (~320dp wide), instead of relying on the
-            // default 48x48 IconButton tap target for each.
+      
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
