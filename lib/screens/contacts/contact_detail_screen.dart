@@ -71,11 +71,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
   }
 
-  Future<void> _logInteraction(InteractionType type) async {
+  Future<void> _logInteraction(InteractionType type, {String? note}) async {
     final updated = _contact.copyWith(
       interactions: [
         ..._contact.interactions,
-        ContactInteraction(date: DateTime.now(), type: type),
+        ContactInteraction(date: DateTime.now(), type: type, note: note),
       ],
     );
     try {
@@ -86,6 +86,22 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao registrar interação: $e')),
+      );
+    }
+  }
+
+  Future<void> _deleteInteraction(int index) async {
+    final updatedInteractions = List<ContactInteraction>.from(_contact.interactions)
+      ..removeAt(index);
+    final updated = _contact.copyWith(interactions: updatedInteractions);
+    try {
+      await _contactService.updateContact(updated);
+      if (!mounted) return;
+      setState(() => _contact = updated);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao remover interação: $e')),
       );
     }
   }
@@ -165,14 +181,82 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     return '${date.day} ${_monthAbbrev[date.month - 1]}';
   }
 
-  IconData _interactionIcon(InteractionType type) => switch (type) {
+  IconData _interactionIcon(InteractionType type, {String? note}) {
+    if (type == InteractionType.other && note != null) {
+      return switch (note) {
+        'Presencial' => Icons.person_pin,
+        'Redes Sociais' => Icons.alternate_email,
+        'Email' => Icons.email_outlined,
+        'Presente' => Icons.card_giftcard,
+        _ => Icons.more_horiz,
+      };
+    }
+    return switch (type) {
         InteractionType.call => Icons.call_outlined,
         InteractionType.message => Icons.chat_bubble_outline,
         InteractionType.meeting => Icons.people_outline,
         InteractionType.other => Icons.more_horiz,
       };
+  }
 
-/// Abre o modal de chamada e também regista a interação.
+  Future<void> _showOtherInteractionSheet() async {
+    final colors = context.loahColors;
+    final result = await showModalBottomSheet<String?>(
+      context: context,
+      backgroundColor: colors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Text(
+              'Tipo de Interação',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            _InteractionOptionTile(
+              icon: Icons.person_pin,
+              label: 'Presencial',
+              subtitle: 'Encontrou pessoalmente',
+              onTap: () => Navigator.of(sheetContext).pop('Presencial'),
+            ),
+            _InteractionOptionTile(
+              icon: Icons.alternate_email,
+              label: 'Redes Sociais',
+              subtitle: 'Instagram, WhatsApp, Twitter...',
+              onTap: () => Navigator.of(sheetContext).pop('Redes Sociais'),
+            ),
+            _InteractionOptionTile(
+              icon: Icons.email_outlined,
+              label: 'Email',
+              subtitle: 'Enviou ou respondeu um email',
+              onTap: () => Navigator.of(sheetContext).pop('Email'),
+            ),
+            _InteractionOptionTile(
+              icon: Icons.card_giftcard,
+              label: 'Presente',
+              subtitle: 'Enviou ou recebeu um presente',
+              onTap: () => Navigator.of(sheetContext).pop('Presente'),
+            ),
+            _InteractionOptionTile(
+              icon: Icons.more_horiz,
+              label: 'Outro',
+              subtitle: 'Outro tipo de interação',
+              onTap: () => Navigator.of(sheetContext).pop('Outro'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (result == null) return;
+    await _logInteraction(InteractionType.other, note: result);
+  }
+
+  /// Abre o modal de chamada e também regista a interação.
   Future<void> _onCallButtonPressed() async {
     if (_contact.phone == null) {
       if (!mounted) return;
@@ -388,9 +472,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: _QuickLogButton(
-                    icon: Icons.people_outline,
-                    label: 'Encontro',
-                    onTap: () => _logInteraction(InteractionType.meeting),
+                    icon: Icons.more_horiz,
+                    label: 'Outro',
+                    onTap: _showOtherInteractionSheet,
                   ),
                 ),
               ],
@@ -411,27 +495,101 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               for (final interaction in sortedInteractions)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: LoahCard(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    child: Row(
-                      children: [
-                        Icon(_interactionIcon(interaction.type), size: 18, color: colors.accentBlue),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(interaction.type.label,
-                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                  child: Dismissible(
+                    key: ValueKey('${interaction.date.millisecondsSinceEpoch}-${interaction.type.name}-${sortedInteractions.indexOf(interaction)}'),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade400,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(Icons.delete_outline, color: Colors.white, size: 22),
+                    ),
+                    confirmDismiss: (direction) async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Remover interação'),
+                          content: const Text('Tem certeza que deseja remover esta interação do histórico?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(false),
+                              child: const Text('Cancelar'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(true),
+                              style: TextButton.styleFrom(foregroundColor: Colors.red),
+                              child: const Text('Remover'),
+                            ),
+                          ],
                         ),
-                        Text(
-                          _relativeLabel(interaction.date),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
+                      );
+                      return confirm ?? false;
+                    },
+                    onDismissed: (direction) {
+                      final originalIndex = _contact.interactions.indexOf(interaction);
+                      if (originalIndex != -1) {
+                        _deleteInteraction(originalIndex);
+                      }
+                    },
+                    child: LoahCard(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _interactionIcon(interaction.type, note: interaction.note),
+                            size: 18,
+                            color: colors.accentBlue,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              interaction.type == InteractionType.other && interaction.note != null
+                                  ? interaction.note!
+                                  : interaction.type.label,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          Text(
+                            _relativeLabel(interaction.date),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _InteractionOptionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _InteractionOptionTile({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.loahColors;
+    return ListTile(
+      leading: Icon(icon, color: colors.accentBlue),
+      title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+      trailing: Icon(Icons.chevron_right, color: colors.accentBlue, size: 18),
+      onTap: onTap,
     );
   }
 }
