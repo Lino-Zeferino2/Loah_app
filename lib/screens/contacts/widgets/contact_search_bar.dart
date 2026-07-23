@@ -5,12 +5,14 @@ import '../../../core/theme/app_theme.dart';
 /// an optional trailing filter button (shows a small dot when at least
 /// one filter is active).
 class ContactSearchBar extends StatelessWidget {
+  final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onFilterTap;
   final bool hasActiveFilters;
 
   const ContactSearchBar({
     super.key,
+    this.controller,
     this.onChanged,
     this.onFilterTap,
     this.hasActiveFilters = false,
@@ -23,6 +25,7 @@ class ContactSearchBar extends StatelessWidget {
       children: [
         Expanded(
           child: TextField(
+            controller: controller,
             onChanged: onChanged,
             decoration: InputDecoration(
               hintText: 'Buscar contatos...',

@@ -42,9 +42,16 @@ class _ContactsScreenState extends State<ContactsScreen> {
   ];
 
   final ContactService _contactService = ContactService();
+  final TextEditingController _searchController = TextEditingController();
 
   String _query = '';
   ContactFilters _filters = const ContactFilters();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   /// Converte um [DocumentSnapshot] do Firestore para [ContactModel].
   ContactModel _docToContact(DocumentSnapshot doc) {
@@ -106,8 +113,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
     }
   }
 
-  /// Constrói a lista de contactos a partir da stream do Firestore.
-  Widget _buildContactsList(AsyncSnapshot<QuerySnapshot> snapshot) {
+  /// Constrói o conteúdo da lista de contactos (sem a search bar).
+  Widget _buildContactListContent(AsyncSnapshot<QuerySnapshot> snapshot) {
     if (snapshot.hasError) {
       return Center(
         child: Text('Erro ao carregar contatos: ${snapshot.error}'),
@@ -150,13 +157,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        ContactSearchBar(
-          onChanged: (v) => setState(() => _query = v),
-          onFilterTap: _openFilters,
-          hasActiveFilters: _filters.isActive,
-        ),
-        const SizedBox(height: AppSpacing.xl),
-
         if (favorites.isNotEmpty) ...[
           Text(
             'FAVORITOS',
@@ -305,19 +305,36 @@ child: ContactListTile(
 
     return Scaffold(
       drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
-      appBar: const LoahAppBar(title: 'Loah', actions: [LoahAvatarAction()]),
+      appBar: const LoahAppBar(title: 'Meus Contactos', actions: [LoahAvatarAction()]),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _contactService.getContactsStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return _buildContactsList(snapshot);
-              },
+            child: Column(
+              children: [
+                // Search bar fixa no topo (fora do ListView para manter o foco)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: ContactSearchBar(
+                    controller: _searchController,
+                    onChanged: (v) => setState(() => _query = v),
+                    onFilterTap: _openFilters,
+                    hasActiveFilters: _filters.isActive,
+                  ),
+                ),
+                // Resultados da lista
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: _contactService.getContactsStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      return _buildContactListContent(snapshot);
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         ),
