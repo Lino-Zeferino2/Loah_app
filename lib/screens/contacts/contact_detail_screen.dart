@@ -106,6 +106,39 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
   }
 
+  Future<void> _deleteContact() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remover contato'),
+        content: Text('Tem certeza que deseja remover ${_contact.name.split(' ').first} da sua lista de contatos? Esta ação não pode ser desfeita.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      await _contactService.deleteContact(_contact.id);
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Volta para a lista de contactos
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao remover contato: $e')),
+      );
+    }
+  }
+
   Future<void> _editContact() async {
     final updated = await Navigator.of(context).push<ContactModel?>(
       MaterialPageRoute(builder: (_) => AddContactScreen(existingContact: _contact)),
@@ -256,7 +289,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     await _logInteraction(InteractionType.other, note: result);
   }
 
-  /// Abre o modal de chamada e também regista a interação.
+  /// Abre o modal de chamada e regista a interação apenas se o usuário
+  /// selecionar uma opção (WhatsApp ou Chamada).
   Future<void> _onCallButtonPressed() async {
     if (_contact.phone == null) {
       if (!mounted) return;
@@ -267,9 +301,10 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
 
     // Abre o modal WhatsApp/Chamada
+    bool interagiu = false;
     if (!mounted) return;
     try {
-      await showCallOptions(
+      interagiu = await showCallOptions(
         context,
         _contact.phone!,
         contactName: _contact.name.split(' ').first,
@@ -283,8 +318,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       return;
     }
 
-    // Regista a interação de chamada
-    if (!mounted) return;
+    // Só regista a interação se o usuário realmente escolheu uma opção
+    if (!mounted || !interagiu) return;
     await _logInteraction(InteractionType.call);
   }
 
@@ -367,6 +402,20 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _deleteContact,
+                      icon: Icon(Icons.delete_outline, size: 16, color: colors.negative),
+                      label: Text('Remover Contato', style: TextStyle(color: colors.negative)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        side: BorderSide(color: colors.negative.withValues(alpha: 0.4)),
                       ),
                     ),
                   ),
@@ -453,12 +502,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     label: 'Mensagem',
                     onTap: () async {
                       if (_contact.phone != null) {
-                        await showMessageOptions(
+                        final interagiu = await showMessageOptions(
                           context,
                           _contact.phone!,
                           contactName: _contact.name.split(' ').first,
                         );
-                        if (!mounted) return;
+                        if (!mounted || !interagiu) return;
                         await _logInteraction(InteractionType.message);
                       } else {
                         if (!mounted) return;

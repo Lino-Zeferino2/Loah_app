@@ -64,7 +64,8 @@ Future<void> _openSms(String phoneNumber) async {
 /// Mostra um modal bottom sheet com opções de mensagem:
 /// - WhatsApp (abre o WhatsApp com o número)
 /// - SMS normal (abre o app de SMS nativo)
-Future<void> showMessageOptions(BuildContext context, String phoneNumber, {String? contactName}) async {
+/// Retorna `true` se o usuário selecionou uma opção, `false` se fechou o modal.
+Future<bool> showMessageOptions(BuildContext context, String phoneNumber, {String? contactName}) async {
   final name = contactName ?? phoneNumber;
   final cleanedNumber = phoneNumber.replaceAll(RegExp(r'\s+'), '');
 
@@ -136,7 +137,7 @@ Future<void> showMessageOptions(BuildContext context, String phoneNumber, {Strin
     ),
   );
 
-  if (result == null || context.mounted == false) return;
+  if (result == null || context.mounted == false) return false;
 
   switch (result) {
     case 'whatsapp':
@@ -144,12 +145,14 @@ Future<void> showMessageOptions(BuildContext context, String phoneNumber, {Strin
     case 'sms':
       await _openSms(cleanedNumber);
   }
+  return true;
 }
 
 /// Mostra um modal bottom sheet com opções de contacto:
 /// - WhatsApp (abre o WhatsApp com o número)
 /// - Chamada normal (abre o discador do telefone)
-Future<void> showCallOptions(BuildContext context, String phoneNumber, {String? contactName}) async {
+/// Retorna `true` se o usuário selecionou uma opção, `false` se fechou o modal.
+Future<bool> showCallOptions(BuildContext context, String phoneNumber, {String? contactName}) async {
   final name = contactName ?? phoneNumber;
   final cleanedNumber = phoneNumber.replaceAll(RegExp(r'\s+'), '');
 
@@ -221,7 +224,7 @@ Future<void> showCallOptions(BuildContext context, String phoneNumber, {String? 
     ),
   );
 
-  if (result == null || context.mounted == false) return;
+  if (result == null || context.mounted == false) return false;
 
   switch (result) {
     case 'whatsapp':
@@ -229,4 +232,5 @@ Future<void> showCallOptions(BuildContext context, String phoneNumber, {String? 
     case 'call':
       await _makePhoneCall(cleanedNumber);
   }
+  return true;
 }
