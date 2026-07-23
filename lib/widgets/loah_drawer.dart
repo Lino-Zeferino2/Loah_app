@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/auth_service.dart';
+import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/screens/auth/login_screen.dart';
 import 'package:loah_app/widgets/loah_app_bar.dart';
 import '../core/theme/app_theme.dart';
@@ -16,19 +18,71 @@ import 'theme_toggle_switch.dart';
 /// [currentIndex] highlights the active nav item; [onNavigate] is
 /// called with the tapped item's index (0..4) and should close the
 /// drawer + switch the visible screen.
-class LoahDrawer extends StatelessWidget {
+///
+/// O nome, email e role sao carregados automaticamente do Firebase
+/// Auth + Firestore — nao sao mais parametros estaticos.
+class LoahDrawer extends StatefulWidget {
   final int currentIndex;
   final ValueChanged<int> onNavigate;
-  final String userName;
-  final String userEmail;
 
   const LoahDrawer({
     super.key,
     required this.currentIndex,
     required this.onNavigate,
-    this.userName = 'Arthur',
-    this.userEmail = 'arthur@loah.app',
   });
+
+  @override
+  State<LoahDrawer> createState() => _LoahDrawerState();
+}
+
+class _LoahDrawerState extends State<LoahDrawer> {
+  String _userName = '';
+  String _userEmail = '';
+  String _userRole = '';
+  bool _loadingProfile = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null) {
+        // Dados do Firebase Auth (disponiveis offline)
+        final displayName = firebaseUser.displayName ?? 'Utilizador';
+        final email = firebaseUser.email ?? '';
+
+        // Dados do Firestore (role + nome completo salvo no cadastro)
+        final doc = await UserService().getUserProfile(firebaseUser.uid);
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          if (mounted) {
+            setState(() {
+              _userName = (data['name'] as String?)?.trim() ?? displayName;
+              _userEmail = (data['email'] as String?)?.trim() ?? email;
+              _userRole = data['role'] ?? 'user';
+              _loadingProfile = false;
+            });
+          }
+          return;
+        }
+
+        // Fallback: apenas dados do Auth
+        if (mounted) {
+          setState(() {
+            _userName = displayName;
+            _userEmail = email;
+            _loadingProfile = false;
+          });
+        }
+        return;
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loadingProfile = false);
+  }
 
   static const _navItems = [
     (icon: Icons.grid_view_rounded, label: 'Dashboard'),
@@ -61,18 +115,56 @@ class LoahDrawer extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            userName,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
+                          _loadingProfile
+                              ? SizedBox(
+                                  width: 80,
+                                  height: 14,
+                                  child: LinearProgressIndicator(
+                                    backgroundColor: colors.cardBackgroundAlt,
+                                  ),
+                                )
+                              : Text(
+                                  _userName,
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                 ),
-                          ),
-                          Text(
-                            userEmail,
-                            style: TextStyle(
-                              color: colors.accentBlue,
-                              fontSize: 12.5,
-                            ),
+                          Row(
+                            children: [
+                              _loadingProfile
+                                  ? SizedBox(
+                                      width: 100,
+                                      height: 12,
+                                      child: LinearProgressIndicator(
+                                        backgroundColor: colors.cardBackgroundAlt,
+                                      ),
+                                    )
+                                  : Text(
+                                      _userEmail,
+                                      style: TextStyle(
+                                        color: colors.accentBlue,
+                                        fontSize: 12.5,
+                                      ),
+                                    ),
+                              if (!_loadingProfile && _userRole == 'admin') ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade700,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'Admin',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),
@@ -91,10 +183,10 @@ class LoahDrawer extends StatelessWidget {
                       DrawerNavItem(
                         icon: _navItems[i].icon,
                         label: _navItems[i].label,
-                        selected: i == currentIndex,
+                        selected: i == widget.currentIndex,
                         onTap: () {
                           Navigator.of(context).pop(); // close drawer
-                          onNavigate(i);
+                          widget.onNavigate(i);
                         },
                       ),
                   ],

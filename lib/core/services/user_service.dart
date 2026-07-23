@@ -25,6 +25,7 @@ class UserService {
       'email': email,
       'phoneNumber': phoneNumber ?? '',
       'dialCode': dialCode,
+      'role': 'user', // Padrão: usuário normal. Para tornar admin, alterar manualmente no Firestore.
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });

@@ -1,13 +1,10 @@
-# Plano de Correção - Erro ao entrar com Google (PERMISSION_DENIED no Firestore)
+# TODO: Implementar sistema de Roles (Admin / User)
 
-## ✅ Ação 1: Melhorar tratamento de erro no login/signup Google e Apple
-- [x] Adicionar captura de `FirebaseException` do Firestore no `login_screen.dart` (`_handleGoogleLogin`)
-- [x] Adicionar captura de `FirebaseException` do Firestore no `login_screen.dart` (`_handleAppleLogin`)
-- [x] Adicionar captura de `FirebaseException` do Firestore no `signup_screen.dart` (`_handleGoogleSignUp`)
-- [x] Adicionar captura de `FirebaseException` do Firestore no `signup_screen.dart` (`_handleAppleSignUp`)
-- [x] Adicionar import `package:firebase_core/firebase_core.dart` em ambos os arquivos
-- [x] Mensagens exibidas em português com orientação clara
+## Passos
 
-## ❓ Ação 2: Instalar Firebase CLI e implantar regras do Firestore
-- [ ] Pendente - Necessário instalar Firebase CLI e executar `firebase deploy --only firestore:rules`
+- [x] 1. **Criar plano e obter aprovação**
+- [x] 2. **UserService** - Adicionar campo `role` com valor padrão `'user'` no `createUserProfile()`
+- [x] 3. **Firestore Rules** - Atualizar regras de segurança para suportar roles
+- [x] 4. **Drawer** - Exibir a role do usuário no header do menu lateral (com badge "Admin")
+- [x] 5. **Verificar compilação** - `flutter analyze` ✅ Sem issues
 
