@@ -4,6 +4,7 @@ import 'package:loah_app/core/theme/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/services/goal_service.dart';
+import '../../core/mock/goal_progress.dart';
 import '../../models/goal_model.dart';
 import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_avatar_action.dart';
@@ -62,6 +63,16 @@ class _GoalsScreenState extends State<GoalsScreen> {
 
   List<GoalModel> _byTerm(GoalTerm term) => _goals.where((g) => g.term == term).toList();
 
+  String _buildCompletionSummary() {
+    if (_goals.isEmpty) return '';
+    final totalProgress = _goals.fold<double>(
+      0,
+      (sum, g) => sum + GoalProgress.of(g, []),
+    );
+    final avgPercent = ((totalProgress / _goals.length) * 100).round();
+    return 'Você completou $avgPercent% do seu planejamento trimestral.';
+  }
+
   Future<void> _openGoal(GoalModel goal) async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => GoalDetailScreen(goal: goal)),
@@ -88,19 +99,22 @@ class _GoalsScreenState extends State<GoalsScreen> {
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              LoahCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Metas',
-                        style: Theme.of(context)
-                            .textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 4),
-                    Text('Você completou 65% do seu planejamento trimestral.',
-                        style: Theme.of(context).textTheme.bodyMedium),
-                  ],
+              if (_goals.isNotEmpty)
+                LoahCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Metas',
+                          style: Theme.of(context)
+                              .textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 4),
+                      Text(
+                        _buildCompletionSummary(),
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               const SizedBox(height: AppSpacing.xl),
               GoalTermSection(
                 term: GoalTerm.curtoPrazo,
