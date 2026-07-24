@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/mock/goal_progress.dart';
-import '../../core/mock/mock_data.dart';
+import '../../core/services/goal_service.dart';
+import '../../core/services/task_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/goal_model.dart';
@@ -16,6 +16,8 @@ import 'widgets/goal_milestone_tile.dart';
 /// circular progress ring overlay, category/date chips, title,
 /// description, action buttons, and a "Marcos & Tarefas" checklist of
 /// any tasks linked to this goal (regardless of its progress mode).
+///
+/// Lê e escreve metas e tarefas diretamente via services.
 class GoalDetailScreen extends StatefulWidget {
   final GoalModel goal;
 
@@ -26,45 +28,63 @@ class GoalDetailScreen extends StatefulWidget {
 }
 
 class _GoalDetailScreenState extends State<GoalDetailScreen> {
-  // Mutable copy so editing the goal updates this screen immediately —
-  // `widget.goal` itself can't change (it's the const passed in when
-  // this route was pushed), so we track the current version here and
-  // refresh it after returning from AddGoalScreen's edit flow.
-  late GoalModel _goal = widget.goal;
+  final GoalService _goalService = GoalService();
+  final TaskService _taskService = TaskService();
 
-  void _toggleTask(TaskModel task) {
-    setState(() {
-      final index = MockData.tasks.indexWhere((t) => t.id == task.id);
-      MockData.tasks[index] = task.copyWith(isDone: !task.isDone);
-    });
+  late GoalModel _goal = widget.goal;
+  List<TaskModel> _milestones = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    final tasks = await _taskService.getTasksByGoalId(_goal.id);
+    if (mounted) setState(() => _milestones = tasks);
+  }
+
+  void _toggleTask(TaskModel task) async {
+    final updated = task.copyWith(isDone: !task.isDone);
+    try {
+      await _taskService.updateTask(updated);
+      await _loadTasks();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar tarefa: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _addTask() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => AddTaskScreen(relatedGoal: _goal)),
     );
-    // AddTaskScreen writes straight into MockData.tasks, so a rebuild
-    // here is enough to show the newly created milestone.
-    setState(() {});
+    await _loadTasks();
   }
 
   Future<void> _openTask(TaskModel task) async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task)),
     );
-    // TaskDetailScreen writes straight into MockData.tasks (toggle,
-    // edit, delete), so a rebuild here is enough to reflect changes.
-    setState(() {});
+    await _loadTasks();
   }
 
   Future<void> _editGoal() async {
     final updated = await Navigator.of(context).push<GoalModel?>(
       MaterialPageRoute(builder: (_) => AddGoalScreen(existingGoal: _goal)),
     );
-    if (updated != null) setState(() => _goal = updated);
+    if (updated != null) {
+      setState(() => _goal = updated);
+      final fresh = await _goalService.getGoal(_goal.id);
+      if (mounted && fresh != null) setState(() => _goal = fresh);
+    }
   }
 
- Future<void> _adjustProgress() async {
+  Future<void> _adjustProgress() async {
     final controller = TextEditingController();
     final delta = await showModalBottomSheet<double>(
       context: context,
@@ -75,9 +95,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
       ),
       builder: (sheetContext) => Padding(
         padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
+          left: 20, right: 20, top: 20,
           bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
         ),
         child: SafeArea(
@@ -86,13 +104,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Atualizar Valor',
-                style: Theme.of(sheetContext)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
+              Text('Atualizar Valor',
+                  style: Theme.of(sheetContext)
+                      .textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 16),
               TextField(
                 controller: controller,
@@ -104,8 +118,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                   filled: true,
                   fillColor: context.loahColors.cardBackgroundAlt,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none,
                   ),
                 ),
               ),
@@ -115,14 +128,12 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
-                        final value =
-                            double.tryParse(controller.text.trim().replaceAll(',', '.'));
-                        if (value != null) Navigator.of(sheetContext).pop(-value);
+                        final v = double.tryParse(controller.text.trim().replaceAll(',', '.'));
+                        if (v != null) Navigator.of(sheetContext).pop(-v);
                       },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('Remover'),
                     ),
@@ -131,14 +142,12 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                   Expanded(
                     child: FilledButton(
                       onPressed: () {
-                        final value =
-                            double.tryParse(controller.text.trim().replaceAll(',', '.'));
-                        if (value != null) Navigator.of(sheetContext).pop(value);
+                        final v = double.tryParse(controller.text.trim().replaceAll(',', '.'));
+                        if (v != null) Navigator.of(sheetContext).pop(v);
                       },
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('Adicionar'),
                     ),
@@ -159,32 +168,26 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     );
     if (delta == null || delta == 0) return;
 
-    setState(() {
-      final newCurrent = (_goal.current ?? 0) + delta;
-      // Keep it inside [0, target] — no negative progress, and don't
-      // overshoot the target visually (still "concluído" at 100%).
-      // Note: num.clamp() returns `num`, not `double`, even when both
-      // arguments are doubles — hence the explicit .toDouble() below,
-      // otherwise this wouldn't type-check against GoalModel.current.
-      final double clamped = (_goal.target != null
-              ? newCurrent.clamp(0, _goal.target!)
-              : newCurrent.clamp(0, double.infinity))
-          .toDouble();
-      _goal = _goal.copyWith(current: clamped);
-
-      final index = MockData.goals.indexWhere((g) => g.id == _goal.id);
-      if (index != -1) MockData.goals[index] = _goal;
-    });
+    final clamped = ((_goal.current ?? 0) + delta).clamp(0, _goal.target ?? double.infinity);
+    final updatedGoal = _goal.copyWith(current: clamped.toDouble());
+    try {
+      await _goalService.updateGoal(updatedGoal);
+      if (mounted) setState(() => _goal = updatedGoal);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar progresso: $e')),
+        );
+      }
+    }
   }
+
   @override
   Widget build(BuildContext context) {
     final goal = _goal;
-    final progress = GoalProgress.of(goal, MockData.tasks);
+    final milestones = _milestones;
+    final progress = _computeProgress(goal, milestones);
     final progressPercent = (progress * 100).round();
-    // Any task linked to this goal counts as a "milestone" here — even
-    // for manualValue goals, where the tasks don't drive the % but are
-    // still useful sub-steps (e.g. "Guardar R$ 5.000 de entrada").
-    final milestones = GoalProgress.linkedTasks(goal, MockData.tasks);
     final doneCount = milestones.where((t) => t.isDone).length;
 
     return Scaffold(
@@ -199,10 +202,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
               background: _GoalHeader(goal: goal, progress: progress, percent: progressPercent),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () {},
-              ),
+              IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
             ],
           ),
           SliverPadding(
@@ -221,19 +221,13 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  goal.title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
+                Text(goal.title,
+                    style: Theme.of(context)
+                        .textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
                 if (goal.description != null) ...[
                   const SizedBox(height: 8),
-                  Text(
-                    goal.description!,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
-                  ),
+                  Text(goal.description!,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4)),
                 ],
                 if (goal.progressMode == GoalProgressMode.manualValue) ...[
                   const SizedBox(height: 8),
@@ -242,18 +236,14 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                     children: [
                       Text(
                         '${CurrencyFormatter.format(goal.current ?? 0)} de ${CurrencyFormatter.format(goal.target ?? 0)}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: goal.progressColor,
-                            ),
+                        style: Theme.of(context)
+                            .textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: goal.progressColor),
                       ),
                       TextButton.icon(
                         onPressed: _adjustProgress,
                         icon: Icon(Icons.tune, size: 16, color: goal.progressColor),
-                        label: Text(
-                          'Atualizar Valor',
-                          style: TextStyle(color: goal.progressColor, fontWeight: FontWeight.w600),
-                        ),
+                        label: Text('Atualizar Valor',
+                            style: TextStyle(color: goal.progressColor, fontWeight: FontWeight.w600)),
                         style: TextButton.styleFrom(padding: EdgeInsets.zero),
                       ),
                     ],
@@ -268,8 +258,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         icon: const Icon(Icons.edit_outlined, size: 18),
                         label: const Text('Editar Meta'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: goal.progressColor,
-                          foregroundColor: Colors.white,
+                          backgroundColor: goal.progressColor, foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
@@ -293,51 +282,56 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Marcos & Tarefas',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w800),
-                    ),
-                    Text(
-                      '$doneCount de ${milestones.length} completas',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+                    Text('Marcos & Tarefas',
+                        style: Theme.of(context)
+                            .textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                    Text('$doneCount de ${milestones.length} completas',
+                        style: Theme.of(context).textTheme.bodySmall),
                   ],
                 ),
                 const SizedBox(height: 12),
                 if (milestones.isEmpty)
-                  Text(
-                    'Nenhuma tarefa vinculada a esta meta ainda.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  )
+                  Text('Nenhuma tarefa vinculada a esta meta ainda.',
+                      style: Theme.of(context).textTheme.bodySmall)
                 else
                   for (final task in milestones)
-                    GoalMilestoneTile(
-                      task: task,
-                      accentColor: goal.progressColor,
-                      onToggle: () => _toggleTask(task),
-                      onTap: () => _openTask(task),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: GoalMilestoneTile(
+                        task: task,
+                        accentColor: goal.progressColor,
+                        onToggle: () => _toggleTask(task),
+                        onTap: () => _openTask(task),
+                      ),
                     ),
-                    const SizedBox(height: 38),
+                const SizedBox(height: 38),
               ]),
             ),
           ),
-         
         ],
       ),
     );
   }
+
+  double _computeProgress(GoalModel goal, List<TaskModel> tasks) {
+    final taskProgress = tasks.isEmpty
+        ? null
+        : tasks.where((t) => t.isDone).length / tasks.length;
+    switch (goal.progressMode) {
+      case GoalProgressMode.taskChecklist:
+        return taskProgress ?? 0;
+      case GoalProgressMode.manualValue:
+        final valueProgress = goal.manualProgress;
+        if (taskProgress == null) return valueProgress;
+        return (valueProgress + taskProgress) / 2;
+    }
+  }
 }
 
-/// Photo (or gradient fallback) header with a dark scrim and the
-/// [CircularProgressRing] centered on top.
 class _GoalHeader extends StatelessWidget {
   final GoalModel goal;
   final double progress;
   final int percent;
-
   const _GoalHeader({required this.goal, required this.progress, required this.percent});
 
   @override
@@ -351,24 +345,16 @@ class _GoalHeader extends StatelessWidget {
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  goal.progressColor.withValues(alpha: 0.55),
-                  Colors.black,
-                ],
+                begin: Alignment.topLeft, end: Alignment.bottomRight,
+                colors: [goal.progressColor.withValues(alpha: 0.55), Colors.black],
               ),
             ),
           ),
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withValues(alpha: 0.35),
-                Colors.black.withValues(alpha: 0.55),
-              ],
+              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: [Colors.black.withValues(alpha: 0.35), Colors.black.withValues(alpha: 0.55)],
             ),
           ),
         ),
@@ -379,18 +365,10 @@ class _GoalHeader extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '$percent%',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const Text(
-                  'CONCLUÍDO',
-                  style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 0.6),
-                ),
+                Text('$percent%',
+                    style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w800)),
+                const Text('CONCLUÍDO',
+                    style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 0.6)),
               ],
             ),
           ),
@@ -413,10 +391,8 @@ class _CategoryChip extends StatelessWidget {
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(100),
       ),
-      child: Text(
-        label,
-        style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
-      ),
+      child: Text(label,
+          style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12)),
     );
   }
 }

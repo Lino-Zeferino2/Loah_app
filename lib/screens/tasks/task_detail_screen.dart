@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/mock/mock_data.dart';
+import '../../core/services/task_service.dart';
+import '../../core/services/goal_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/goal_model.dart';
 import '../../models/task_model.dart';
@@ -11,6 +12,8 @@ import 'widgets/related_goal_card.dart';
 /// "Loah - Detalhes da Tarefa": shows everything about one [TaskModel]
 /// — status, related goal (if any), description, due date, priority —
 /// plus quick actions to mark it done or open the edit form.
+///
+/// Lê e escreve tarefas diretamente no Firestore via [TaskService].
 class TaskDetailScreen extends StatefulWidget {
   final TaskModel task;
 
@@ -21,23 +24,38 @@ class TaskDetailScreen extends StatefulWidget {
 }
 
 class _TaskDetailScreenState extends State<TaskDetailScreen> {
-  // Mutable copy so toggling "done" or editing updates this screen
-  // immediately, same pattern as GoalDetailScreen's `_goal`.
-  late TaskModel _task = widget.task;
+  final TaskService _taskService = TaskService();
+  final GoalService _goalService = GoalService();
 
-  GoalModel? get _relatedGoal {
-    final goalId = _task.goalId;
-    if (goalId == null) return null;
-    final matches = MockData.goals.where((g) => g.id == goalId);
-    return matches.isEmpty ? null : matches.first;
+  late TaskModel _task = widget.task;
+  GoalModel? _relatedGoal;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRelatedGoal();
   }
 
-  void _toggleDone() {
-    setState(() {
-      _task = _task.copyWith(isDone: !_task.isDone);
-      final index = MockData.tasks.indexWhere((t) => t.id == _task.id);
-      if (index != -1) MockData.tasks[index] = _task;
-    });
+  Future<void> _loadRelatedGoal() async {
+    final goalId = _task.goalId;
+    if (goalId != null) {
+      final goal = await _goalService.getGoal(goalId);
+      if (mounted) setState(() => _relatedGoal = goal);
+    }
+  }
+
+  void _toggleDone() async {
+    final updated = _task.copyWith(isDone: !_task.isDone);
+    try {
+      await _taskService.updateTask(updated);
+      if (mounted) setState(() => _task = updated);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar tarefa: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _editTask() async {
@@ -46,14 +64,21 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
     if (updated == null) return;
 
-    final stillExists = MockData.tasks.any((t) => t.id == updated.id);
-    if (!stillExists) {
-      // The task was deleted from within the edit screen — nothing left
-      // to show here, so back out to whichever list opened this detail.
+    try {
+      final stillExists = await _taskService.getTask(updated.id);
+      if (stillExists == null) {
+        if (mounted) Navigator.of(context).pop();
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          _task = updated;
+          _loadRelatedGoal();
+        });
+      }
+    } catch (_) {
       if (mounted) Navigator.of(context).pop();
-      return;
     }
-    setState(() => _task = updated);
   }
 
   Color _statusColor(BuildContext context, TaskStatus status) {
@@ -257,8 +282,6 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// One "icon + label ..... value" row, e.g. "📅 Data de Entrega   25 de
-/// Outubro, 2024", rendered as its own card.
 class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;

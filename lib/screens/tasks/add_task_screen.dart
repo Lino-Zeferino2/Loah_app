@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../../core/mock/mock_data.dart';
+import '../../core/services/task_service.dart';
+import '../../core/services/goal_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/goal_model.dart';
 import '../../models/task_model.dart';
@@ -11,21 +13,12 @@ import 'widgets/related_goal_card.dart';
 /// cases:
 ///
 /// 1. **New sub-task of a goal** — pass [relatedGoal] (e.g. from the
-///    Goal Detail screen's "Adicionar Tarefa" button). The goal shows
-///    as a locked, non-editable card at the top.
+///    Goal Detail screen's "Adicionar Tarefa" button).
 /// 2. **New standalone task** — leave both [relatedGoal] and
-///    [existingTask] null (e.g. from the Tarefas tab's FAB). The user
-///    can optionally attach a goal via a picker, or leave it avulsa.
-/// 3. **Editing an existing task** — pass [existingTask]. Every field
-///    pre-fills, the related goal becomes editable (even if the task
-///    was originally created locked to one), and a "Excluir Tarefa"
-///    action appears.
+///    [existingTask] null (e.g. from the Tarefas tab's FAB).
+/// 3. **Editing an existing task** — pass [existingTask].
 ///
-/// On success, pops with the created/updated [TaskModel]. Pops with
-/// `null` if cancelled. Pops with the *same task marked deleted*
-/// (`isDone` untouched, but removed from [MockData.tasks]) when the
-/// user deletes it — callers should treat any non-null result as "the
-/// list may have changed, refresh".
+/// On success, pops with the created/updated [TaskModel].
 class AddTaskScreen extends StatefulWidget {
   final GoalModel? relatedGoal;
   final TaskModel? existingTask;
@@ -39,15 +32,19 @@ class AddTaskScreen extends StatefulWidget {
 }
 
 class _AddTaskScreenState extends State<AddTaskScreen> {
-  late final _titleController =
+  final TaskService _taskService = TaskService();
+  final GoalService _goalService = GoalService();
+
+  late final TextEditingController _titleController =
       TextEditingController(text: widget.existingTask?.title ?? '');
-  late final _descriptionController =
+  late final TextEditingController _descriptionController =
       TextEditingController(text: widget.existingTask?.description ?? '');
 
   GoalModel? _selectedGoal;
   DateTime? _dueDate;
   TaskPriority _priority = TaskPriority.baixa;
   String? _titleError;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -57,8 +54,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
     final existingGoalId = widget.existingTask?.goalId ?? widget.relatedGoal?.id;
     if (existingGoalId != null) {
-      _selectedGoal = MockData.goals.where((g) => g.id == existingGoalId).firstOrNull;
+      _loadGoal(existingGoalId);
     }
+  }
+
+  Future<void> _loadGoal(String goalId) async {
+    final goal = await _goalService.getGoal(goalId);
+    if (mounted) setState(() => _selectedGoal = goal);
   }
 
   @override
@@ -68,9 +70,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     super.dispose();
   }
 
-  /// The goal card is only locked when *creating* a fresh task directly
-  /// from a Goal Detail screen — editing always allows changing (or
-  /// removing) the link, even if the task was originally locked.
   bool get _goalIsLocked => !widget.isEditing && widget.relatedGoal != null;
 
   Future<void> _pickDate() async {
@@ -84,6 +83,40 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   Future<void> _pickGoal() async {
+    final goals = await _goalService.getGoalsStream().first;
+    final allGoals = goals.docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return GoalModel(
+        id: doc.id,
+        title: data['title'] ?? '',
+        category: data['category'] ?? 'Pessoal',
+        term: data['term'] != null
+            ? GoalTerm.values.firstWhere(
+                (t) => t.name == data['term'],
+                orElse: () => GoalTerm.curtoPrazo,
+              )
+            : GoalTerm.curtoPrazo,
+        progressMode: data['progressMode'] != null
+            ? GoalProgressMode.values.firstWhere(
+                (m) => m.name == data['progressMode'],
+                orElse: () => GoalProgressMode.manualValue,
+              )
+            : GoalProgressMode.manualValue,
+        current: (data['current'] as num?)?.toDouble(),
+        target: (data['target'] as num?)?.toDouble(),
+        imageAsset: data['imageAsset'],
+        description: data['description'],
+        targetDate: data['targetDate'] != null
+            ? (data['targetDate'] as Timestamp).toDate()
+            : null,
+        progressColor: data['progressColor'] != null
+            ? Color(int.parse(data['progressColor']))
+            : Colors.blue,
+        remainingLabel: data['remainingLabel'],
+      );
+    }).toList();
+
+    if (!mounted) return;
     final goal = await showModalBottomSheet<GoalModel?>(
       context: context,
       isScrollControlled: true,
@@ -91,18 +124,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => GoalPickerSheet(currentSelection: _selectedGoal),
+      builder: (_) => GoalPickerSheet(
+        goals: allGoals,
+        currentSelection: _selectedGoal,
+      ),
     );
-    setState(() => _selectedGoal = goal);
+    if (mounted) setState(() => _selectedGoal = goal);
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final title = _titleController.text.trim();
     if (title.isEmpty) {
       setState(() => _titleError = 'Dê um nome para a tarefa.');
       return;
     }
 
+    setState(() => _isSaving = true);
     final existing = widget.existingTask;
 
     final task = TaskModel(
@@ -115,24 +152,31 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       dueLabel: _dueDate != null ? TaskModel.shortDate(_dueDate!) : null,
       priority: _priority,
       goalId: _selectedGoal?.id,
-      // Preserve state that this form doesn't edit directly.
       isDone: existing?.isDone ?? false,
       completedAt: existing?.completedAt,
       createdAt: existing?.createdAt ?? DateTime.now(),
       status: existing?.status,
     );
 
-    if (existing != null) {
-      final index = MockData.tasks.indexWhere((t) => t.id == existing.id);
-      if (index != -1) MockData.tasks[index] = task;
-    } else {
-      MockData.tasks.add(task);
+    try {
+      if (existing != null) {
+        await _taskService.updateTask(task);
+      } else {
+        await _taskService.addTask(task);
+      }
+      if (mounted) Navigator.of(context).pop(task);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar tarefa: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
-
-    Navigator.of(context).pop(task);
   }
 
-Future<void> _delete() async {
+  Future<void> _delete() async {
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: context.loahColors.cardBackground,
@@ -194,9 +238,18 @@ Future<void> _delete() async {
     );
     if (confirmed != true || !mounted) return;
 
-    MockData.tasks.removeWhere((t) => t.id == widget.existingTask!.id);
-    Navigator.of(context).pop(widget.existingTask); // signal "list changed"
+    try {
+      await _taskService.deleteTask(widget.existingTask!.id);
+      if (mounted) Navigator.of(context).pop(widget.existingTask);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao excluir tarefa: $e')),
+        );
+      }
+    }
   }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
@@ -335,17 +388,26 @@ Future<void> _delete() async {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _submit,
+                onPressed: _isSaving ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colors.accentBlue,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: Text(
-                  isEditing ? 'Salvar Alterações' : 'Criar Tarefa',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        isEditing ? 'Salvar Alterações' : 'Criar Tarefa',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
               ),
             ),
             const SizedBox(height: 8),
@@ -376,8 +438,4 @@ class _SectionLabel extends StatelessWidget {
           ),
     );
   }
-}
-
-extension _FirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }

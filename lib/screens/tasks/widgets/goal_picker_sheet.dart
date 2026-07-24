@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
-import '../../../core/mock/mock_data.dart';
 import '../../../models/goal_model.dart';
 import '../../goals/widgets/goal_term_section.dart'; // GoalTermVisuals (icon/color)
 
-/// Bottom sheet listing every goal in [MockData.goals], plus a "remove
-/// link" option, used when picking a goal for a task.
+/// Bottom sheet listing goals, plus a "remove link" option, used when
+/// picking a goal for a task.
 ///
-/// Capped to 70% of screen height with an internally-scrolling list —
-/// without this, a long goal list (or a small phone screen) would
-/// overflow, since a plain Column has no bound on its own height.
+/// Receives [goals] from the caller (e.g. fetched from Firestore) so
+/// this widget stays a pure UI component.
+///
+/// Capped to 70% of screen height with an internally-scrolling list.
 class GoalPickerSheet extends StatelessWidget {
+  final List<GoalModel> goals;
   final GoalModel? currentSelection;
 
-  const GoalPickerSheet({super.key, required this.currentSelection});
+  const GoalPickerSheet({
+    super.key,
+    required this.goals,
+    required this.currentSelection,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +51,7 @@ class GoalPickerSheet extends StatelessWidget {
                     title: const Text('Nenhuma (tarefa avulsa)'),
                     onTap: () => Navigator.of(context).pop(),
                   ),
-                  for (final goal in MockData.goals)
+                  for (final goal in goals)
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: CircleAvatar(

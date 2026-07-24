@@ -1,24 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../core/mock/mock_data.dart';
+import '../../core/services/goal_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/goal_model.dart';
 import '../../widgets/goal_image.dart';
 import '../../widgets/chip_selector.dart';
-import 'widgets/goal_term_section.dart'; // GoalTermVisuals (icon/color/shortLabel)
+import 'widgets/goal_term_section.dart';
 
 /// "Loah - Criar/Editar Meta": form for both creating a new [GoalModel]
 /// and editing an existing one.
 ///
 /// Pass [existingGoal] to edit it in place (fields pre-filled, saving
-/// updates the same id in [MockData.goals]); leave it null to create a
+/// updates the same goal via [GoalService]); leave it null to create a
 /// brand new goal instead.
-///
-/// Leaving "Valor Alvo" empty creates/keeps a checklist-mode goal
-/// (progress comes from linked sub-tasks); filling it in makes it a
-/// manualValue goal (progress comes from current/target). This mirrors
-/// the same duality used throughout the rest of the app — no separate
-/// "goal type" toggle needed, the presence of a target value decides it.
 class AddGoalScreen extends StatefulWidget {
   final GoalModel? existingGoal;
 
@@ -31,6 +25,8 @@ class AddGoalScreen extends StatefulWidget {
 }
 
 class _AddGoalScreenState extends State<AddGoalScreen> {
+  final GoalService _goalService = GoalService();
+
   static const _categories = [
     ChipOption('Financeiro', 'Financeiro'),
     ChipOption('Saúde', 'Saúde'),
@@ -55,11 +51,11 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     ChipOption(GoalTerm.longoPrazo.shortLabel, GoalTerm.longoPrazo),
   ];
 
-  late final _titleController =
+  late final TextEditingController _titleController =
       TextEditingController(text: widget.existingGoal?.title ?? '');
-  late final _descriptionController =
+  late final TextEditingController _descriptionController =
       TextEditingController(text: widget.existingGoal?.description ?? '');
-  late final _targetValueController = TextEditingController(
+  late final TextEditingController _targetValueController = TextEditingController(
     text: widget.existingGoal?.target != null
         ? widget.existingGoal!.target!.toStringAsFixed(2)
         : '',
@@ -68,10 +64,9 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
   late String _category = widget.existingGoal?.category ?? 'Financeiro';
   late GoalTerm _term = widget.existingGoal?.term ?? GoalTerm.curtoPrazo;
   DateTime? _targetDate;
-  // Holds either a network URL (untouched existing goal image) or a
-  // freshly-picked local file path — GoalImage renders either.
   String? _imagePath;
   String? _titleError;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -136,21 +131,19 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     return double.tryParse(raw);
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final title = _titleController.text.trim();
     if (title.isEmpty) {
       setState(() => _titleError = 'Dê um nome para a meta.');
       return;
     }
 
+    setState(() => _isSaving = true);
+
     final targetValue = _parseTargetValue();
     final hasManualValue = targetValue != null && targetValue > 0;
     final existing = widget.existingGoal;
 
-  // Preserve prior progress when possible instead of resetting it:
-    // - staying in manualValue mode keeps the old `current`
-    // - switching INTO manualValue from checklist starts at 0
-    // - switching OUT of manualValue (or creating fresh) has no current
     final double? current = hasManualValue
         ? (existing?.progressMode == GoalProgressMode.manualValue
             ? (existing!.current ?? 0.0)
@@ -173,14 +166,22 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
       progressColor: _categoryColors[_category] ?? Colors.blue,
     );
 
-    if (existing != null) {
-      final index = MockData.goals.indexWhere((g) => g.id == existing.id);
-      if (index != -1) MockData.goals[index] = goal;
-    } else {
-      MockData.goals.add(goal);
+    try {
+      if (existing != null) {
+        await _goalService.updateGoal(goal);
+      } else {
+        await _goalService.addGoal(goal);
+      }
+      if (mounted) Navigator.of(context).pop(goal);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar meta: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
-
-    Navigator.of(context).pop(goal);
   }
 
   @override
@@ -372,8 +373,14 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _submit,
-                icon: const Icon(Icons.check_circle_outline, size: 18),
+                onPressed: _isSaving ? null : _submit,
+                icon: _isSaving
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.check_circle_outline, size: 18),
                 label: Text(
                   isEditing ? 'Salvar Alterações' : 'Criar Meta',
                   style: const TextStyle(fontWeight: FontWeight.w700),
@@ -410,9 +417,6 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// Tappable cover-photo field: an empty dashed placeholder when no
-/// image is set yet, or a preview (network URL or local file, via
-/// [GoalImage]) with remove/change buttons once one is set.
 class _ImagePickerField extends StatelessWidget {
   final String? imagePath;
   final VoidCallback onTap;
