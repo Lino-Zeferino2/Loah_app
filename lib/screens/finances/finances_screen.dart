@@ -24,6 +24,7 @@ import '../../widgets/section_header.dart';
 import '../../core/services/finance_service.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/services/task_service.dart';
+import '../../core/mock/recurring_engine.dart';
 import 'accounts_screen.dart';
 import 'add_transaction_screen.dart';
 import 'assets_screen.dart';
@@ -68,6 +69,10 @@ class _FinancesScreenState extends State<FinancesScreen> {
 
   Future<void> _loadData() async {
     try {
+      // Processa recorrências vencidas — gera transações automaticamente
+      // e salva tudo no Firestore.
+      await RecurringEngine.processDue(financeService: _financeService);
+
       final txns = await _financeService.getAllTransactions();
       final accts = await _financeService.getAllAccounts();
       final assets = await _financeService.getAllAssets();

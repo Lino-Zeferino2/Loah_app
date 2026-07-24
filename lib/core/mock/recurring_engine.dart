@@ -1,59 +1,70 @@
 import '../../models/recurring_transaction_model.dart';
 import '../../models/transaction_model.dart';
+import '../services/finance_service.dart';
 
 /// Turns due [RecurringTransactionModel]s into real [TransactionModel]s.
 ///
 /// Call [processDue] once per app session (e.g. in the Finances
-/// screen's `initState`) — it mutates both lists in place: appends any
-/// newly-due transactions and stamps `lastGeneratedMonth` on each
-/// recurring item so it's never charged twice for the same month.
+/// screen's `initState`) — it reads recurring items from Firestore via
+/// [FinanceService], creates any newly-due transactions (also saved to
+/// Firestore), and updates each recurring item's `lastGeneratedMonth`.
+///
+/// This is the 100% Firebase-integrated version.
 class RecurringEngine {
   RecurringEngine._();
 
-  static void processDue(
-    List<RecurringTransactionModel> recurring,
-    List<TransactionModel> transactions,
-  ) {
+  /// Processes all due recurring transactions for the current month.
+  /// Returns a list of newly created transactions (already saved).
+  static Future<List<TransactionModel>> processDue({
+    required FinanceService financeService,
+  }) async {
+    final recurring = await financeService.getAllRecurring();
+    final created = <TransactionModel>[];
     final now = DateTime.now();
     final currentMonthStart = DateTime(now.year, now.month, 1);
 
-    for (var i = 0; i < recurring.length; i++) {
-      var item = recurring[i];
+    for (final item in recurring) {
       if (!item.active) continue;
 
-      // Never generated before: start catching up from the current
-      // month only (don't backfill transactions from before the user
-      // ever set this up).
+      var updatedItem = item;
       var cursor = item.lastGeneratedMonth == null
           ? currentMonthStart
           : DateTime(item.lastGeneratedMonth!.year, item.lastGeneratedMonth!.month + 1, 1);
 
-      // Catch up month-by-month in case the app wasn't opened for a
-      // while, stopping once we reach a month whose due day hasn't
-      // happened yet.
       while (!cursor.isAfter(currentMonthStart)) {
-        // Se o dia escolhido (ex: 31) não existe no mês (ex: Fevereiro,
-        // Abril, Junho, Setembro, Novembro), usa o último dia do mês.
+        // Se o dia escolhido (ex: 31) não existe no mês (ex: Fevereiro),
+        // usa o último dia do mês.
         final lastDay = DateTime(cursor.year, cursor.month + 1, 0).day;
         final safeDay = item.dayOfMonth > lastDay ? lastDay : item.dayOfMonth;
         final dueDate = DateTime(cursor.year, cursor.month, safeDay);
         if (dueDate.isAfter(now)) break;
 
-        transactions.add(TransactionModel(
-          id: 'txn_recurring_${item.id}_${cursor.year}_${cursor.month}',
+        final newTxn = TransactionModel(
+          id: 'recurring_${item.id}_${cursor.year}_${cursor.month}',
           title: item.title,
           category: item.category,
           amount: item.amount,
           type: item.type,
           date: dueDate,
           accountId: item.accountId,
-        ));
+        );
 
-        item = item.copyWith(lastGeneratedMonth: DateTime(cursor.year, cursor.month, 1));
+        // Salva no Firestore
+        await financeService.addTransaction(newTxn);
+        created.add(newTxn);
+
+        updatedItem = updatedItem.copyWith(
+          lastGeneratedMonth: DateTime(cursor.year, cursor.month, 1),
+        );
         cursor = DateTime(cursor.year, cursor.month + 1, 1);
       }
 
-      recurring[i] = item;
+      // Atualiza o lastGeneratedMonth no Firestore
+      if (updatedItem.lastGeneratedMonth != item.lastGeneratedMonth) {
+        await financeService.updateRecurring(updatedItem);
+      }
     }
+
+    return created;
   }
 }
