@@ -160,6 +160,17 @@ class _FinancesScreenState extends State<FinancesScreen> {
   }
 
   Future<void> _addTransaction() async {
+    if (_accounts.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Crie uma conta primeiro antes de adicionar transações.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
     );

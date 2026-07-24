@@ -192,7 +192,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
             else
               ChipSelector<String>(
                 options: [for (final c in available) ChipOption(c, c)],
-                selected: _category!,
+                selected: _category ?? available.firstOrNull ?? TransactionCategories.expense.first,
                 onChanged: (v) => setState(() => _category = v),
               ),
             const SizedBox(height: 20),

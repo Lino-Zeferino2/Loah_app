@@ -97,6 +97,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _submit() async {
+    if (_accounts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Crie uma conta primeiro antes de adicionar transações.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     final title = _titleController.text.trim();
     final amount = _parseAmount();
 
