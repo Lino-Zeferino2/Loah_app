@@ -247,7 +247,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
     return Scaffold(
       drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
       appBar: LoahAppBar(
-        title: 'Loah',
+        title: 'Minhas Finanças',
         actions: [
           IconButton(
             onPressed: () {},
@@ -350,7 +350,17 @@ class _FinancesScreenState extends State<FinancesScreen> {
                     const SizedBox(height: AppSpacing.lg),
                     SectionHeader(
                       title: 'Transações Recentes',
-                      trailing: Icon(Icons.filter_list, color: colors.accentBlue, size: 18),
+                      trailing: IconButton(
+                        icon: Icon(Icons.filter_list, color: colors.accentBlue, size: 18),
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const TransactionHistoryScreen()),
+                          );
+                          _loadData();
+                        },
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
                     ),
                     const SizedBox(height: 10),
                     if (recentCapped.isEmpty)
