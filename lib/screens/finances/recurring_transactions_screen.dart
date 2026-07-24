@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/mock/mock_data.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
+import '../../core/services/finance_service.dart';
 import '../../models/recurring_transaction_model.dart';
 import '../../models/transaction_model.dart';
 import '../../widgets/loah_app_bar_simple.dart';
@@ -9,10 +9,7 @@ import '../../widgets/loah_card.dart';
 import 'add_recurring_transaction_screen.dart';
 import 'widgets/recurring_transaction_card.dart';
 
-/// "Loah - Recorrentes": salary, rent, subscriptions — anything that
-/// repeats every month without the user re-entering it. Active items
-/// are turned into real transactions automatically by [RecurringEngine]
-/// once their due day arrives (see `finances_screen.dart`'s `initState`).
+/// "Loah - Recorrentes": recurring transactions from Firebase.
 class RecurringTransactionsScreen extends StatefulWidget {
   const RecurringTransactionsScreen({super.key});
 
@@ -21,32 +18,54 @@ class RecurringTransactionsScreen extends StatefulWidget {
 }
 
 class _RecurringTransactionsScreenState extends State<RecurringTransactionsScreen> {
-  void _toggleActive(RecurringTransactionModel item, bool value) {
-    setState(() {
-      final index = MockData.recurringTransactions.indexWhere((r) => r.id == item.id);
-      if (index != -1) {
-        MockData.recurringTransactions[index] = item.copyWith(active: value);
+  final FinanceService _financeService = FinanceService();
+  List<RecurringTransactionModel> _items = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final items = await _financeService.getAllRecurring();
+      if (mounted) setState(() { _items = items; });
+    } catch (_) {
+      if (mounted) {}
+    }
+  }
+
+  Future<void> _toggleActive(RecurringTransactionModel item, bool value) async {
+    try {
+      await _financeService.updateRecurring(item.copyWith(active: value));
+      _loadData();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar: $e')),
+        );
       }
-    });
+    }
   }
 
   Future<void> _add() async {
-    await Navigator.of(context).push(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const AddRecurringTransactionScreen()),
     );
-    setState(() {});
+    if (result == true) _loadData();
   }
 
   Future<void> _edit(RecurringTransactionModel item) async {
-    await Navigator.of(context).push(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => AddRecurringTransactionScreen(existingRecurring: item)),
     );
-    setState(() {});
+    if (result == true) _loadData();
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = MockData.recurringTransactions;
+    final items = _items;
     final activeIncome = items
         .where((r) => r.active && r.type == TransactionType.income)
         .fold<double>(0, (sum, r) => sum + r.amount);

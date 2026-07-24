@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../core/mock/budget_summary.dart';
-import '../../core/mock/mock_data.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
+import '../../core/services/finance_service.dart';
 import '../../models/budget_model.dart';
+import '../../models/transaction_model.dart';
 import '../../widgets/labeled_progress_bar.dart';
 import '../../widgets/loah_app_bar_simple.dart';
 import '../../widgets/loah_card.dart';
 import 'add_budget_screen.dart';
 import 'widgets/budget_card.dart';
 
-/// "Loah - Orçamento": a monthly spending limit per expense category,
-/// compared against what's actually been spent this month.
+/// "Loah - Orçamento": a monthly spending limit per expense category.
+/// Dados do Firebase via [FinanceService].
 class BudgetsScreen extends StatefulWidget {
   const BudgetsScreen({super.key});
 
@@ -20,25 +21,45 @@ class BudgetsScreen extends StatefulWidget {
 }
 
 class _BudgetsScreenState extends State<BudgetsScreen> {
+  final FinanceService _financeService = FinanceService();
+  List<BudgetModel> _budgets = [];
+  List<TransactionModel> _transactions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final budgets = await _financeService.getAllBudgets();
+      final txns = await _financeService.getAllTransactions();
+      if (mounted) setState(() { _budgets = budgets; _transactions = txns; });
+    } catch (_) {
+      if (mounted) {}
+    }
+  }
+
   Future<void> _addBudget() async {
-    await Navigator.of(context).push(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const AddBudgetScreen()),
     );
-    setState(() {});
+    if (result == true) _loadData();
   }
 
   Future<void> _editBudget(BudgetModel budget) async {
-    await Navigator.of(context).push(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => AddBudgetScreen(existingBudget: budget)),
     );
-    setState(() {});
+    if (result == true) _loadData();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
-    final budgets = MockData.budgets;
-    final transactions = MockData.transactions;
+    final budgets = _budgets;
+    final transactions = _transactions;
     final progressList = BudgetSummary.all(budgets, transactions);
     final totalBudgeted = BudgetSummary.totalBudgeted(budgets);
     final totalSpent = BudgetSummary.totalSpent(budgets, transactions);

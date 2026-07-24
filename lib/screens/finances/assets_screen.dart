@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:loah_app/screens/finances/widgets/asset_card.dart';
 import '../../core/mock/asset_visuals.dart';
-import '../../core/mock/mock_data.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
+import '../../core/services/finance_service.dart';
 import '../../models/asset_model.dart';
 import '../../widgets/labeled_progress_bar.dart';
 import '../../widgets/loah_card.dart';
 import 'add_asset_screen.dart';
 import '../../widgets/loah_app_bar_simple.dart';
 
-/// "Loah - Patrimônio": total net worth plus a breakdown by asset type
-/// (Reserva de Emergência, Ações, Imóveis, Dinheiro em Conta...) and
-/// the full list of individual assets underneath.
+/// "Loah - Patrimônio": total net worth plus a breakdown by asset type.
+/// Dados vindos do Firebase via [FinanceService].
 class AssetsScreen extends StatefulWidget {
   const AssetsScreen({super.key});
 
@@ -21,32 +20,48 @@ class AssetsScreen extends StatefulWidget {
 }
 
 class _AssetsScreenState extends State<AssetsScreen> {
-  double get _total =>
-      MockData.assets.fold<double>(0, (sum, a) => sum + a.currentValue);
+  final FinanceService _financeService = FinanceService();
+  List<AssetModel> _assets = [];
 
-  /// Assets grouped by type, in [AssetType.values] order, skipping
-  /// empty groups.
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final assets = await _financeService.getAllAssets();
+      if (mounted) setState(() { _assets = assets; });
+    } catch (_) {
+      if (mounted) {}
+    }
+  }
+
+  double get _total =>
+      _assets.fold<double>(0, (sum, a) => sum + a.currentValue);
+
   Map<AssetType, List<AssetModel>> get _grouped {
     final grouped = <AssetType, List<AssetModel>>{};
     for (final type in AssetType.values) {
-      final matches = MockData.assets.where((a) => a.type == type).toList();
+      final matches = _assets.where((a) => a.type == type).toList();
       if (matches.isNotEmpty) grouped[type] = matches;
     }
     return grouped;
   }
 
   Future<void> _addAsset() async {
-    await Navigator.of(context).push(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const AddAssetScreen()),
     );
-    setState(() {});
+    if (result == true) _loadData();
   }
 
   Future<void> _editAsset(AssetModel asset) async {
-    await Navigator.of(context).push(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => AddAssetScreen(existingAsset: asset)),
     );
-    setState(() {});
+    if (result == true) _loadData();
   }
 
   Future<void> _quickUpdate(AssetModel asset) async {
@@ -114,13 +129,17 @@ class _AssetsScreenState extends State<AssetsScreen> {
     );
     if (newValue == null) return;
 
-    setState(() {
-      final index = MockData.assets.indexWhere((a) => a.id == asset.id);
-      if (index != -1) {
-        MockData.assets[index] =
-            asset.copyWith(currentValue: newValue, updatedAt: DateTime.now());
+    try {
+      final updated = asset.copyWith(currentValue: newValue, updatedAt: DateTime.now());
+      await _financeService.updateAsset(updated);
+      _loadData();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar: $e')),
+        );
       }
-    });
+    }
   }
 
   @override

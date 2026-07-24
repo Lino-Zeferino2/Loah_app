@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../core/mock/mock_data.dart';
 import '../../core/mock/transaction_categories.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/services/finance_service.dart';
 import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
 import '../../widgets/chip_selector.dart';
 
 /// "Loah - Nova/Editar Transação": form to create or edit a
-/// [TransactionModel]. Pass [existingTransaction] to edit in place
-/// (fields pre-fill, saving updates the same id, and a delete action
-/// appears); leave it null to create a new one.
+/// [TransactionModel]. Salva diretamente no Firestore via [FinanceService].
 class AddTransactionScreen extends StatefulWidget {
   final TransactionModel? existingTransaction;
 
@@ -22,6 +20,9 @@ class AddTransactionScreen extends StatefulWidget {
 }
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
+  final FinanceService _financeService = FinanceService();
+  List<AccountModel> _accounts = [];
+
   late final _titleController =
       TextEditingController(text: widget.existingTransaction?.title ?? '');
   late final _amountController = TextEditingController(
@@ -34,16 +35,31 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   late String _category = widget.existingTransaction?.category ??
       TransactionCategories.forType(_type).first;
   late DateTime _date = widget.existingTransaction?.date ?? DateTime.now();
-  late AccountModel? _account = _initialAccount();
+  AccountModel? _account;
 
   String? _titleError;
   String? _amountError;
 
-  AccountModel? _initialAccount() {
-    final id = widget.existingTransaction?.accountId;
-    final matches = MockData.accounts.where((a) => a.id == id);
-    if (matches.isNotEmpty) return matches.first;
-    return MockData.accounts.isNotEmpty ? MockData.accounts.first : null;
+  @override
+  void initState() {
+    super.initState();
+    _loadAccounts();
+  }
+
+  Future<void> _loadAccounts() async {
+    final accts = await _financeService.getAllAccounts();
+    if (mounted) {
+      setState(() {
+        _accounts = accts;
+        if (_account == null) {
+          final id = widget.existingTransaction?.accountId;
+          if (id != null) {
+            _account = accts.where((a) => a.id == id).firstOrNull;
+          }
+          _account ??= accts.isNotEmpty ? accts.first : null;
+        }
+      });
+    }
   }
 
   @override
@@ -56,7 +72,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void _onTypeChanged(TransactionType type) {
     setState(() {
       _type = type;
-      // Reset category if it doesn't belong to the new type's list.
       if (!TransactionCategories.forType(type).contains(_category)) {
         _category = TransactionCategories.forType(type).first;
       }
@@ -81,7 +96,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return double.tryParse(raw);
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final title = _titleController.text.trim();
     final amount = _parseAmount();
 
@@ -107,14 +122,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       accountId: _account?.id,
     );
 
-    if (existing != null) {
-      final index = MockData.transactions.indexWhere((t) => t.id == existing.id);
-      if (index != -1) MockData.transactions[index] = transaction;
-    } else {
-      MockData.transactions.add(transaction);
+    try {
+      if (existing != null) {
+        await _financeService.updateTransaction(transaction);
+      } else {
+        await _financeService.addTransaction(transaction);
+      }
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: $e')),
+        );
+      }
     }
-
-    Navigator.of(context).pop(transaction);
   }
 
   Future<void> _delete() async {
@@ -177,8 +198,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
     if (confirmed != true || !mounted) return;
 
-    MockData.transactions.removeWhere((t) => t.id == widget.existingTransaction!.id);
-    Navigator.of(context).pop(widget.existingTransaction);
+    try {
+      await _financeService.deleteTransaction(widget.existingTransaction!.id);
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao excluir: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -258,14 +287,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
             const _SectionLabel('CONTA'),
             const SizedBox(height: 8),
-            if (MockData.accounts.isEmpty)
+            if (_accounts.isEmpty)
               Text(
                 'Nenhuma conta cadastrada — crie uma na tela de Contas antes de lançar transações.',
                 style: Theme.of(context).textTheme.bodySmall,
               )
             else
               ChipSelector<AccountModel>(
-                options: [for (final a in MockData.accounts) ChipOption(a.name, a)],
+                options: [for (final a in _accounts) ChipOption(a.name, a)],
                 selected: _account!,
                 onChanged: (v) => setState(() => _account = v),
               ),

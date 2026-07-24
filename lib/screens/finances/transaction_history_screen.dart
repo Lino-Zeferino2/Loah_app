@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../core/mock/mock_data.dart';
 import '../../core/mock/transaction_filters.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
+import '../../core/services/finance_service.dart';
+import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
 import '../../widgets/loah_app_bar_simple.dart';
 import 'add_transaction_screen.dart';
 import 'widgets/transaction_filter_sheet.dart';
 import 'widgets/transaction_list_item.dart';
 
-/// "Loah - Histórico": every transaction ever lançada, searchable,
-/// filterable (tipo/categoria/conta) and grouped by month with each
-/// month's net total.
+/// "Loah - Histórico": every transaction from Firebase, searchable,
+/// filterable (tipo/categoria/conta) and grouped by month.
 class TransactionHistoryScreen extends StatefulWidget {
   const TransactionHistoryScreen({super.key});
 
@@ -20,6 +20,9 @@ class TransactionHistoryScreen extends StatefulWidget {
 }
 
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
+  final FinanceService _financeService = FinanceService();
+  List<TransactionModel> _transactions = [];
+  List<AccountModel> _accounts = [];
   String _query = '';
   TransactionFilters _filters = const TransactionFilters();
 
@@ -28,8 +31,24 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final txns = await _financeService.getAllTransactions();
+      final accts = await _financeService.getAllAccounts();
+      if (mounted) setState(() { _transactions = txns; _accounts = accts; });
+    } catch (_) {
+      if (mounted) {}
+    }
+  }
+
   List<String> get _availableCategories =>
-      MockData.transactions.map((t) => t.category).toSet().toList()..sort();
+      _transactions.map((t) => t.category).toSet().toList()..sort();
 
   Future<void> _openFilters() async {
     final result = await showModalBottomSheet<TransactionFilters>(
@@ -41,7 +60,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       ),
       builder: (_) => TransactionFilterSheet(
         availableCategories: _availableCategories,
-        availableAccounts: MockData.accounts,
+        availableAccounts: _accounts,
         initialFilters: _filters,
       ),
     );
@@ -49,16 +68,14 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   }
 
   Future<void> _editTransaction(TransactionModel t) async {
-    await Navigator.of(context).push(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => AddTransactionScreen(existingTransaction: t)),
     );
-    setState(() {});
+    if (result == true) _loadData();
   }
 
-  /// Filtered transactions grouped by month (most recent month first,
-  /// transactions within each month most recent first).
   Map<DateTime, List<TransactionModel>> get _grouped {
-    final filtered = MockData.transactions.where((t) {
+    final filtered = _transactions.where((t) {
       if (!_filters.matches(t)) return false;
       if (_query.isNotEmpty && !t.title.toLowerCase().contains(_query.toLowerCase())) return false;
       return true;

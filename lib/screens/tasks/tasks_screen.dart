@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/services/task_service.dart';
-import '../../core/services/goal_service.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
@@ -30,7 +29,6 @@ class TasksScreen extends StatefulWidget {
 
 class _TasksScreenState extends State<TasksScreen> {
   final TaskService _taskService = TaskService();
-  final GoalService _goalService = GoalService();
 
   bool _showDone = false;
   String _query = '';

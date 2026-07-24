@@ -1,3 +1,6 @@
+// ignore_for_file: avoid_types_as_parameter_names
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
@@ -5,19 +8,26 @@ import '../../core/mock/account_balance.dart';
 import '../../core/mock/budget_summary.dart';
 import '../../core/mock/finance_summary.dart';
 import '../../core/mock/goal_progress.dart';
-import '../../core/mock/mock_data.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
+import '../../models/account_model.dart';
+import '../../models/asset_model.dart';
+import '../../models/budget_model.dart';
+import '../../models/goal_model.dart';
+import '../../models/recurring_transaction_model.dart';
 import '../../models/transaction_model.dart';
+import '../../models/task_model.dart';
 import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_drawer.dart';
 import '../../widgets/section_header.dart';
+import '../../core/services/finance_service.dart';
+import '../../core/services/goal_service.dart';
+import '../../core/services/task_service.dart';
 import 'accounts_screen.dart';
 import 'add_transaction_screen.dart';
 import 'assets_screen.dart';
 import 'budgets_screen.dart';
-import '../../core/mock/recurring_engine.dart';
 import 'recurring_transactions_screen.dart';
 import 'reports_screen.dart';
 import 'widgets/emergency_goal_card.dart';
@@ -27,13 +37,11 @@ import 'widgets/transaction_list_item.dart';
 import 'expense_distribution_detail_screen.dart';
 import 'transaction_history_screen.dart';
 
-
 /// "Loah - Finanças": total balance, quick links to Contas/Patrimônio,
 /// the emergency-fund goal, expense distribution donut chart and
 /// recent transaction history.
 ///
-/// All figures are derived live from [MockData.transactions] and
-/// [MockData.accounts] — nothing here is a hardcoded number anymore.
+/// All figures are derived live from Firebase via [FinanceService].
 class FinancesScreen extends StatefulWidget {
   const FinancesScreen({super.key});
 
@@ -42,57 +50,157 @@ class FinancesScreen extends StatefulWidget {
 }
 
 class _FinancesScreenState extends State<FinancesScreen> {
+  final FinanceService _financeService = FinanceService();
+  List<TransactionModel> _transactions = [];
+  List<AccountModel> _accounts = [];
+  List<AssetModel> _assets = [];
+  List<BudgetModel> _budgets = [];
+  List<GoalModel> _goals = [];
+  List<RecurringTransactionModel> _recurring = [];
+  List<TaskModel> _tasks = [];
+  bool _loading = true;
+
   @override
   void initState() {
     super.initState();
-    // Turns any due salary/rent/subscription into a real transaction —
-    // safe to call every time the screen loads, since RecurringEngine
-    // stamps each item with the month it already generated for.
-    RecurringEngine.processDue(MockData.recurringTransactions, MockData.transactions);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final txns = await _financeService.getAllTransactions();
+      final accts = await _financeService.getAllAccounts();
+      final assets = await _financeService.getAllAssets();
+      final budgets = await _financeService.getAllBudgets();
+      final recurring = await _financeService.getAllRecurring();
+      final goalsSnapshot = await GoalService().getGoalsStream().first;
+      final goals = goalsSnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return GoalModel(
+          id: doc.id,
+          title: data['title'] ?? '',
+          category: data['category'] ?? 'Pessoal',
+          term: data['term'] != null
+              ? GoalTerm.values.firstWhere(
+                  (t) => t.name == data['term'],
+                  orElse: () => GoalTerm.curtoPrazo,
+                )
+              : GoalTerm.curtoPrazo,
+          progressMode: data['progressMode'] != null
+              ? GoalProgressMode.values.firstWhere(
+                  (m) => m.name == data['progressMode'],
+                  orElse: () => GoalProgressMode.manualValue,
+                )
+              : GoalProgressMode.manualValue,
+          current: (data['current'] as num?)?.toDouble(),
+          target: (data['target'] as num?)?.toDouble(),
+          imageAsset: data['imageAsset'],
+          description: data['description'],
+          targetDate: data['targetDate'] != null
+              ? (data['targetDate'] as Timestamp).toDate()
+              : null,
+          progressColor: data['progressColor'] != null
+              ? Color(int.parse(data['progressColor']))
+              : Colors.blue,
+          remainingLabel: data['remainingLabel'],
+        );
+      }).toList();
+
+      final tasksSnapshot = await TaskService().getTasksStream().first;
+      final tasks = tasksSnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return TaskModel(
+          id: doc.id,
+          title: data['title'] ?? '',
+          subtitle: data['subtitle'],
+          tag: data['tag'],
+          dueLabel: data['dueLabel'],
+          priority: data['priority'] != null
+              ? TaskPriority.values.firstWhere(
+                  (p) => p.name == data['priority'],
+                  orElse: () => TaskPriority.baixa,
+                )
+              : null,
+          isDone: data['isDone'] ?? false,
+          goalId: data['goalId'],
+          completedAt: data['completedAt'] != null
+              ? (data['completedAt'] as Timestamp).toDate()
+              : null,
+          description: data['description'],
+          dueDate: data['dueDate'] != null
+              ? (data['dueDate'] as Timestamp).toDate()
+              : null,
+          createdAt: data['createdAt'] != null
+              ? (data['createdAt'] as Timestamp).toDate()
+              : null,
+          status: data['status'] != null
+              ? TaskStatus.values.firstWhere(
+                  (s) => s.name == data['status'],
+                  orElse: () => TaskStatus.pendente,
+                )
+              : null,
+        );
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _transactions = txns;
+          _accounts = accts;
+          _assets = assets;
+          _budgets = budgets;
+          _recurring = recurring;
+          _goals = goals;
+          _tasks = tasks;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   Future<void> _addTransaction() async {
-    await Navigator.of(context).push(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
     );
-    setState(() {});
+    if (result == true) _loadData();
   }
 
   Future<void> _editTransaction(TransactionModel transaction) async {
-    await Navigator.of(context).push(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => AddTransactionScreen(existingTransaction: transaction),
       ),
     );
-    setState(() {});
+    if (result == true) _loadData();
   }
 
   Future<void> _openAssets() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const AssetsScreen()),
     );
-    setState(() {});
+    _loadData();
   }
 
   Future<void> _openAccounts() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const AccountsScreen()),
     );
-    setState(() {});
+    _loadData();
   }
 
   Future<void> _openBudgets() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const BudgetsScreen()),
     );
-    setState(() {});
+    _loadData();
   }
 
   Future<void> _openRecurring() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const RecurringTransactionsScreen()),
     );
-    setState(() {});
+    _loadData();
   }
 
   Future<void> _openReports() async {
@@ -106,27 +214,19 @@ class _FinancesScreenState extends State<FinancesScreen> {
     final colors = context.loahColors;
     final nav = LoahNavigationController.of(context);
 
-    final transactions = MockData.transactions;
-    final accounts = MockData.accounts;
+    final transactions = _transactions;
+    final accounts = _accounts;
 
-    // "Saldo total" is now the sum of every account's live balance
-    // (initial balance + its linked transactions) rather than a raw
-    // sum of all transactions — this correctly accounts for money that
-    // was already in an account before Loah started tracking it.
     final total = AccountBalance.totalOf(accounts, transactions);
     final income = FinanceSummary.monthlyIncome(transactions);
     final expense = FinanceSummary.monthlyExpense(transactions);
     final distribution = FinanceSummary.expenseDistribution(transactions);
 
-    // Recent transactions, most recent first, capped to keep the
-    // a full paginated list would live once we have more entries.
-    final recent = [...transactions]..sort((a, b) => b.date.compareTo(a.date));
+    final recent = transactions;
     final recentCapped = recent.take(10).toList();
 
-    // Reuses the same "Reserva de Emergência" goal already tracked on
-    // the Metas screen, so the two screens never disagree with each other.
     final emergencyGoal =
-        MockData.goals.where((g) => g.id == 'goal_emergency_fund').firstOrNull;
+        _goals.where((g) => g.id == 'goal_emergency_fund').firstOrNull;
 
     return Scaffold(
       drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
@@ -144,129 +244,134 @@ class _FinancesScreenState extends State<FinancesScreen> {
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          children: [
-            TotalBalanceCard(total: total, income: income, expense: expense),
-            const SizedBox(height: AppSpacing.md),
-            SizedBox(
-              height: 120,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  SizedBox(
-                    width: 150,
-                    child: _FinanceEntryCard(
-                      icon: Icons.account_balance_wallet_outlined,
-                      label: 'Contas',
-                      value: CurrencyFormatter.format(total),
-                      onTap: _openAccounts,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 150,
-                    child: _FinanceEntryCard(
-                      icon: Icons.account_balance_outlined,
-                      label: 'Patrimônio',
-                      value: CurrencyFormatter.format(
-                        MockData.assets.fold<double>(0, (sum, a) => sum + a.currentValue),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadData,
+                child: ListView(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  children: [
+                    TotalBalanceCard(total: total, income: income, expense: expense),
+                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(
+                      height: 120,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          SizedBox(
+                            width: 150,
+                            child: _FinanceEntryCard(
+                              icon: Icons.account_balance_wallet_outlined,
+                              label: 'Contas',
+                              value: CurrencyFormatter.format(total),
+                              onTap: _openAccounts,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          SizedBox(
+                            width: 150,
+                            child: _FinanceEntryCard(
+                              icon: Icons.account_balance_outlined,
+                              label: 'Patrimônio',
+                              value: CurrencyFormatter.format(
+                                _assets.fold<double>(0, (sum, a) => sum + a.currentValue),
+                              ),
+                              onTap: _openAssets,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          SizedBox(
+                            width: 150,
+                            child: _FinanceEntryCard(
+                              icon: Icons.pie_chart_outline,
+                              label: 'Orçamento',
+                              value:
+                                  '${CurrencyFormatter.format(BudgetSummary.totalSpent(_budgets, transactions))} '
+                                  'de ${CurrencyFormatter.format(BudgetSummary.totalBudgeted(_budgets))}',
+                              onTap: _openBudgets,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          SizedBox(
+                            width: 150,
+                            child: _FinanceEntryCard(
+                              icon: Icons.autorenew,
+                              label: 'Recorrentes',
+                              value: '${_recurring.where((r) => r.active).length} ativas',
+                              onTap: _openRecurring,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          SizedBox(
+                            width: 150,
+                            child: _FinanceEntryCard(
+                              icon: Icons.bar_chart_outlined,
+                              label: 'Relatórios',
+                              value: 'Ver evolução',
+                              onTap: _openReports,
+                            ),
+                          ),
+                        ],
                       ),
-                      onTap: _openAssets,
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 150,
-                    child: _FinanceEntryCard(
-                      icon: Icons.pie_chart_outline,
-                      label: 'Orçamento',
-                      value:
-                          '${CurrencyFormatter.format(BudgetSummary.totalSpent(MockData.budgets, transactions))} '
-                          'de ${CurrencyFormatter.format(BudgetSummary.totalBudgeted(MockData.budgets))}',
-                      onTap: _openBudgets,
+                    if (emergencyGoal != null) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      EmergencyGoalCard(
+                        target: emergencyGoal.target ?? 0,
+                        progress: GoalProgress.of(emergencyGoal, _tasks),
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.lg),
+                    if (distribution.isEmpty)
+                      _EmptyDistributionHint(colors: colors)
+                    else
+                    ExpenseDistributionCard(
+                        categories: distribution,
+                        onDetails: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const ExpenseDistributionDetailScreen()),
+                        ),
+                      ),
+                    const SizedBox(height: AppSpacing.lg),
+                    SectionHeader(
+                      title: 'Transações Recentes',
+                      trailing: Icon(Icons.filter_list, color: colors.accentBlue, size: 18),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 150,
-                    child: _FinanceEntryCard(
-                      icon: Icons.autorenew,
-                      label: 'Recorrentes',
-                      value: '${MockData.recurringTransactions.where((r) => r.active).length} ativas',
-                      onTap: _openRecurring,
+                    const SizedBox(height: 10),
+                    if (recentCapped.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text(
+                            'Nenhuma transação ainda. Toque no + para adicionar a primeira.',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      )
+                    else
+                      for (final t in recentCapped) ...[
+                        TransactionListItem(transaction: t, onTap: () => _editTransaction(t)),
+                        const SizedBox(height: AppSpacing.sm),
+                      ],
+                    const SizedBox(height: 4),
+                   OutlinedButton(
+                      onPressed: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const TransactionHistoryScreen()),
+                        );
+                        _loadData();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text('VER TODO O HISTÓRICO'),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 150,
-                    child: _FinanceEntryCard(
-                      icon: Icons.bar_chart_outlined,
-                      label: 'Relatórios',
-                      value: 'Ver evolução',
-                      onTap: _openReports,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (emergencyGoal != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              EmergencyGoalCard(
-                target: emergencyGoal.target ?? 0,
-                progress: GoalProgress.of(emergencyGoal, MockData.tasks),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.lg),
-            if (distribution.isEmpty)
-              _EmptyDistributionHint(colors: colors)
-            else
-            ExpenseDistributionCard(
-                categories: distribution,
-                onDetails: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ExpenseDistributionDetailScreen()),
+                  ],
                 ),
               ),
-            const SizedBox(height: AppSpacing.lg),
-            SectionHeader(
-              title: 'Transações Recentes',
-              trailing: Icon(Icons.filter_list, color: colors.accentBlue, size: 18),
-            ),
-            const SizedBox(height: 10),
-            if (recentCapped.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: Text(
-                    'Nenhuma transação ainda. Toque no + para adicionar a primeira.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              )
-            else
-              for (final t in recentCapped) ...[
-                TransactionListItem(transaction: t, onTap: () => _editTransaction(t)),
-                const SizedBox(height: AppSpacing.sm),
-              ],
-            const SizedBox(height: 4),
-           OutlinedButton(
-              onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const TransactionHistoryScreen()),
-                );
-                setState(() {});
-              },
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(44),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text('VER TODO O HISTÓRICO'),
-            ),
-          ],
-        ),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primary ,

@@ -69,7 +69,7 @@ class GoalService {
       'targetDate': goal.targetDate != null
           ? Timestamp.fromDate(goal.targetDate!)
           : null,
-      'progressColor': goal.progressColor.value.toString(),
+      'progressColor': goal.progressColor.toARGB32().toString(),
       'remainingLabel': goal.remainingLabel,
       'updatedAt': FieldValue.serverTimestamp(),
     };

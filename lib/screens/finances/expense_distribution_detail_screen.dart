@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/mock/finance_summary.dart';
-import '../../core/mock/mock_data.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
+import '../../core/services/finance_service.dart';
+import '../../models/transaction_model.dart';
 import '../../widgets/loah_app_bar_simple.dart';
 import '../../widgets/loah_card.dart';
 import 'widgets/category_detail_row.dart';
@@ -12,13 +13,37 @@ import 'widgets/donut_chart.dart';
 /// expenses — total spent (with vs.-last-month comparison), a donut
 /// chart showing how many categories are in play, a color legend, and
 /// a detailed per-category list with progress bars.
-class ExpenseDistributionDetailScreen extends StatelessWidget {
+class ExpenseDistributionDetailScreen extends StatefulWidget {
   const ExpenseDistributionDetailScreen({super.key});
+
+  @override
+  State<ExpenseDistributionDetailScreen> createState() => _ExpenseDistributionDetailScreenState();
+}
+
+class _ExpenseDistributionDetailScreenState extends State<ExpenseDistributionDetailScreen> {
+  final FinanceService _financeService = FinanceService();
+  List<TransactionModel> _transactions = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final txns = await _financeService.getAllTransactions();
+      if (mounted) setState(() { _transactions = txns; _loading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
-    final transactions = MockData.transactions;
+    final transactions = _transactions;
 
     final total = FinanceSummary.monthlyExpense(transactions);
     final changePercent = FinanceSummary.monthlyExpenseChangePercent(transactions);
@@ -27,7 +52,11 @@ class ExpenseDistributionDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: const LoahAppBarSimple(title: 'Distribuição de Gastos'),
       body: SafeArea(
-        child: ListView(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadData,
+                child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             LoahCard(
@@ -147,6 +176,7 @@ class ExpenseDistributionDetailScreen extends StatelessWidget {
             ],
           ],
         ),
+      ),
       ),
     );
   }

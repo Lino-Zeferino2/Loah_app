@@ -1,23 +1,49 @@
 import 'package:flutter/material.dart';
-import '../../core/mock/mock_data.dart';
 import '../../core/mock/report_summary.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/services/finance_service.dart';
+import '../../models/account_model.dart';
+import '../../models/transaction_model.dart';
 import '../../widgets/loah_app_bar_simple.dart';
 import '../../widgets/loah_card.dart';
 import '../../widgets/section_header.dart';
 import 'widgets/balance_bar_chart.dart';
 import 'widgets/category_comparison_row.dart';
 
-/// "Loah - Relatórios": monthly account-balance evolution (last 6
-/// months, reconstructed from real transaction history) and a
-/// this-month-vs-last-month spend comparison per category.
-class ReportsScreen extends StatelessWidget {
+/// "Loah - Relatórios": monthly account-balance evolution and category
+/// comparison. Dados do Firebase via [FinanceService].
+class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
 
   @override
+  State<ReportsScreen> createState() => _ReportsScreenState();
+}
+
+class _ReportsScreenState extends State<ReportsScreen> {
+  final FinanceService _financeService = FinanceService();
+  List<AccountModel> _accounts = [];
+  List<TransactionModel> _transactions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final accts = await _financeService.getAllAccounts();
+      final txns = await _financeService.getAllTransactions();
+      if (mounted) setState(() { _accounts = accts; _transactions = txns; });
+    } catch (_) {
+      if (mounted) {}
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final accounts = MockData.accounts;
-    final transactions = MockData.transactions;
+    final accounts = _accounts;
+    final transactions = _transactions;
     final history = ReportSummary.balanceHistory(accounts, transactions, months: 6);
     final comparisons = ReportSummary.categoryComparison(transactions);
 

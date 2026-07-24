@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../core/mock/account_visuals.dart';
-import '../../core/mock/mock_data.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/services/finance_service.dart';
 import '../../models/account_model.dart';
 import '../../widgets/chip_selector.dart';
 
 /// "Loah - Nova/Editar Conta": form to create or edit an [AccountModel].
-/// Pass [existingAccount] to edit in place; leave it null to create a
-/// new one. Deleting an account does NOT delete its transactions (they
-/// simply become unlinked) — see the confirmation copy in [_delete].
+/// Salva diretamente no Firestore via [FinanceService].
 class AddAccountScreen extends StatefulWidget {
   final AccountModel? existingAccount;
 
@@ -21,6 +19,8 @@ class AddAccountScreen extends StatefulWidget {
 }
 
 class _AddAccountScreenState extends State<AddAccountScreen> {
+  final FinanceService _financeService = FinanceService();
+
   late final _nameController =
       TextEditingController(text: widget.existingAccount?.name ?? '');
   late final _initialBalanceController = TextEditingController(
@@ -40,7 +40,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       setState(() => _nameError = 'Dê um nome para a conta.');
@@ -57,14 +57,20 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       initialBalance: initialBalance,
     );
 
-    if (existing != null) {
-      final index = MockData.accounts.indexWhere((a) => a.id == existing.id);
-      if (index != -1) MockData.accounts[index] = account;
-    } else {
-      MockData.accounts.add(account);
+    try {
+      if (existing != null) {
+        await _financeService.updateAccount(account);
+      } else {
+        await _financeService.addAccount(account);
+      }
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: $e')),
+        );
+      }
     }
-
-    Navigator.of(context).pop(account);
   }
 
   Future<void> _delete() async {
@@ -128,8 +134,16 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     );
     if (confirmed != true || !mounted) return;
 
-    MockData.accounts.removeWhere((a) => a.id == widget.existingAccount!.id);
-    Navigator.of(context).pop(widget.existingAccount);
+    try {
+      await _financeService.deleteAccount(widget.existingAccount!.id);
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao excluir: $e')),
+        );
+      }
+    }
   }
 
   @override

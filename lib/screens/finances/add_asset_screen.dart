@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../core/mock/asset_visuals.dart';
-import '../../core/mock/mock_data.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/services/finance_service.dart';
 import '../../models/asset_model.dart';
 import '../../widgets/chip_selector.dart';
 
 /// "Loah - Novo/Editar Ativo": form to create or edit an [AssetModel].
-/// Pass [existingAsset] to edit in place (fields pre-fill, saving
-/// updates the same id, and a delete action appears); leave it null to
-/// create a new one.
+/// Salva diretamente no Firestore via [FinanceService].
 class AddAssetScreen extends StatefulWidget {
   final AssetModel? existingAsset;
 
@@ -21,6 +19,8 @@ class AddAssetScreen extends StatefulWidget {
 }
 
 class _AddAssetScreenState extends State<AddAssetScreen> {
+  final FinanceService _financeService = FinanceService();
+
   late final _nameController =
       TextEditingController(text: widget.existingAsset?.name ?? '');
   late final _valueController = TextEditingController(
@@ -50,7 +50,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     return double.tryParse(raw);
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final name = _nameController.text.trim();
     final value = _parseValue();
 
@@ -75,14 +75,20 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
       updatedAt: DateTime.now(),
     );
 
-    if (existing != null) {
-      final index = MockData.assets.indexWhere((a) => a.id == existing.id);
-      if (index != -1) MockData.assets[index] = asset;
-    } else {
-      MockData.assets.add(asset);
+    try {
+      if (existing != null) {
+        await _financeService.updateAsset(asset);
+      } else {
+        await _financeService.addAsset(asset);
+      }
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: $e')),
+        );
+      }
     }
-
-    Navigator.of(context).pop(asset);
   }
 
   Future<void> _delete() async {
@@ -145,8 +151,16 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     );
     if (confirmed != true || !mounted) return;
 
-    MockData.assets.removeWhere((a) => a.id == widget.existingAsset!.id);
-    Navigator.of(context).pop(widget.existingAsset);
+    try {
+      await _financeService.deleteAsset(widget.existingAsset!.id);
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao excluir: $e')),
+        );
+      }
+    }
   }
 
   @override

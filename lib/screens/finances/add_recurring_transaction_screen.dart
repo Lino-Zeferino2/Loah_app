@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../core/mock/mock_data.dart';
 import '../../core/mock/transaction_categories.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/services/finance_service.dart';
 import '../../models/account_model.dart';
 import '../../models/recurring_transaction_model.dart';
 import '../../models/transaction_model.dart';
 import '../../widgets/chip_selector.dart';
 
 /// "Loah - Nova/Editar Recorrência": form to create or edit a
-/// [RecurringTransactionModel]. Pass [existingRecurring] to edit in
-/// place; leave it null to create a new one.
+/// [RecurringTransactionModel]. Salva no Firestore via [FinanceService].
 class AddRecurringTransactionScreen extends StatefulWidget {
   final RecurringTransactionModel? existingRecurring;
 
@@ -22,6 +21,9 @@ class AddRecurringTransactionScreen extends StatefulWidget {
 }
 
 class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionScreen> {
+  final FinanceService _financeService = FinanceService();
+  List<AccountModel> _accounts = [];
+
   late final _titleController =
       TextEditingController(text: widget.existingRecurring?.title ?? '');
   late final _amountController = TextEditingController(
@@ -43,11 +45,19 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
   @override
   void initState() {
     super.initState();
-    final id = widget.existingRecurring?.accountId;
-    final matches = MockData.accounts.where((a) => a.id == id);
-    _account = matches.isNotEmpty
-        ? matches.first
-        : (MockData.accounts.isNotEmpty ? MockData.accounts.first : null);
+    _loadAccounts();
+  }
+
+  Future<void> _loadAccounts() async {
+    final accts = await _financeService.getAllAccounts();
+    if (mounted) {
+      setState(() {
+        _accounts = accts;
+        final id = widget.existingRecurring?.accountId;
+        final matches = accts.where((a) => a.id == id);
+        _account = matches.isNotEmpty ? matches.first : (accts.isNotEmpty ? accts.first : null);
+      });
+    }
   }
 
   @override
@@ -66,7 +76,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
     });
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final title = _titleController.text.trim();
     final amount = double.tryParse(_amountController.text.trim().replaceAll(',', '.'));
 
@@ -94,14 +104,20 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
       lastGeneratedMonth: existing?.lastGeneratedMonth,
     );
 
-    if (existing != null) {
-      final index = MockData.recurringTransactions.indexWhere((r) => r.id == existing.id);
-      if (index != -1) MockData.recurringTransactions[index] = recurring;
-    } else {
-      MockData.recurringTransactions.add(recurring);
+    try {
+      if (existing != null) {
+        await _financeService.updateRecurring(recurring);
+      } else {
+        await _financeService.addRecurring(recurring);
+      }
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: $e')),
+        );
+      }
     }
-
-    Navigator.of(context).pop(recurring);
   }
 
   Future<void> _delete() async {
@@ -164,8 +180,16 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
     );
     if (confirmed != true || !mounted) return;
 
-    MockData.recurringTransactions.removeWhere((r) => r.id == widget.existingRecurring!.id);
-    Navigator.of(context).pop(widget.existingRecurring);
+    try {
+      await _financeService.deleteRecurring(widget.existingRecurring!.id);
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao excluir: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -245,14 +269,14 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
 
             const _SectionLabel('CONTA'),
             const SizedBox(height: 8),
-            if (MockData.accounts.isEmpty)
+if (_accounts.isEmpty)
               Text(
                 'Nenhuma conta cadastrada — crie uma na tela de Contas primeiro.',
                 style: Theme.of(context).textTheme.bodySmall,
               )
             else
               ChipSelector<AccountModel>(
-                options: [for (final a in MockData.accounts) ChipOption(a.name, a)],
+                options: [for (final a in _accounts) ChipOption(a.name, a)],
                 selected: _account!,
                 onChanged: (v) => setState(() => _account = v),
               ),

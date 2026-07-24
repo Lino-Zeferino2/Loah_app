@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../core/mock/mock_data.dart';
 import '../../core/mock/transaction_categories.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/services/finance_service.dart';
 import '../../models/budget_model.dart';
 import '../../widgets/chip_selector.dart';
 
 /// "Loah - Novo/Editar Orçamento": form to create or edit a
-/// [BudgetModel]. Pass [existingBudget] to edit in place; leave it null
-/// to create a new one. When creating, categories that already have a
-/// budget are hidden from the picker (one budget per category).
+/// [BudgetModel]. Salva diretamente no Firestore via [FinanceService].
 class AddBudgetScreen extends StatefulWidget {
   final BudgetModel? existingBudget;
 
@@ -21,20 +19,36 @@ class AddBudgetScreen extends StatefulWidget {
 }
 
 class _AddBudgetScreenState extends State<AddBudgetScreen> {
+  final FinanceService _financeService = FinanceService();
+  List<BudgetModel> _existingBudgets = [];
+
   late final _limitController = TextEditingController(
     text: widget.existingBudget != null
         ? widget.existingBudget!.monthlyLimit.toStringAsFixed(2)
         : '',
   );
 
-  late String? _category = widget.existingBudget?.category ?? _firstAvailableCategory();
-
+  late String? _category = widget.existingBudget?.category;
   String? _limitError;
 
-  /// Categories that don't already have a budget (excluding the one
-  /// currently being edited, so it stays selectable).
+  @override
+  void initState() {
+    super.initState();
+    _loadBudgets();
+  }
+
+  Future<void> _loadBudgets() async {
+    final budgets = await _financeService.getAllBudgets();
+    if (mounted) {
+      setState(() {
+        _existingBudgets = budgets;
+        _category ??= _firstAvailableCategory();
+      });
+    }
+  }
+
   List<String> get _availableCategories {
-    final used = MockData.budgets
+    final used = _existingBudgets
         .where((b) => b.id != widget.existingBudget?.id)
         .map((b) => b.category)
         .toSet();
@@ -52,9 +66,9 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final limit = double.tryParse(_limitController.text.trim().replaceAll(',', '.'));
-    if (_category == null) return; // no categories left to budget
+    if (_category == null) return;
 
     if (limit == null || limit <= 0) {
       setState(() => _limitError = 'Informe um valor válido.');
@@ -68,14 +82,20 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       monthlyLimit: limit,
     );
 
-    if (existing != null) {
-      final index = MockData.budgets.indexWhere((b) => b.id == existing.id);
-      if (index != -1) MockData.budgets[index] = budget;
-    } else {
-      MockData.budgets.add(budget);
+    try {
+      if (existing != null) {
+        await _financeService.updateBudget(budget);
+      } else {
+        await _financeService.addBudget(budget);
+      }
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: $e')),
+        );
+      }
     }
-
-    Navigator.of(context).pop(budget);
   }
 
   Future<void> _delete() async {
@@ -138,8 +158,16 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     );
     if (confirmed != true || !mounted) return;
 
-    MockData.budgets.removeWhere((b) => b.id == widget.existingBudget!.id);
-    Navigator.of(context).pop(widget.existingBudget);
+    try {
+      await _financeService.deleteBudget(widget.existingBudget!.id);
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao excluir: $e')),
+        );
+      }
+    }
   }
 
   @override
