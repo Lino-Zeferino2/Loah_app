@@ -32,7 +32,11 @@ class RecurringEngine {
       // while, stopping once we reach a month whose due day hasn't
       // happened yet.
       while (!cursor.isAfter(currentMonthStart)) {
-        final dueDate = DateTime(cursor.year, cursor.month, item.dayOfMonth);
+        // Se o dia escolhido (ex: 31) não existe no mês (ex: Fevereiro,
+        // Abril, Junho, Setembro, Novembro), usa o último dia do mês.
+        final lastDay = DateTime(cursor.year, cursor.month + 1, 0).day;
+        final safeDay = item.dayOfMonth > lastDay ? lastDay : item.dayOfMonth;
+        final dueDate = DateTime(cursor.year, cursor.month, safeDay);
         if (dueDate.isAfter(now)) break;
 
         transactions.add(TransactionModel(

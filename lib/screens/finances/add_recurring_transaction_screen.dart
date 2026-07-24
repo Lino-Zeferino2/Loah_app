@@ -296,8 +296,8 @@ if (_accounts.isEmpty)
                     child: Slider(
                       value: _dayOfMonth.toDouble(),
                       min: 1,
-                      max: 28,
-                      divisions: 27,
+                      max: 31,
+                      divisions: 30,
                       activeColor: colors.accentBlue,
                       label: 'Dia $_dayOfMonth',
                       onChanged: (v) => setState(() => _dayOfMonth = v.round()),
