@@ -86,8 +86,31 @@ class NotificationScheduler {
       final contact = _contactFromDoc(doc);
       if (!contact.isOverdue) continue;
 
-      // Check if we already have a pending notification for this contact
-      final existingSnapshot = await FirebaseFirestore.instance
+      // Build a deterministic weekly notification ID so we only fire
+      // once per week (or per frequency period) per contact — matching
+      // the server-side convention.
+      final now = DateTime.now();
+      final weekAnchor = DateTime.utc(now.year, 1, 1)
+          .add(Duration(days: (contact.desiredContactFrequencyDays ?? 7) * (now.weekday - 1)));
+      final periodKey =
+          '${now.year}_${weekAnchor.month}_${weekAnchor.day}';
+      final notificationId =
+          'notif_contact_${contact.id}_$periodKey';
+
+      // Check if we already sent this notification for this period
+      // Check by ID (deterministic weekly key) first, then by pending
+      final idCheck = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('notifications')
+          .where('id', isEqualTo: notificationId)
+          .limit(1)
+          .get();
+
+      if (idCheck.docs.isNotEmpty) continue;
+
+      // Also check if there's any unread notification for this contact
+      final pendingCheck = await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .collection('notifications')
@@ -96,15 +119,18 @@ class NotificationScheduler {
           .limit(1)
           .get();
 
-      if (existingSnapshot.docs.isNotEmpty) continue;
+      if (pendingCheck.docs.isNotEmpty) continue;
 
+      final daysLabel = contact.daysSinceLastContact >= 999
+          ? 'há muito tempo'
+          : 'há ${contact.daysSinceLastContact} dias';
       final notification = AppNotification(
-        id: 'notif_contact_${contact.id}_${DateTime.now().millisecondsSinceEpoch}',
+        id: notificationId,
         category: NotificationCategory.contacts,
         title: 'Contatos',
-        message: 'Você não fala com ${contact.name} há ${contact.daysSinceLastContact} dias. '
+        message: 'Você não fala com ${contact.name} $daysLabel. '
             'Que tal ligar para ${contact.name.split(' ').first}?',
-        timestamp: DateTime.now(),
+        timestamp: now,
         relatedId: contact.id,
       );
 

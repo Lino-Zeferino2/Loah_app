@@ -192,10 +192,34 @@ exports.checkOverdueContacts = functions.pubsub
           ? Math.floor((now - lastInteraction) / (1000 * 60 * 60 * 24))
           : 999;
 
-        if (daysSinceLastContact <= desiredFrequency) continue;
+        // Use < (not <=) so that "Toda semana" (7 dias) fires on the
+        // 7th day, not the 8th — matching the client-side fix.
+        if (daysSinceLastContact < desiredFrequency) continue;
 
-        // Check if already notified recently
-        const notificationId = `notif_contact_${contactDoc.id}_${now.getFullYear()}_${now.getMonth()}`;
+        // Build a deterministic period-based ID so we can notify
+        // weekly for "Toda semana", bi-weekly for "A cada 15 dias",
+        // monthly for "Todo mês", etc.
+        // Calculate which "period bucket" we're in:
+        //   week  -> isoWeek number (1-52)
+        //   15d   -> bi-weekly bucket
+        //   30d   -> month number
+        let periodKey;
+        if (desiredFrequency <= 7) {
+          // Weekly — use ISO week number
+          const startOfYear = new Date(now.getFullYear(), 0, 1);
+          const diffDays = Math.floor((now - startOfYear) / (24 * 60 * 60 * 1000));
+          const isoWeek = Math.ceil((diffDays + startOfYear.getDay() + 1) / 7);
+          periodKey = `${now.getFullYear()}_W${String(isoWeek).padStart(2, '0')}`;
+        } else if (desiredFrequency <= 15) {
+          // Bi-weekly — use fortnight number
+          const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (24 * 60 * 60 * 1000));
+          const fortnight = Math.ceil(dayOfYear / 14);
+          periodKey = `${now.getFullYear()}_F${fortnight}`;
+        } else {
+          // Monthly
+          periodKey = `${now.getFullYear()}_${now.getMonth() + 1}`;
+        }
+        const notificationId = `notif_contact_${contactDoc.id}_${periodKey}`;
         const alreadyNotified = await notificationExists(userId, notificationId);
         if (alreadyNotified) continue;
 

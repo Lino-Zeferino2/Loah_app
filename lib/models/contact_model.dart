@@ -95,23 +95,26 @@ class ContactModel {
     return interactions.map((i) => i.date).reduce((a, b) => a.isAfter(b) ? a : b);
   }
 
-  /// Days since the last logged interaction. -1 if there's no history
-  /// at all (never contacted, or no interactions logged yet).
+  /// Days since the last logged interaction. 999 if there's no history
+  /// at all (never contacted, or no interactions logged yet) — matching
+  /// the Cloud Functions convention so never-contacted contacts also
+  /// trigger overdue reminders.
   int get daysSinceLastContact {
     final last = lastContactedAt;
-    if (last == null) return -1;
+    if (last == null) return 999;
     return DateTime.now().difference(last).inDays;
   }
 
-  /// True once [daysSinceLastContact] exceeds [desiredContactFrequencyDays]
-  /// — drives the "faz tempo que não fala" alert. Always false if no
-  /// frequency was set, or if there's no contact history yet.
+  /// True once [daysSinceLastContact] meets or exceeds
+  /// [desiredContactFrequencyDays] — drives the "faz tempo que não
+  /// fala" alert. Always false if no frequency was set.
+  ///
+  /// Uses >= so that a "Toda semana" (7 dias) reminder fires on the
+  /// 7th day, not the 8th.
   bool get isOverdue {
     final frequency = desiredContactFrequencyDays;
     if (frequency == null) return false;
-    final days = daysSinceLastContact;
-    if (days == -1) return false;
-    return days > frequency;
+    return daysSinceLastContact >= frequency;
   }
 
   int interactionsInLast(Duration period) {
