@@ -22,6 +22,8 @@ import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_drawer.dart';
 import '../../widgets/section_header.dart';
 import '../../core/services/finance_service.dart';
+import '../../core/mock/notification_generator.dart';
+import '../notifications/notifications_screen.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/services/task_service.dart';
 import '../../core/mock/recurring_engine.dart';
@@ -249,13 +251,37 @@ class _FinancesScreenState extends State<FinancesScreen> {
       appBar: LoahAppBar(
         title: 'Minhas Finanças',
         actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none_rounded),
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.info_outline),
+          Stack(
+            children: [
+              IconButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                ),
+                icon: const Icon(Icons.notifications_none_rounded),
+              ),
+              if (NotificationGenerator.generate().isNotEmpty)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                    child: Text(
+                      '${NotificationGenerator.generate().length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
