@@ -372,13 +372,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 ),
               ),
             if (isEditing) ...[
-              Center(
-                child: TextButton.icon(
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
                   onPressed: _delete,
-                  icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-                  label: const Text(
-                    'Excluir Tarefa',
-                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  label: const Text('Excluir Tarefa'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    side: const BorderSide(color: Colors.redAccent),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
