@@ -1,64 +1,22 @@
-# ✅ Plano de Migração das Finanças para Firebase - CONCLUÍDO
+# Plano: Substituir Notificações Estáticas por Notificações Reais com Firebase
 
-## 1. ✅ Criar FinanceService (serviço Firestore)
-- [x] Criar `lib/core/services/finance_service.dart` com CRUD para:
-  - Transactions
-  - Accounts
-  - Assets
-  - Budgets
-  - RecurringTransactions
+## ✅ Passos Concluídos
+- [x] Análise do projeto (estrutura, dependências, Firebase configurado)
+- [x] 1.1 Adicionar `isRead` e `toFirestore()/fromFirestore()` ao model
+- [x] 2.1 Criar `lib/core/services/notification_repository.dart`
+- [x] 3.1 Criar `lib/core/services/notification_service.dart` (FCM init, token, foreground/background)
+- [x] 4.1 Criar `lib/core/services/notification_scheduler.dart` (verifica contactos, tarefas, etc. e escreve no Firestore)
+- [x] 5.1 Inicializar NotificationService no startup
+- [x] 6.1 Substituir NotificationGenerator por Firestore stream
+- [x] 7.1 Android: permissão `POST_NOTIFICATIONS`
+- [x] 8.1 Criar `functions/package.json`
+- [x] 8.2 Criar `functions/index.js` com todas as Cloud Functions
+- [x] 8.3 Criar `functions/.gitignore`
+- [x] Adicionar dependência `flutter_local_notifications`
 
-## 2. ✅ Modificar FinancesScreen
-- [x] Substituir MockData por streams do Firebase
-- [x] Usar FinanceService em vez de MockData
-
-## 3. ✅ Modificar telas de CRUD de Transações
-- [x] `add_transaction_screen.dart` - usar FinanceService
-- [x] `transaction_history_screen.dart` - usar streams do Firebase
-
-## 4. ✅ Modificar telas de Contas (Accounts)
-- [x] `accounts_screen.dart` - usar stream do Firebase
-- [x] `add_account_screen.dart` - usar FinanceService
-
-## 5. ✅ Modificar telas de Ativos (Assets)
-- [x] `assets_screen.dart` - usar stream do Firebase
-- [x] `add_asset_screen.dart` - usar FinanceService
-
-## 6. ✅ Modificar telas de Orçamento (Budgets)
-- [x] `budgets_screen.dart` - usar stream do Firebase
-- [x] `add_budget_screen.dart` - usar FinanceService
-
-## 7. ✅ Modificar telas de Recorrências
-- [x] `recurring_transactions_screen.dart` - usar stream do Firebase
-- [x] `add_recurring_transaction_screen.dart` - usar FinanceService
-
-## 8. ✅ Modificar telas de Relatórios
-- [x] `reports_screen.dart` - usar dados do Firebase
-
-## 9. ✅ Corrigir bugs
-- [x] LateInitializationError no add_transaction_screen (account nullable)
-- [x] Validação de conta para criar transação (finances_screen + add_transaction_screen)
-- [x] Null check error no add_budget_screen (fallback no ChipSelector)
-- [x] Slider de dia do mês: 1-28 → 1-31 + tratamento no RecurringEngine
-- [x] unused_import no finance_service.dart
-
-## 10. ✅ Verificar e testar
-- [x] Verificar imports e consistência
-- [x] Corrigir erros de compilação
-
----
-
-# ✅ Melhorias na Tela de Detalhes da Tarefa
-
-## 1. ✅ Botão Excluir Tarefa (com confirmação)
-- [x] Adicionar método `_deleteTask()` com `AlertDialog` de confirmação
-- [x] Adicionar botão "Excluir Tarefa" (vermelho, ícone de lixeira) na UI
-- [x] Chamar `TaskService.deleteTask()` e navegar de volta após exclusão
-- [x] Mostrar SnackBar de sucesso/erro
-
-## 2. ✅ Seletor de Status na Tela de Detalhes
-- [x] Tornar a linha de Status clicável (com ícone `chevron_right`)
-- [x] Adicionar método `_showStatusPicker()` com `ModalBottomSheet`
-- [x] Opções: "Não Iniciada" | "Em Progresso" | "Concluída"
-- [x] Atualizar `isDone` e `status` no Firestore conforme seleção
+## 📋 Próximos Passos
+- [ ] 9. Executar `flutter pub get`
+- [ ] 10. Executar `npm install` na pasta `functions/`
+- [ ] 11. Fazer deploy das Cloud Functions com `firebase deploy --only functions`
+- [ ] 12. Testar a aplicação
 

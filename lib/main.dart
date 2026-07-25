@@ -2,6 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
 import 'core/navigation/navigation_controller.dart';
+import 'core/services/notification_service.dart';
+import 'core/services/notification_scheduler.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'screens/contacts/contacts_screen.dart';
@@ -17,6 +19,15 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize FCM push notifications
+  await NotificationService().initialize();
+
+  // Start periodic checks for local notifications (contact overdue,
+  // tasks due, recurring bills, budgets over limit, etc.)
+  NotificationScheduler().startPeriodicChecks(intervalMinutes: 30);
+  NotificationScheduler().runAllChecks();
+
   runApp(const LoahApp());
 }
 
