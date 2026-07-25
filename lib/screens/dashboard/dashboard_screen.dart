@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_spacing.dart';
-import '../../core/mock/notification_generator.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/notification_repository.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/services/finance_service.dart';
@@ -38,16 +38,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final TaskService _taskService = TaskService();
   final GoalService _goalService = GoalService();
   final FinanceService _financeService = FinanceService();
+  final NotificationRepository _notificationRepo = NotificationRepository();
 
   List<TaskModel> _standaloneTasks = [];
   List<GoalModel> _goals = [];
   double _availableBalance = 0;
   double _progressToGoal = 0;
+  int _unreadCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _notificationRepo.getUnreadCountStream().listen((count) {
+      if (mounted) setState(() => _unreadCount = count);
+    });
   }
 
   Future<void> _loadData() async {
@@ -172,7 +177,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final nav = LoahNavigationController.of(context);
-    final notificationCount = NotificationGenerator.generate().length;
+final notificationCount = _unreadCount;
 
     return Scaffold(
       drawer: LoahDrawer(
