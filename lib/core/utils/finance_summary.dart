@@ -9,7 +9,7 @@ class FinanceSummary {
 
   /// All-time net balance: sum of every income minus every expense.
   static double totalBalance(List<TransactionModel> transactions) {
-    return transactions.fold<double>(0, (sum, t) => sum + (t.isIncome ? t.amount : -t.amount));
+    return transactions.fold<double>(0.0, (sum, t) => sum + (t.isIncome ? t.amount : -t.amount));
   }
 
   static bool _isCurrentMonth(DateTime date) {
@@ -21,14 +21,14 @@ class FinanceSummary {
   static double monthlyIncome(List<TransactionModel> transactions) {
     return transactions
         .where((t) => t.isIncome && _isCurrentMonth(t.date))
-        .fold<double>(0, (sum, t) => sum + t.amount);
+        .fold<double>(0.0, (sum, t) => sum + t.amount);
   }
 
   /// Sum of expenses in the current calendar month.
   static double monthlyExpense(List<TransactionModel> transactions) {
     return transactions
         .where((t) => !t.isIncome && _isCurrentMonth(t.date))
-        .fold<double>(0, (sum, t) => sum + t.amount);
+        .fold<double>(0.0, (sum, t) => sum + t.amount);
   }
 static bool _isPreviousMonth(DateTime date) {
     final now = DateTime.now();
@@ -41,7 +41,7 @@ static bool _isPreviousMonth(DateTime date) {
   static double previousMonthExpense(List<TransactionModel> transactions) {
     return transactions
         .where((t) => !t.isIncome && _isPreviousMonth(t.date))
-        .fold<double>(0, (sum, t) => sum + t.amount);
+        .fold<double>(0.0, (sum, t) => sum + t.amount);
   }
 
   /// % change in total expenses vs. last month. Null if last month had

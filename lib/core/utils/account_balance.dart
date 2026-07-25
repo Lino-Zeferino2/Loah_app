@@ -11,12 +11,12 @@ class AccountBalance {
   static double of(AccountModel account, List<TransactionModel> allTransactions) {
     final net = allTransactions
         .where((t) => t.accountId == account.id)
-        .fold<double>(0, (sum, t) => sum + (t.isIncome ? t.amount : -t.amount));
+        .fold<double>(0.0, (sum, t) => sum + (t.isIncome ? t.amount : -t.amount));
     return account.initialBalance + net;
   }
 
   /// Sum of every account's balance — the app-wide "saldo total".
   static double totalOf(List<AccountModel> accounts, List<TransactionModel> allTransactions) {
-    return accounts.fold<double>(0, (sum, a) => sum + of(a, allTransactions));
+    return accounts.fold<double>(0.0, (sum, a) => sum + of(a, allTransactions));
   }
 }

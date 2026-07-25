@@ -68,7 +68,7 @@ class BalanceCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-           Text('SALDO DISPONÍVEL',
+           Text('PATRIMÔNIO TOTAL',
               style: TextStyle(
                   color:   isDark ? Colors.white70: Colors.black87,
                   fontSize: 11,

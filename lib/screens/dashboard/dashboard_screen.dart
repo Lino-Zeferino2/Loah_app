@@ -1,4 +1,7 @@
+// ignore_for_file: avoid_types_as_parameter_names
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/navigation/navigation_controller.dart';
@@ -42,7 +45,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<TaskModel> _standaloneTasks = [];
   List<GoalModel> _goals = [];
-  double _availableBalance = 0;
+  double _totalWealth = 0;
   double _progressToGoal = 0;
   int _unreadCount = 0;
 
@@ -50,28 +53,73 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadData();
-    // ignore: avoid_types_as_parameter_names
     _notificationRepo.getUnreadCountStream().listen((count) {
       if (mounted) setState(() => _unreadCount = count);
     });
   }
 
-  Future<void> _loadData() async {
+  /// Tenta carregar os dados financeiros (contas + ativos).
+  /// Retorna true se conseguiu carregar.
+Future<bool> _loadFinanceData() async {
     try {
-      // Carrega finanças do Firebase
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        debugPrint('Dashboard - Sem usuário autenticado');
+        return false;
+      }
+
+      debugPrint('Dashboard - Carregando transações...');
       final txns = await _financeService.getAllTransactions();
+      debugPrint('Dashboard - Transações carregadas: ${txns.length}');
+
+      debugPrint('Dashboard - Carregando contas...');
       final accts = await _financeService.getAllAccounts();
+      debugPrint('Dashboard - Contas carregadas: ${accts.length}');
 
-      // Calcula saldo total real
-      final totalBal = AccountBalance.totalOf(accts, txns);
+      double assetsValue = 0;
+      try {
+        debugPrint('Dashboard - Carregando ativos...');
+        final assets = await _financeService.getAllAssets();
+        assetsValue = assets.fold<double>(0.0, (sum, a) => sum + a.currentValue);
+        debugPrint('Dashboard - Ativos carregados: ${assets.length}, valor: $assetsValue');
+      } catch (e) {
+        debugPrint('Dashboard - Erro ao carregar ativos: $e');
+      }
 
-      // Calcula progresso: despesas do mês / receitas do mês
+      debugPrint('Dashboard - Calculando AccountBalance.totalOf...');
+      final accountsBalance = AccountBalance.totalOf(accts, txns);
+      final totalWealth = accountsBalance + assetsValue;
+      debugPrint('Dashboard - accountsBalance: $accountsBalance, totalWealth: $totalWealth');
+
+      debugPrint('Dashboard - Calculando FinanceSummary...');
       final monthlyIncome = FinanceSummary.monthlyIncome(txns);
       final monthlyExpense = FinanceSummary.monthlyExpense(txns);
+      debugPrint('Dashboard - monthlyIncome: $monthlyIncome, monthlyExpense: $monthlyExpense');
+
       final progress = monthlyIncome > 0
-          ? ((monthlyExpense / monthlyIncome).clamp(0, 1) as double)
+          ? ((monthlyExpense / monthlyIncome).clamp(0.0, 1.0) as double)
           : 0.0;
 
+      if (mounted) {
+        setState(() {
+          _totalWealth = totalWealth;
+          _progressToGoal = progress;
+        });
+        debugPrint('Dashboard - setState concluído! totalWealth=$totalWealth');
+      }
+      return true;
+    } catch (e, s) {
+      debugPrint('Dashboard - Erro ao carregar finanças: $e');
+      debugPrint('Dashboard - Stack: $s');
+      return false;
+    }
+  }
+
+  Future<void> _loadData() async {
+    // Carrega finanças primeiro — o saldo aparece mesmo que o resto falhe
+    await _loadFinanceData();
+
+    try {
       // Carrega tarefas
       final tasksSnapshot = await _taskService.getTasksStream().first;
       final standalone = tasksSnapshot.docs
@@ -148,14 +196,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (mounted) {
         setState(() {
-          _availableBalance = totalBal;
-          _progressToGoal = progress;
           _standaloneTasks = standalone;
           _goals = goals;
         });
       }
-    } catch (_) {
-      if (mounted) {}
+    } catch (e) {
+      debugPrint('Dashboard - Erro ao carregar tasks/goals: $e');
     }
   }
 
@@ -178,7 +224,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final nav = LoahNavigationController.of(context);
-final notificationCount = _unreadCount;
+    final notificationCount = _unreadCount;
 
     return Scaffold(
       drawer: LoahDrawer(
@@ -242,7 +288,7 @@ final notificationCount = _unreadCount;
               const SizedBox(height: AppSpacing.xl),
               // Card de Finanças com dados reais do Firebase
               BalanceCard(
-                available: _availableBalance,
+                available: _totalWealth,
                 progressToGoal: _progressToGoal,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -284,4 +330,3 @@ final notificationCount = _unreadCount;
     );
   }
 }
-
