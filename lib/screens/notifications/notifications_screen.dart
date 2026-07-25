@@ -1,20 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:loah_app/screens/notifications/widgets/notification_card.dart';
 import '../../core/services/notification_repository.dart';
-import '../../core/services/user_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/app_notification.dart';
-import '../../models/contact_model.dart';
-import '../../models/goal_model.dart';
-import '../../models/task_model.dart';
 import '../../widgets/loah_app_bar_simple.dart';
-import '../contacts/contact_detail_screen.dart';
 import '../finances/add_transaction_screen.dart';
 import '../finances/budgets_screen.dart';
-import '../goals/goal_detail_screen.dart';
-import '../tasks/task_detail_screen.dart';
-import 'widgets/notification_card.dart';
 
 /// "Loah - Notificações": unified feed of real push notifications
 /// stored in Firestore under /users/{userId}/notifications/.
@@ -35,64 +27,12 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final NotificationRepository _repository = NotificationRepository();
 
-  /// Lookup helpers — these will eventually come from Firestore
-  /// services, but for now we keep local caches (or use Firestore
-  /// queries directly in _behaviorFor).
-  ContactModel? _findContact(String id) {
-    // In the future, use ContactService().getContact(id).
-    // For now returns null and the screen shows only the notification
-    // without extra actions (still functional).
-    return null;
-  }
 
-  TaskModel? _findTask(String id) {
-    return null;
-  }
 
-  GoalModel? _findGoal(String id) {
-    return null;
-  }
 
-  /// When the user taps "Ligar agora" on a contact notification,
-  /// we record the call interaction and dismiss the notification.
-  Future<void> _logCallAndDismiss(AppNotification n, ContactModel contact) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser?.uid)
-          .collection('contacts')
-          .doc(contact.id)
-          .update({
-        'interactions': FieldValue.arrayUnion([
-          {
-            'date': Timestamp.fromDate(DateTime.now()),
-            'type': 'call',
-          }
-        ]),
-      });
-    } catch (_) {}
 
-    await _repository.markAsRead(n.id);
-    if (mounted) setState(() {});
-  }
 
-  Future<void> _openTask(TaskModel task) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task)),
-    );
-  }
 
-  Future<void> _openGoal(GoalModel goal) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => GoalDetailScreen(goal: goal)),
-    );
-  }
-
-  Future<void> _openContact(ContactModel contact) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ContactDetailScreen(contact: contact)),
-    );
-  }
 
   Future<void> _openBudgets() async {
     await Navigator.of(context).push(
@@ -146,10 +86,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         );
 
       case NotificationCategory.tasks:
-        return (onTap: () => null, actions: const []);
+        return (onTap: () {}, actions: const []);
 
       case NotificationCategory.goals:
-        return (onTap: () => null, actions: const []);
+        return (onTap: () {}, actions: const []);
 
       case NotificationCategory.finance:
         final isRecurringBill = n.id.startsWith('notif_recurring_');

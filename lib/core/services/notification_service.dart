@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../models/app_notification.dart';
 import 'notification_repository.dart';
@@ -192,18 +191,6 @@ class NotificationService {
     await _localNotifications.show(id, title, body, details, payload: payload);
   }
 
-  /// Called when the user taps a local notification (foreground).
-  void _onLocalNotificationResponse(NotificationResponse response) {
-    final payload = response.payload;
-    if (payload == null || payload.isEmpty) return;
-
-    try {
-      final data = jsonDecode(payload) as Map<String, dynamic>;
-      _navigateFromData(data);
-    } catch (e) {
-      debugPrint('[NotificationService] Error parsing payload: $e');
-    }
-  }
 
   /// Called when the user taps a push notification while the app is
   /// in background or has been opened from terminated state.

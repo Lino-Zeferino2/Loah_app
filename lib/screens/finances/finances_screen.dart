@@ -4,10 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
-import '../../core/mock/account_balance.dart';
-import '../../core/mock/budget_summary.dart';
-import '../../core/mock/finance_summary.dart';
-import '../../core/mock/goal_progress.dart';
+import '../../core/utils/account_balance.dart';
+import '../../core/utils/budget_summary.dart';
+import '../../core/utils/finance_summary.dart';
+import '../../core/utils/goal_progress.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
@@ -22,11 +22,11 @@ import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_drawer.dart';
 import '../../widgets/section_header.dart';
 import '../../core/services/finance_service.dart';
-import '../../core/mock/notification_generator.dart';
 import '../notifications/notifications_screen.dart';
+import '../../core/services/notification_repository.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/services/task_service.dart';
-import '../../core/mock/recurring_engine.dart';
+import '../../core/utils/recurring_engine.dart';
 import 'accounts_screen.dart';
 import 'add_transaction_screen.dart';
 import 'assets_screen.dart';
@@ -54,6 +54,7 @@ class FinancesScreen extends StatefulWidget {
 
 class _FinancesScreenState extends State<FinancesScreen> {
   final FinanceService _financeService = FinanceService();
+  final NotificationRepository _notifRepo = NotificationRepository();
   List<TransactionModel> _transactions = [];
   List<AccountModel> _accounts = [];
   List<AssetModel> _assets = [];
@@ -62,11 +63,15 @@ class _FinancesScreenState extends State<FinancesScreen> {
   List<RecurringTransactionModel> _recurring = [];
   List<TaskModel> _tasks = [];
   bool _loading = true;
+  int _unreadCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _notifRepo.getUnreadCountStream().listen((count) {
+      if (mounted) setState(() => _unreadCount = count);
+    });
   }
 
   Future<void> _loadData() async {
@@ -259,7 +264,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
                 ),
                 icon: const Icon(Icons.notifications_none_rounded),
               ),
-              if (NotificationGenerator.generate().isNotEmpty)
+if (_unreadCount > 0)
                 Positioned(
                   right: 6,
                   top: 6,
@@ -271,7 +276,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
                     ),
                     constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                     child: Text(
-                      '${NotificationGenerator.generate().length}',
+                      '$_unreadCount',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,

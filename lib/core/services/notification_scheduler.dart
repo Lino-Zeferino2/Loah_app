@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../models/app_notification.dart';
 import '../../models/contact_model.dart';
@@ -181,7 +180,7 @@ class NotificationScheduler {
         .doc(uid)
         .collection('tasks')
         .get();
-    final allTasks = tasksSnapshot.docs.map((doc) => _taskFromDoc(doc)).toList();
+    tasksSnapshot.docs.map((doc) => _taskFromDoc(doc)).toList();
 
     for (final doc in snapshot.docs) {
       final goal = _goalFromDoc(doc);
@@ -202,7 +201,7 @@ class NotificationScheduler {
           .collection('users')
           .doc(uid)
           .collection('notifications')
-          .where('id', isEqualTo: 'notif_goal_${goal.id}_${milestoneBucket}')
+          .where('id', isEqualTo: 'notif_goal_${goal.id}_$milestoneBucket')
           .limit(1)
           .get();
 
@@ -307,14 +306,14 @@ class NotificationScheduler {
     // Group expenses by category
     final categoryExpenses = <String, double>{};
     for (final doc in transactionsSnapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
+      final data = doc.data();
       final category = data['category'] as String? ?? 'Outros';
       final amount = (data['amount'] as num?)?.toDouble() ?? 0;
       categoryExpenses[category] = (categoryExpenses[category] ?? 0) + amount;
     }
 
     for (final doc in budgetsSnapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
+      final data = doc.data();
       final category = data['category'] as String? ?? '';
       final monthlyLimit = (data['monthlyLimit'] as num?)?.toDouble() ?? 0;
       final spent = categoryExpenses[category] ?? 0;

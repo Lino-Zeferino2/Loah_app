@@ -81,46 +81,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
-  Future<void> _deleteTask() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Excluir Tarefa'),
-        content: const Text('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('Excluir'),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-
-    try {
-      await _taskService.deleteTask(_task.id);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tarefa excluída com sucesso!')),
-        );
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao excluir tarefa: $e')),
-        );
-      }
-    }
-  }
 
   Future<void> _showStatusPicker() async {
-    final statuses = TaskStatus.values;
+    const statuses = TaskStatus.values;
     final selected = _task.effectiveStatus;
     final result = await showModalBottomSheet<TaskStatus>(
       context: context,

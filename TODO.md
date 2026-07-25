@@ -1,7 +1,4 @@
-# Plano: Substituir Notificações Estáticas por Notificações Reais com Firebase
 
-## ✅ Passos Concluídos
-- [x] Análise do projeto (estrutura, dependências, Firebase configurado)
 - [x] 1.1 Adicionar `isRead` e `toFirestore()/fromFirestore()` ao model
 - [x] 2.1 Criar `lib/core/services/notification_repository.dart`
 - [x] 3.1 Criar `lib/core/services/notification_service.dart` (FCM init, token, foreground/background)

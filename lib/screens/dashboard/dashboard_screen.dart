@@ -50,6 +50,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadData();
+    // ignore: avoid_types_as_parameter_names
     _notificationRepo.getUnreadCountStream().listen((count) {
       if (mounted) setState(() => _unreadCount = count);
     });
