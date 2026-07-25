@@ -6,6 +6,9 @@ import '../../core/navigation/navigation_controller.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/goal_service.dart';
+import '../../core/services/finance_service.dart';
+import '../../core/mock/account_balance.dart';
+import '../../core/mock/finance_summary.dart';
 import '../../core/theme/app_theme.dart';
 import '../notifications/notifications_screen.dart';
 import '../../widgets/loah_app_bar.dart';
@@ -22,7 +25,8 @@ import 'widgets/pending_tasks_card.dart';
 /// "Loah - Dashboard": the home screen with a greeting, balance summary,
 /// pending tasks, a quick-add card, goal progress and a daily reflection.
 ///
-/// Lê tarefas e metas do Firestore via services.
+/// Lê tarefas, metas e finanças do Firestore via services.
+/// O saldo e progresso financeiro são calculados em tempo real.
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -33,9 +37,12 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final TaskService _taskService = TaskService();
   final GoalService _goalService = GoalService();
+  final FinanceService _financeService = FinanceService();
 
   List<TaskModel> _standaloneTasks = [];
   List<GoalModel> _goals = [];
+  double _availableBalance = 0;
+  double _progressToGoal = 0;
 
   @override
   void initState() {
@@ -45,6 +52,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadData() async {
     try {
+      // Carrega finanças do Firebase
+      final txns = await _financeService.getAllTransactions();
+      final accts = await _financeService.getAllAccounts();
+
+      // Calcula saldo total real
+      final totalBal = AccountBalance.totalOf(accts, txns);
+
+      // Calcula progresso: despesas do mês / receitas do mês
+      final monthlyIncome = FinanceSummary.monthlyIncome(txns);
+      final monthlyExpense = FinanceSummary.monthlyExpense(txns);
+      final progress = monthlyIncome > 0
+          ? ((monthlyExpense / monthlyIncome).clamp(0, 1) as double)
+          : 0.0;
+
+      // Carrega tarefas
       final tasksSnapshot = await _taskService.getTasksStream().first;
       final standalone = tasksSnapshot.docs
           .map((doc) {
@@ -84,6 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           .where((t) => t.goalId == null)
           .toList();
 
+      // Carrega metas
       final goalsSnapshot = await _goalService.getGoalsStream().first;
       final goals = goalsSnapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
@@ -119,11 +142,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (mounted) {
         setState(() {
+          _availableBalance = totalBal;
+          _progressToGoal = progress;
           _standaloneTasks = standalone;
           _goals = goals;
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {}
+    }
   }
 
   void _toggleTask(int index) {
@@ -207,7 +234,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.xl),
-              const BalanceCard(available: 4820.50, progressToGoal: 0.75),
+              // Card de Finanças com dados reais do Firebase
+              BalanceCard(
+                available: _availableBalance,
+                progressToGoal: _progressToGoal,
+              ),
               const SizedBox(height: AppSpacing.lg),
               PendingTasksCard(
                 tasks: _standaloneTasks,
@@ -247,3 +278,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
+
