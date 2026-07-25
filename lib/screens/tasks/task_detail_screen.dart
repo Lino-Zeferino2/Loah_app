@@ -119,6 +119,106 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
+  Future<void> _showStatusPicker() async {
+    final statuses = TaskStatus.values;
+    final selected = _task.effectiveStatus;
+    final result = await showModalBottomSheet<TaskStatus>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.loahColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Alterar Status',
+                style: Theme.of(ctx)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 16),
+              for (final status in statuses) ...[
+                InkWell(
+                  onTap: () => Navigator.of(ctx).pop(status),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: status == selected
+                          ? _statusColor(context, status).withValues(alpha: 0.10)
+                          : null,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          status == TaskStatus.pendente
+                              ? Icons.radio_button_unchecked
+                              : status == TaskStatus.emProgresso
+                                  ? Icons.trending_up
+                                  : Icons.check_circle,
+                          size: 20,
+                          color: _statusColor(context, status),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              status.label,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              status == TaskStatus.pendente
+                                  ? 'Tarefa ainda não iniciada'
+                                  : status == TaskStatus.emProgresso
+                                      ? 'Tarefa em andamento'
+                                      : 'Tarefa finalizada',
+                              style: Theme.of(ctx).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        if (status == selected)
+                          Icon(Icons.check, size: 20, color: _statusColor(context, status)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (result == null || result == _task.effectiveStatus) return;
+
+    final updated = _task.copyWith(
+      isDone: result == TaskStatus.concluida,
+      status: result == TaskStatus.concluida ? null : result,
+    );
+    try {
+      await _taskService.updateTask(updated);
+      if (mounted) setState(() => _task = updated);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar status: $e')),
+        );
+      }
+    }
+  }
+
   Color _statusColor(BuildContext context, TaskStatus status) {
     final colors = context.loahColors;
     return switch (status) {
@@ -254,15 +354,25 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   ),
                 ),
               ),
-            _InfoRow(
-              icon: Icons.sync_outlined,
-              label: 'Status',
-              trailing: Text(
-                task.effectiveStatus.label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: statusColor,
-                      fontWeight: FontWeight.w600,
+            GestureDetector(
+              onTap: () => _showStatusPicker(),
+              child: _InfoRow(
+                icon: Icons.sync_outlined,
+                label: 'Status',
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      task.effectiveStatus.label,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: statusColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.chevron_right, size: 18, color: context.textSecondary),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 20),

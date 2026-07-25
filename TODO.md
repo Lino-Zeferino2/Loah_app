@@ -46,3 +46,19 @@
 - [x] Verificar imports e consistência
 - [x] Corrigir erros de compilação
 
+---
+
+# ✅ Melhorias na Tela de Detalhes da Tarefa
+
+## 1. ✅ Botão Excluir Tarefa (com confirmação)
+- [x] Adicionar método `_deleteTask()` com `AlertDialog` de confirmação
+- [x] Adicionar botão "Excluir Tarefa" (vermelho, ícone de lixeira) na UI
+- [x] Chamar `TaskService.deleteTask()` e navegar de volta após exclusão
+- [x] Mostrar SnackBar de sucesso/erro
+
+## 2. ✅ Seletor de Status na Tela de Detalhes
+- [x] Tornar a linha de Status clicável (com ícone `chevron_right`)
+- [x] Adicionar método `_showStatusPicker()` com `ModalBottomSheet`
+- [x] Opções: "Não Iniciada" | "Em Progresso" | "Concluída"
+- [x] Atualizar `isDone` e `status` no Firestore conforme seleção
+
