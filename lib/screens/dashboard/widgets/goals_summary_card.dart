@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/mock/goal_progress.dart';
+import '../../../core/utils/goal_progress.dart';
 import '../../../models/goal_model.dart';
 import '../../../models/task_model.dart';
 import '../../../widgets/labeled_progress_bar.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/mock/account_balance.dart';
+import '../../core/utils/account_balance.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/services/finance_service.dart';

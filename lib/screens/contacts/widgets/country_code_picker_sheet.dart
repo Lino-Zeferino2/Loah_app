@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:loah_app/core/mock/country_codes.dart';
+import 'package:loah_app/core/utils/country_codes.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// Bottom sheet for picking a phone country code: a searchable list of

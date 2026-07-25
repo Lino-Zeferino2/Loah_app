@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/mock/transaction_categories.dart';
+import '../../core/utils/transaction_categories.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/finance_service.dart';
 import '../../models/budget_model.dart';

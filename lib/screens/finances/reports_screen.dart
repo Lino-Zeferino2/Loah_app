@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/mock/report_summary.dart';
+import '../../core/utils/report_summary.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/finance_service.dart';
 import '../../models/account_model.dart';

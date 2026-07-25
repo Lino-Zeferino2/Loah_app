@@ -6,7 +6,7 @@ import 'package:loah_app/core/theme/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/services/goal_service.dart';
-import '../../core/mock/goal_progress.dart';
+import '../../core/utils/goal_progress.dart';
 import '../../models/goal_model.dart';
 import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_avatar_action.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/mock/goal_progress.dart';
+import '../../../core/utils/goal_progress.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../models/goal_model.dart';
