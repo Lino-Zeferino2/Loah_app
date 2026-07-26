@@ -1,9 +1,14 @@
-# TODO: Implementar "Alterar Senha"
+# TODO: Notificações de Suporte (SMS Admin/User)
 
-## Etapas
+## Objective
+Implement notification sending when:
+1. A user sends a support message → notify admin(s)
+2. Admin replies to a support message → notify the user
 
-- [x] 1. Adicionar método `changePassword` ao `AuthService` (`lib/core/services/auth_service.dart`)
-- [x] 2. Criar a tela `ChangePasswordScreen` (`lib/screens/auth/change_password_screen.dart`)
-- [x] 3. Atualizar `LoahDrawer` para navegar para a nova tela (`lib/widgets/loah_drawer.dart`)
-- [x] 4. Verificar com `flutter analyze` se há erros (1 warning de unused import corrigido)
+## Steps
+
+- [x] Step 0: Analyze codebase (HelpCenterService, functions/index.js, notification infrastructure)
+- [x] Step 1: Create/edit `functions/index.js` - Add Cloud Function `onSupportMessageCreated` (trigger on `helpCenterMessages` onCreate → notify admins)
+- [x] Step 2: Create/edit `functions/index.js` - Add Cloud Function `onSupportMessageReplied` (trigger on `helpCenterMessages` onUpdate when `adminReply` changes → notify user)
+- [ ] Step 3: **Deploy the functions** - Run `firebase deploy --only functions` when ready
 

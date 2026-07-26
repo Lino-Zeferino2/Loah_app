@@ -424,6 +424,112 @@ exports.checkOverBudget = functions.pubsub
   });
 
 // ────────────────────────────────────────────────────────────────────
+// TRIGGER: Notify admins when a user sends a support message
+// ────────────────────────────────────────────────────────────────────
+
+/**
+ * When a new document is created in `helpCenterMessages`, find all
+ * admin users and send them a push notification with the message details.
+ */
+exports.onSupportMessageCreated = functions.firestore
+  .document('helpCenterMessages/{messageId}')
+  .onCreate(async (snap, context) => {
+    const { messageId } = context.params;
+    const data = snap.data();
+
+    console.log(`[SupportMessage] New message created: ${messageId}`);
+
+    const userName = data.userName || 'Utilizador';
+    const subject = data.subject || 'Sem assunto';
+    const messagePreview = data.message || '';
+
+    // Find all admin users
+    const adminsSnapshot = await db
+      .collection('users')
+      .where('role', '==', 'admin')
+      .get();
+
+    if (adminsSnapshot.empty) {
+      console.log('[SupportMessage] No admin users found to notify.');
+      return;
+    }
+
+    const notificationId = `notif_support_msg_${messageId}`;
+
+    for (const adminDoc of adminsSnapshot.docs) {
+      const adminId = adminDoc.id;
+
+      // Check if already notified (avoid duplicates on re-runs)
+      const alreadyNotified = await notificationExists(adminId, notificationId);
+      if (alreadyNotified) continue;
+
+      await createAndSendNotification(adminId, {
+        id: notificationId,
+        category: 'system',
+        title: 'Nova mensagem de suporte',
+        message: `${userName} enviou: "${subject}"`,
+        relatedId: messageId,
+      });
+    }
+
+    console.log(`[SupportMessage] Notified ${adminsSnapshot.docs.length} admin(s) about message ${messageId}.`);
+  });
+
+// ────────────────────────────────────────────────────────────────────
+// TRIGGER: Notify user when admin replies to their support message
+// ────────────────────────────────────────────────────────────────────
+
+/**
+ * When a `helpCenterMessages` document is updated, check if the
+ * `adminReply` field was set (or changed). If so, send a push
+ * notification to the original message author.
+ */
+exports.onSupportMessageReplied = functions.firestore
+  .document('helpCenterMessages/{messageId}')
+  .onUpdate(async (change, context) => {
+    const { messageId } = context.params;
+    const before = change.before.data();
+    const after = change.after.data();
+
+    const previousReply = before.adminReply || null;
+    const currentReply = after.adminReply || null;
+
+    // Only trigger if adminReply was just added (or changed)
+    if (previousReply === currentReply) {
+      return;
+    }
+
+    console.log(`[SupportMessage] Admin replied to message: ${messageId}`);
+
+    const userId = after.userId;
+    const subject = after.subject || 'Mensagem';
+    const replyPreview = currentReply
+      ? currentReply.substring(0, 120)
+      : '';
+
+    if (!userId) {
+      console.log(`[SupportMessage] No userId found for message ${messageId}.`);
+      return;
+    }
+
+    const notificationId = `notif_support_reply_${messageId}`;
+
+    // Check if already notified (avoid duplicates on re-runs)
+    const alreadyNotified = await notificationExists(userId, notificationId);
+    if (alreadyNotified) return;
+
+    await createAndSendNotification(userId, {
+      id: notificationId,
+      category: 'system',
+      title: 'Resposta do Suporte',
+      message: `Sua mensagem "${subject}" foi respondida.${replyPreview ? ` "${replyPreview}..."` : ''}`,
+      relatedId: messageId,
+    });
+
+    console.log(`[SupportMessage] Notified user ${userId} about reply to message ${messageId}.`);
+  });
+
+// ────────────────────────────────────────────────────────────────────
 // SCHEDULED: Check goal milestones (runs daily at 10:00)
 // ────────────────────────────────────────────────────────────────────
 
