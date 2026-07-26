@@ -358,13 +358,14 @@ Future<bool> _loadFinanceData() async {
                     : 'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800',
               
               ),
+               const SizedBox(height: AppSpacing.xxxl*2),
             ],
           ),
         ),
       ),
        floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primary,
-        heroTag: 'goals_fab',
+        heroTag: 'dashboard_fab',
         onPressed: (){showModalBottomSheet(
                     context: context,
                     isScrollControlled: false,
