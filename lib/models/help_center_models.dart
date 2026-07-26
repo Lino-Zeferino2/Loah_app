@@ -131,6 +131,67 @@ class FaqArticle {
 /// Status of a help message from a user.
 enum HelpMessageStatus { pendente, emAndamento, resolvido }
 
+/// Represents the app's "About Loah" content stored in Firestore
+/// under a single document: appContent/aboutLoah.
+///
+/// Fields:
+///   - terms:        Termos de Uso
+///   - privacyPolicy:Política de Privacidade
+///   - aboutUs:      Texto "Sobre Nós" exibido na tela AboutLoahScreen
+///   - lastUpdatedBy:UID do admin que fez a última atualização
+///   - updatedAt:    Timestamp da última atualização
+class AboutLoahContent {
+  final String terms;
+  final String privacyPolicy;
+  final String aboutUs;
+  final String lastUpdatedBy;
+  final DateTime? updatedAt;
+
+  const AboutLoahContent({
+    this.terms = '',
+    this.privacyPolicy = '',
+    this.aboutUs = '',
+    this.lastUpdatedBy = '',
+    this.updatedAt,
+  });
+
+  factory AboutLoahContent.fromMap(Map<String, dynamic> data) {
+    return AboutLoahContent(
+      terms: data['terms'] as String? ?? '',
+      privacyPolicy: data['privacyPolicy'] as String? ?? '',
+      aboutUs: data['aboutUs'] as String? ?? '',
+      lastUpdatedBy: data['lastUpdatedBy'] as String? ?? '',
+      updatedAt: (data['updatedAt'] as dynamic)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'terms': terms,
+      'privacyPolicy': privacyPolicy,
+      'aboutUs': aboutUs,
+      'lastUpdatedBy': lastUpdatedBy,
+      'updatedAt': updatedAt ?? FieldValue.serverTimestamp(),
+    };
+  }
+
+  AboutLoahContent copyWith({
+    String? terms,
+    String? privacyPolicy,
+    String? aboutUs,
+    String? lastUpdatedBy,
+    DateTime? updatedAt,
+  }) {
+    return AboutLoahContent(
+      terms: terms ?? this.terms,
+      privacyPolicy: privacyPolicy ?? this.privacyPolicy,
+      aboutUs: aboutUs ?? this.aboutUs,
+      lastUpdatedBy: lastUpdatedBy ?? this.lastUpdatedBy,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
+
 /// Represents a message sent by a user asking for help.
 class HelpMessage {
   final String id;

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
+import 'package:loah_app/screens/admin/manage_about_loah_screen.dart';
 import 'package:loah_app/screens/admin/manage_help_center_screen.dart';
 import 'package:loah_app/screens/admin/manage_reflections_screen.dart';
 import 'package:loah_app/screens/admin/manage_users_screen.dart';
@@ -12,6 +13,7 @@ import '../core/theme/app_theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../screens/support/about_loah_screen.dart';
 import '../screens/support/help_center_screen.dart';
+import '../screens/support/terms_privacy_screen.dart';
 import 'drawer_nav_item.dart';
 import 'theme_toggle_switch.dart';
 
@@ -341,6 +343,19 @@ class _LoahDrawerState extends State<LoahDrawer> {
                             );
                           },
                         ),
+                        DrawerNavItem(
+                          icon: Icons.description_outlined,
+                          label: 'Termos e Políticas',
+                          selected: false,
+                          onTap: () {
+                            Navigator.of(context).pop(); // close drawer
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const TermsPrivacyScreen(),
+                              ),
+                            );
+                          },
+                        ),
                       ],
                     ),
 
@@ -397,6 +412,20 @@ class _LoahDrawerState extends State<LoahDrawer> {
                             MaterialPageRoute(
                               builder: (_) =>
                                   const ManageHelpCenterScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      DrawerNavItem(
+                        icon: Icons.description_outlined,
+                        label: 'Gerir Sobre Loah',
+                        selected: false,
+                        onTap: () {
+                          Navigator.of(context).pop(); // close drawer
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const ManageAboutLoahScreen(),
                             ),
                           );
                         },

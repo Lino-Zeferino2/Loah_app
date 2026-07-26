@@ -24,6 +24,27 @@ class HelpCenterService {
       _firestore.collection('helpCenterMessages');
 
   // ════════════════════════════════════════════════════════════════
+  //  APP CONTENT – About Loah (terms, privacy, about us)
+  // ════════════════════════════════════════════════════════════════
+
+  DocumentReference get _appContentDoc =>
+      _firestore.collection('appContent').doc('aboutLoah');
+
+  /// Fetch the AboutLoahContent document from Firestore.
+  Future<AboutLoahContent> getAboutLoahContent() async {
+    final snap = await _appContentDoc.get();
+    if (snap.exists) {
+      return AboutLoahContent.fromMap(snap.data() as Map<String, dynamic>);
+    }
+    return const AboutLoahContent();
+  }
+
+  /// Save (create or update) the AboutLoahContent document.
+  Future<void> updateAboutLoahContent(AboutLoahContent content) async {
+    await _appContentDoc.set(content.toMap(), SetOptions(merge: true));
+  }
+
+  // ════════════════════════════════════════════════════════════════
   //  CATEGORIES
   // ════════════════════════════════════════════════════════════════
 

@@ -1,0 +1,85 @@
+POLÍTICA DE PRIVACIDADE – LOAH
+
+Última atualização: [Data]
+
+1. INTRODUÇÃO
+
+A sua privacidade é importante para nós. Esta Política de Privacidade descreve como o Loah recolhe, utiliza, armazena e protege os seus dados pessoais quando utiliza o nosso aplicativo.
+
+2. DADOS QUE RECOLHEMOS
+
+2.1. Dados fornecidos pelo utilizador:
+- Nome completo
+- Endereço de e-mail
+- Número de telefone (opcional)
+- Foto de perfil (opcional)
+
+2.2. Dados gerados pela utilização do App:
+- Informações financeiras (transações, contas, orçamentos, ativos, metas)
+- Tarefas e lembretes criados
+- Contactos sincronizados ou adicionados manualmente
+- Reflexões e mensagens enviadas ao suporte
+- Preferências de configuração (tema, notificações, etc.)
+
+2.3. Dados técnicos:
+- Tipo de dispositivo e sistema operativo
+- Versão do App
+- Identificadores de dispositivo
+- Dados de navegação e interação com o App
+
+3. FINALIDADE DO TRATAMENTO DOS DADOS
+
+Os seus dados são utilizados para:
+
+- Fornecer, manter e melhorar as funcionalidades do App;
+- Processar transações e gerar relatórios financeiros;
+- Personalizar a sua experiência no App;
+- Enviar notificações relevantes (metas, lembretes, reflexões);
+- Responder a pedidos de suporte e mensagens;
+- Cumprir obrigações legais e regulamentares;
+- Detetar e prevenir atividades fraudulentas ou abusivas.
+
+4. COMPARTILHAMENTO DE DADOS
+
+O Loah não vende, aluga ou partilha dados pessoais com terceiros para fins de marketing, exceto:
+
+- Com prestadores de serviços essenciais ao funcionamento do App (ex.: Firebase/Firestore para armazenamento de dados e autenticação);
+- Por obrigação legal, ordem judicial ou solicitação de autoridade competente;
+- Para proteger os direitos, propriedade ou segurança do Loah, dos utilizadores ou do público.
+
+5. ARMAZENAMENTO E SEGURANÇA DOS DADOS
+
+5.1. Os seus dados são armazenados de forma segura nos servidores do Firebase (Google Cloud Platform), com criptografia em trânsito e em repouso.
+5.2. Implementamos medidas técnicas e organizacionais adequadas para proteger os seus dados contra acesso não autorizado, perda, destruição ou divulgação.
+5.3. Recomendamos que mantenha o seu dispositivo seguro e o App atualizado.
+
+6. OS SEUS DIREITOS
+
+Nos termos da legislação aplicável, nomeadamente o Regulamento Geral de Proteção de Dados (RGPD), você tem direito a:
+
+- Aceder aos seus dados pessoais;
+- Solicitar a correção de dados inexatos;
+- Solicitar a eliminação dos seus dados ("direito ao esquecimento");
+- Solicitar a limitação do tratamento dos seus dados;
+- Solicitar a portabilidade dos seus dados;
+- Opor-se ao tratamento dos seus dados para determinadas finalidades;
+- Retirar o consentimento a qualquer momento, sem comprometer a legalidade do tratamento efetuado até essa data.
+
+Para exercer estes direitos, utilize a secção de Suporte no App ou contacte-nos através dos canais indicados no final desta política.
+
+7. RETENÇÃO DE DADOS
+
+Conservamos os seus dados pessoais apenas pelo período necessário para cumprir as finalidades descritas nesta política, salvo se a lei exigir ou permitir um período de retenção mais longo. Ao eliminar a sua conta, os seus dados serão removidos dos nossos servidores no prazo máximo de 30 dias.
+
+8. TRANSFERÊNCIA INTERNACIONAL DE DADOS
+
+Os seus dados poderão ser processados em servidores localizados fora do seu país de residência. Garantimos que as transferências são realizadas em conformidade com a legislação aplicável, utilizando cláusulas contratuais padrão ou outras salvaguardas adequadas.
+
+9. ALTERAÇÕES A ESTA POLÍTICA
+
+O Loah poderá atualizar esta Política de Privacidade periodicamente. Notificaremos os utilizadores sobre alterações significativas através do App ou por e-mail. Recomendamos a revisão periódica desta política.
+
+10. CONTACTO DO ENCARREGADO DE PROTEÇÃO DE DADOS
+
+Para qualquer questão relacionada com a proteção dos seus dados pessoais, entre em contacto connosco através da Central de Ajuda no App ou envie-nos uma mensagem na secção de Suporte.
+
