@@ -1,86 +1,570 @@
+import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:loah_app/core/services/reflection_service.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
+import 'package:loah_app/models/reflection_model.dart';
 
-/// Admin screen to manage daily reflections ("Reflexões do Dia").
-/// Placeholder — to be implemented with full CRUD functionality.
-class ManageReflectionsScreen extends StatelessWidget {
+/// Admin screen to create, list, activate and delete daily reflections
+/// ("Reflexões do Dia").
+class ManageReflectionsScreen extends StatefulWidget {
   const ManageReflectionsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final colors = context.loahColors;
+  State<ManageReflectionsScreen> createState() =>
+      _ManageReflectionsScreenState();
+}
 
+class _ManageReflectionsScreenState extends State<ManageReflectionsScreen> {
+  final ReflectionService _reflectionService = ReflectionService();
+
+  /// Open bottom sheet to add a new reflection.
+  Future<void> _openAddReflectionSheet() async {
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.loahColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const _AddReflectionSheet(),
+    );
+
+    if (result == null || !mounted) return;
+
+    final text = result['text'] as String? ?? '';
+    final imageFile = result['imageFile'] as File?;
+
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('O texto da reflexão não pode estar vazio.'),
+        ),
+      );
+      return;
+    }
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown';
+
+      // Upload image if provided
+      String? imageUrl;
+      if (imageFile != null) {
+        imageUrl = await _reflectionService.uploadImage(
+          imageFile,
+          userId: userId,
+        );
+      }
+
+      // Save reflection to Firestore
+      final reflection = ReflectionModel(
+        id: '',
+        text: text,
+        imageUrl: imageUrl ?? '',
+        active: false,
+      );
+      await _reflectionService.addReflection(reflection);
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // dismiss loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Reflexão criada com sucesso!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // dismiss loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao criar reflexão: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Confirm and delete a reflection.
+  Future<void> _confirmDelete(ReflectionModel reflection) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Apagar Reflexão'),
+        content: Text(
+          'Tem a certeza que deseja apagar esta reflexão?\n\n"${reflection.text}"',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Apagar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    try {
+      await _reflectionService.deleteReflection(
+        reflection.id,
+        reflection.imageUrl,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Reflexão apagada com sucesso.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao apagar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Set this reflection as the active one.
+  Future<void> _setActive(String reflectionId) async {
+    try {
+      await _reflectionService.setActiveReflection(reflectionId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Reflexão definida como ativa.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gerir Reflexões do Dia'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.auto_stories_outlined,
-                size: 80,
-                color: colors.accentBlue.withValues(alpha: 0.4),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'add_reflection',
+        onPressed: _openAddReflectionSheet,
+        child: const Icon(Icons.add),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _reflectionService.getReflectionsStream(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Erro ao carregar reflexões',
+                style: TextStyle(color: context.textSecondary),
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Gestão de Reflexões',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+            );
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final docs = snapshot.data!.docs;
+
+          if (docs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.auto_stories_outlined,
+                    size: 64,
+                    color: context.textSecondary.withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Nenhuma reflexão criada ainda.\nToque no + para adicionar.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: context.textSecondary),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final doc = docs[index];
+              final data = doc.data() as Map<String, dynamic>;
+              final reflection = ReflectionModel.fromMap(doc.id, data);
+
+              return _ReflectionTile(
+                reflection: reflection,
+                onSetActive: () => _setActive(reflection.id),
+                onDelete: () => _confirmDelete(reflection),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Reflection Tile
+// ─────────────────────────────────────────────────────────────────
+
+class _ReflectionTile extends StatelessWidget {
+  final ReflectionModel reflection;
+  final VoidCallback onSetActive;
+  final VoidCallback onDelete;
+
+  const _ReflectionTile({
+    required this.reflection,
+    required this.onSetActive,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.loahColors;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      color: reflection.active
+          ? colors.accentBlue.withValues(alpha: 0.08)
+          : colors.cardBackgroundAlt,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: reflection.active
+            ? BorderSide(color: colors.accentBlue, width: 1.5)
+            : BorderSide.none,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                width: 64,
+                height: 64,
+                child: reflection.imageUrl.isNotEmpty
+                    ? Image.network(
+                        reflection.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: colors.border,
+                          child: const Icon(Icons.broken_image, size: 28),
+                        ),
+                      )
+                    : Container(
+                        color: colors.border,
+                        child: const Icon(Icons.image_outlined, size: 28),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Text + status
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    reflection.text,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
                     ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      if (reflection.active)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.accentBlue.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Ativa',
+                            style: TextStyle(
+                              color: colors.accentBlue,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      if (reflection.createdAt != null) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDate(reflection.createdAt!),
+                          style: TextStyle(
+                            color: context.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Aqui poderá criar, editar e apagar as reflexões diárias '
-                'que aparecem no Dashboard dos utilizadores.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: context.textSecondary,
-                  fontSize: 14,
+            ),
+
+            // Actions
+            Column(
+              children: [
+                if (!reflection.active)
+                  IconButton(
+                    icon: Icon(
+                      Icons.check_circle_outline,
+                      color: colors.positive,
+                      size: 20,
+                    ),
+                    tooltip: 'Definir como ativa',
+                    onPressed: onSetActive,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  color: Colors.redAccent.withValues(alpha: 0.7),
+                  tooltip: 'Apagar',
+                  onPressed: onDelete,
+                  visualDensity: VisualDensity.compact,
                 ),
-              ),
-              const SizedBox(height: 32),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colors.cardBackgroundAlt,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  children: [
-                    _placeholderRow(Icons.add_photo_alternate_outlined, 'Adicionar nova reflexão'),
-                    const Divider(height: 24),
-                    _placeholderRow(Icons.edit_outlined, 'Editar reflexão existente'),
-                    const Divider(height: 24),
-                    _placeholderRow(Icons.delete_outline, 'Remover reflexão'),
-                  ],
-                ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _placeholderRow(IconData icon, String label) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Colors.grey),
-        const SizedBox(width: 12),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.grey,
-            fontWeight: FontWeight.w500,
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Add Reflection Bottom Sheet
+// ─────────────────────────────────────────────────────────────────
+
+class _AddReflectionSheet extends StatefulWidget {
+  const _AddReflectionSheet();
+
+  @override
+  State<_AddReflectionSheet> createState() => _AddReflectionSheetState();
+}
+
+class _AddReflectionSheetState extends State<_AddReflectionSheet> {
+  final _textController = TextEditingController();
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final xfile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 1200,
+    );
+    if (xfile != null) {
+      setState(() {
+        _imageFile = File(xfile.path);
+      });
+    }
+  }
+
+  void _submit() {
+    Navigator.of(context).pop(<String, dynamic>{
+      'text': _textController.text.trim(),
+      'imageFile': _imageFile,
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.loahColors;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Handle
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 20),
+
+          Text(
+            'Nova Reflexão',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 16),
+
+          // Text field
+          TextField(
+            controller: _textController,
+            maxLines: 4,
+            decoration: InputDecoration(
+              hintText: 'Escreva o texto da reflexão...',
+              filled: true,
+              fillColor: colors.cardBackgroundAlt,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.all(14),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Image picker area
+          GestureDetector(
+            onTap: _pickImage,
+            child: Container(
+              width: double.infinity,
+              height: 120,
+              decoration: BoxDecoration(
+                color: colors.cardBackgroundAlt,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: _imageFile != null
+                  ? Stack(
+                      children: [
+                        Image.file(
+                          _imageFile!,
+                          width: double.infinity,
+                          height: 120,
+                          fit: BoxFit.cover,
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () =>
+                                setState(() => _imageFile = null),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_photo_alternate_outlined,
+                          size: 40,
+                          color: context.textSecondary,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Adicionar imagem (opcional)',
+                          style: TextStyle(
+                            color: context.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Submit button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colors.accentBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Criar Reflexão',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
 }

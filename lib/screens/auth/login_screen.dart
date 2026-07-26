@@ -1,3 +1,5 @@
+// ignore_for_file: duplicate_ignore, use_build_context_synchronously
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
@@ -99,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Reativa a rede do Firestore que foi desligada no logout
       await FirebaseFirestore.instance.enableNetwork();
-      // ignore: use_build_context_synchronously
+      
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const RootShell()),
         (route) => false,

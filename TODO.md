@@ -1,21 +1,24 @@
-# TODO - Correções de Bugs ✅
+# Manage Reflections CRUD - Implementation Plan
 
-## Issues corrigidas:
+## Steps
 
-### [x] 1. Bloqueio de login para utilizadores bloqueados ✅
-- [x] Adicionar verificação do campo `blocked` no Firestore no login (`login_screen.dart`)
-- [x] Adicionar verificação no fluxo do SplashScreen (auto-login) (`splash_screen.dart`)
-- [x] Adicionar verificação nos logins sociais Google e Apple (`login_screen.dart`)
+### Step 1: Create Reflection Model
+- [x] Create `lib/models/reflection_model.dart` with `id`, `text`, `imageUrl`, `createdAt`, `active` fields
 
-### [x] 2. Cor de estado (vermelho bloqueado / verde ativo) ✅
-- [x] Card de utilizador bloqueado tem fundo vermelho claro e borda vermelha
-- [x] Card de utilizador ativo tem borda verde e avatar verde
-- [x] Chip de estado dinâmico: "Ativo" (verde) ou "Bloqueado" (vermelho)
-- [x] Indicador visual (bolinha) ao lado do texto de estado
+### Step 2: Create Reflection Service
+- [x] Create `lib/core/services/reflection_service.dart` with Firestore CRUD + Firebase Storage image upload
 
-### [x] 3. Logout não trava mais a app ✅
-- [x] Removido o listener `authStateChanges` do `ManageUsersScreen` que causava conflito de navegação
-- [x] **CORREÇÃO PRINCIPAL**: Invertida a ordem do logout — primeiro navega para o LoginScreen (remove RootShell e todos os StreamListeners), DEPOIS faz signOut().
-- [x] Adicionado `dispose()` no DashboardScreen para cancelar o StreamSubscription do NotificationRepository
-- [x] Adicionado `import 'dart:async'` + `StreamSubscription` no DashboardScreen
+### Step 3: Rewrite ManageReflectionsScreen
+- [x] Convert to `StatefulWidget`
+- [x] List all reflections from Firestore in StreamBuilder
+- [x] FAB to create new reflection
+- [x] Bottom sheet with text field + image picker
+- [x] Delete functionality with confirmation dialog
+
+### Step 4: Update Dashboard
+- [x] Update `dashboard_screen.dart` to fetch active reflection from Firestore
+- [x] Pass dynamic data to `DailyReflectionCard`
+
+### Step 5: Verify compilation
+- [x] Run `flutter analyze` — No issues found!
 

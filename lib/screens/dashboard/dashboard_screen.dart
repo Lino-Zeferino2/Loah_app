@@ -20,6 +20,8 @@ import '../../widgets/loah_drawer.dart';
 import 'widgets/new_item_modal_sheet.dart';
 import '../../models/task_model.dart';
 import '../../models/goal_model.dart';
+import '../../models/reflection_model.dart';
+import '../../core/services/reflection_service.dart';
 import 'widgets/balance_card.dart';
 import 'widgets/daily_reflection_card.dart';
 import 'widgets/goals_summary_card.dart';
@@ -43,12 +45,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final GoalService _goalService = GoalService();
   final FinanceService _financeService = FinanceService();
   final NotificationRepository _notificationRepo = NotificationRepository();
+  final ReflectionService _reflectionService = ReflectionService();
 
   List<TaskModel> _standaloneTasks = [];
   List<GoalModel> _goals = [];
   double _totalWealth = 0;
   double _progressToGoal = 0;
   int _unreadCount = 0;
+  ReflectionModel? _activeReflection;
   StreamSubscription? _notificationSub;
 
   @override
@@ -216,6 +220,16 @@ Future<bool> _loadFinanceData() async {
     } catch (e) {
       debugPrint('Dashboard - Erro ao carregar tasks/goals: $e');
     }
+
+    // Carrega a reflexão ativa
+    try {
+      final reflection = await _reflectionService.getActiveReflection();
+      if (mounted) {
+        setState(() => _activeReflection = reflection);
+      }
+    } catch (e) {
+      debugPrint('Dashboard - Erro ao carregar reflexão: $e');
+    }
   }
 
   void _toggleTask(int index) {
@@ -331,9 +345,10 @@ Future<bool> _loadFinanceData() async {
               ),
               const SizedBox(height: AppSpacing.lg),
               DailyReflectionCard(
-                quote: 'O que é medido, é gerenciado.',
-                imageUrl:
-                    'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800',
+                quote: _activeReflection?.text ?? 'O que é medido, é gerenciado.',
+                imageUrl: _activeReflection?.imageUrl.isNotEmpty == true
+                    ? _activeReflection!.imageUrl
+                    : 'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800',
                 onEdit: () {},
               ),
             ],
