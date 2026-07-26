@@ -39,6 +39,20 @@ class ReflectionService {
     );
   }
 
+  /// Fetch all active reflections from Firestore.
+  /// Used by the Dashboard to pick one randomly.
+  Future<List<ReflectionModel>> getAllActiveReflections() async {
+    final snap = await _reflections
+        .where('active', isEqualTo: true)
+        .get();
+    return snap.docs.map((doc) {
+      return ReflectionModel.fromMap(
+        doc.id,
+        doc.data() as Map<String, dynamic>,
+      );
+    }).toList();
+  }
+
   /// Add a new reflection to Firestore.
   Future<void> addReflection(ReflectionModel reflection) async {
     await _reflections.add(reflection.toMap());

@@ -7,8 +7,8 @@ import 'package:loah_app/core/services/reflection_service.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
 import 'package:loah_app/models/reflection_model.dart';
 
-/// Admin screen to create, list, activate and delete daily reflections
-/// ("Reflexões do Dia").
+/// Admin screen to create, list, activate/deactivate, edit and delete
+/// daily reflections ("Reflexões do Dia").
 class ManageReflectionsScreen extends StatefulWidget {
   const ManageReflectionsScreen({super.key});
 
@@ -29,13 +29,46 @@ class _ManageReflectionsScreenState extends State<ManageReflectionsScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => const _AddReflectionSheet(),
+      builder: (_) => const _AddReflectionSheet(
+        existingReflection: null,
+      ),
     );
 
     if (result == null || !mounted) return;
+    await _handleAddEditResult(result, isEditing: false);
+  }
 
+  /// Open bottom sheet to edit an existing reflection.
+  Future<void> _openEditReflectionSheet(ReflectionModel reflection) async {
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.loahColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _AddReflectionSheet(
+        existingReflection: reflection,
+      ),
+    );
+
+    if (result == null || !mounted) return;
+    await _handleAddEditResult(result,
+        isEditing: true,
+        existingId: reflection.id,
+        oldImageUrl: reflection.imageUrl);
+  }
+
+  /// Process the result from the bottom sheet (add or edit).
+  Future<void> _handleAddEditResult(
+    Map<String, dynamic> result, {
+    required bool isEditing,
+    String? existingId,
+    String? oldImageUrl,
+  }) async {
     final text = result['text'] as String? ?? '';
     final imageFile = result['imageFile'] as File?;
+    final keepExistingImage = result['keepExistingImage'] as bool? ?? false;
 
     if (text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -56,39 +89,62 @@ class _ManageReflectionsScreenState extends State<ManageReflectionsScreen> {
     try {
       final userId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown';
 
-      // Upload image if provided
+      // Determine image URL
       String? imageUrl;
       if (imageFile != null) {
         imageUrl = await _reflectionService.uploadImage(
           imageFile,
           userId: userId,
         );
+      } else if (isEditing && keepExistingImage && oldImageUrl != null) {
+        imageUrl = oldImageUrl;
+      } else {
+        imageUrl = '';
       }
 
-      // Save reflection to Firestore
-      final reflection = ReflectionModel(
-        id: '',
-        text: text,
-        imageUrl: imageUrl ?? '',
-        active: false,
-      );
-      await _reflectionService.addReflection(reflection);
+      if (isEditing && existingId != null) {
+        final reflection = ReflectionModel(
+          id: existingId,
+          text: text,
+          imageUrl: imageUrl ?? '',
+          active: result['active'] as bool? ?? false,
+        );
+        await _reflectionService.updateReflection(reflection);
 
-      if (!mounted) return;
-      Navigator.of(context).pop(); // dismiss loading
+        if (!mounted) return;
+        Navigator.of(context).pop();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Reflexão criada com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reflexão atualizada com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        final reflection = ReflectionModel(
+          id: '',
+          text: text,
+          imageUrl: imageUrl ?? '',
+          active: false,
+        );
+        await _reflectionService.addReflection(reflection);
+
+        if (!mounted) return;
+        Navigator.of(context).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reflexão criada com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
-      Navigator.of(context).pop(); // dismiss loading
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao criar reflexão: $e'),
+          content: Text('Erro: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -143,15 +199,18 @@ class _ManageReflectionsScreenState extends State<ManageReflectionsScreen> {
     }
   }
 
-  /// Set this reflection as the active one.
-  Future<void> _setActive(String reflectionId) async {
+  /// Toggle active state independently (allows multiple active reflections).
+  Future<void> _toggleActive(ReflectionModel reflection) async {
     try {
-      await _reflectionService.setActiveReflection(reflectionId);
+      final updated = reflection.copyWith(active: !reflection.active);
+      await _reflectionService.updateReflection(updated);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Reflexão definida como ativa.'),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: Text(
+            updated.active ? 'Reflexão ativada.' : 'Reflexão desativada.',
+          ),
+          backgroundColor: updated.active ? Colors.green : null,
         ),
       );
     } catch (e) {
@@ -227,7 +286,8 @@ class _ManageReflectionsScreenState extends State<ManageReflectionsScreen> {
 
               return _ReflectionTile(
                 reflection: reflection,
-                onSetActive: () => _setActive(reflection.id),
+                onToggleActive: () => _toggleActive(reflection),
+                onEdit: () => _openEditReflectionSheet(reflection),
                 onDelete: () => _confirmDelete(reflection),
               );
             },
@@ -244,12 +304,14 @@ class _ManageReflectionsScreenState extends State<ManageReflectionsScreen> {
 
 class _ReflectionTile extends StatelessWidget {
   final ReflectionModel reflection;
-  final VoidCallback onSetActive;
+  final VoidCallback onToggleActive;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const _ReflectionTile({
     required this.reflection,
-    required this.onSetActive,
+    required this.onToggleActive,
+    required this.onEdit,
     required this.onDelete,
   });
 
@@ -273,7 +335,6 @@ class _ReflectionTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image thumbnail
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: SizedBox(
@@ -296,7 +357,6 @@ class _ReflectionTile extends StatelessWidget {
             ),
             const SizedBox(width: 12),
 
-            // Text + status
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -313,25 +373,28 @@ class _ReflectionTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      if (reflection.active)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colors.accentBlue.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'Ativa',
-                            style: TextStyle(
-                              color: colors.accentBlue,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: reflection.active
+                              ? colors.accentBlue.withValues(alpha: 0.15)
+                              : Colors.grey.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          reflection.active ? 'Ativa' : 'Inativa',
+                          style: TextStyle(
+                            color: reflection.active
+                                ? colors.accentBlue
+                                : Colors.grey,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
+                      ),
                       if (reflection.createdAt != null) ...[
                         const SizedBox(width: 8),
                         Text(
@@ -348,22 +411,31 @@ class _ReflectionTile extends StatelessWidget {
               ),
             ),
 
-            // Actions
             Column(
               children: [
-                if (!reflection.active)
-                  IconButton(
-                    icon: Icon(
-                      Icons.check_circle_outline,
-                      color: colors.positive,
-                      size: 20,
-                    ),
-                    tooltip: 'Definir como ativa',
-                    onPressed: onSetActive,
-                    visualDensity: VisualDensity.compact,
-                  ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20),
+                  icon: Icon(
+                    reflection.active
+                        ? Icons.toggle_off_outlined
+                        : Icons.toggle_on_outlined,
+                    color: reflection.active
+                        ? colors.accentBlue
+                        : Colors.grey,
+                    size: 22,
+                  ),
+                  tooltip: reflection.active ? 'Desativar' : 'Ativar',
+                  onPressed: onToggleActive,
+                  visualDensity: VisualDensity.compact,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  color: colors.accentBlue,
+                  tooltip: 'Editar',
+                  onPressed: onEdit,
+                  visualDensity: VisualDensity.compact,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 18),
                   color: Colors.redAccent.withValues(alpha: 0.7),
                   tooltip: 'Apagar',
                   onPressed: onDelete,
@@ -385,20 +457,35 @@ class _ReflectionTile extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────
-//  Add Reflection Bottom Sheet
+//  Add / Edit Reflection Bottom Sheet
 // ─────────────────────────────────────────────────────────────────
 
 class _AddReflectionSheet extends StatefulWidget {
-  const _AddReflectionSheet();
+  final ReflectionModel? existingReflection;
+
+  const _AddReflectionSheet({this.existingReflection});
 
   @override
   State<_AddReflectionSheet> createState() => _AddReflectionSheetState();
 }
 
 class _AddReflectionSheetState extends State<_AddReflectionSheet> {
-  final _textController = TextEditingController();
+  late final TextEditingController _textController;
   File? _imageFile;
+  bool _keepExistingImage = false;
   final ImagePicker _picker = ImagePicker();
+
+  bool get _isEditing => widget.existingReflection != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _textController = TextEditingController(
+      text: widget.existingReflection?.text ?? '',
+    );
+    _keepExistingImage =
+        widget.existingReflection?.imageUrl.isNotEmpty ?? false;
+  }
 
   @override
   void dispose() {
@@ -415,6 +502,7 @@ class _AddReflectionSheetState extends State<_AddReflectionSheet> {
     if (xfile != null) {
       setState(() {
         _imageFile = File(xfile.path);
+        _keepExistingImage = false;
       });
     }
   }
@@ -423,6 +511,8 @@ class _AddReflectionSheetState extends State<_AddReflectionSheet> {
     Navigator.of(context).pop(<String, dynamic>{
       'text': _textController.text.trim(),
       'imageFile': _imageFile,
+      'keepExistingImage': _keepExistingImage,
+      'active': widget.existingReflection?.active ?? false,
     });
   }
 
@@ -430,142 +520,177 @@ class _AddReflectionSheetState extends State<_AddReflectionSheet> {
   Widget build(BuildContext context) {
     final colors = context.loahColors;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final hasExistingImage = _isEditing &&
+        _imageFile == null &&
+        _keepExistingImage &&
+        widget.existingReflection!.imageUrl.isNotEmpty;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + bottomInset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colors.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          Text(
-            'Nova Reflexão',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colors.border,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-          ),
-          const SizedBox(height: 16),
-
-          // Text field
-          TextField(
-            controller: _textController,
-            maxLines: 4,
-            decoration: InputDecoration(
-              hintText: 'Escreva o texto da reflexão...',
-              filled: true,
-              fillColor: colors.cardBackgroundAlt,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
               ),
-              contentPadding: const EdgeInsets.all(14),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-          // Image picker area
-          GestureDetector(
-            onTap: _pickImage,
-            child: Container(
-              width: double.infinity,
-              height: 120,
-              decoration: BoxDecoration(
-                color: colors.cardBackgroundAlt,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colors.border),
+            Text(
+              _isEditing ? 'Editar Reflexão' : 'Nova Reflexão',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 16),
+
+            TextField(
+              controller: _textController,
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: 'Escreva o texto da reflexão...',
+                filled: true,
+                fillColor: colors.cardBackgroundAlt,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.all(14),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: _imageFile != null
-                  ? Stack(
-                      children: [
-                        Image.file(
-                          _imageFile!,
-                          width: double.infinity,
-                          height: 120,
-                          fit: BoxFit.cover,
-                        ),
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: GestureDetector(
-                            onTap: () =>
-                                setState(() => _imageFile = null),
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 18,
+            ),
+            const SizedBox(height: 16),
+
+            GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                width: double.infinity,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: colors.cardBackgroundAlt,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colors.border),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: _imageFile != null
+                    ? Stack(
+                        children: [
+                          Image.file(
+                            _imageFile!,
+                            width: double.infinity,
+                            height: 120,
+                            fit: BoxFit.cover,
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setState(() => _imageFile = null),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.add_photo_alternate_outlined,
-                          size: 40,
-                          color: context.textSecondary,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Adicionar imagem (opcional)',
-                          style: TextStyle(
-                            color: context.textSecondary,
-                            fontSize: 13,
+                        ],
+                      )
+                    : hasExistingImage
+                        ? Stack(
+                            children: [
+                              Image.network(
+                                widget.existingReflection!.imageUrl,
+                                width: double.infinity,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              ),
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: GestureDetector(
+                                  onTap: () => setState(() {
+                                    _keepExistingImage = false;
+                                  }),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.black54,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate_outlined,
+                                size: 40,
+                                color: context.textSecondary,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _isEditing
+                                    ? 'Tocar para alterar imagem'
+                                    : 'Adicionar imagem (opcional)',
+                                style: TextStyle(
+                                  color: context.textSecondary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-          // Submit button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colors.accentBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.accentBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
-              child: const Text(
-                'Criar Reflexão',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
+                child: Text(
+                  _isEditing ? 'Guardar Alterações' : 'Criar Reflexão',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-        ],
+            SizedBox(height: 52 + bottomInset),
+          ],
+        ),
       ),
     );
   }
 }
-

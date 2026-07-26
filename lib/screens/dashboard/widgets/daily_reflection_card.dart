@@ -5,13 +5,12 @@ import 'package:flutter/material.dart';
 class DailyReflectionCard extends StatelessWidget {
   final String quote;
   final String imageUrl;
-  final VoidCallback? onEdit;
 
   const DailyReflectionCard({
     super.key,
     required this.quote,
     required this.imageUrl,
-    this.onEdit,
+  
   });
 
   @override
@@ -66,16 +65,6 @@ class DailyReflectionCard extends StatelessWidget {
               ],
             ),
           ),
-          if (onEdit != null)
-            Positioned(
-              right: 12,
-              bottom: 12,
-              child: FloatingActionButton.small(
-                heroTag: 'reflection_edit',
-                onPressed: onEdit,
-                child: const Icon(Icons.edit, size: 18),
-              ),
-            ),
         ],
       ),
     );

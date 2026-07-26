@@ -9,7 +9,6 @@ import '../../core/services/goal_service.dart';
 import '../../core/utils/goal_progress.dart';
 import '../../models/goal_model.dart';
 import '../../widgets/loah_app_bar.dart';
-import '../../widgets/loah_avatar_action.dart';
 import '../../widgets/loah_card.dart';
 import '../../widgets/loah_drawer.dart';
 import 'add_goal_screen.dart';
@@ -94,7 +93,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
     final nav = LoahNavigationController.of(context);
     return Scaffold(
       drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
-      appBar: const LoahAppBar(actions: [LoahAvatarAction()]),
+      appBar: const LoahAppBar(title: "Minhas Metas"),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadGoals,

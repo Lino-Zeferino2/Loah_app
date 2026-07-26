@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_types_as_parameter_names
 
 import 'dart:async';
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -221,14 +222,19 @@ Future<bool> _loadFinanceData() async {
       debugPrint('Dashboard - Erro ao carregar tasks/goals: $e');
     }
 
-    // Carrega a reflexão ativa
+    // Carrega todas as reflexões ativas e escolhe uma aleatoriamente
     try {
-      final reflection = await _reflectionService.getActiveReflection();
+      final reflections = await _reflectionService.getAllActiveReflections();
       if (mounted) {
-        setState(() => _activeReflection = reflection);
+        if (reflections.isNotEmpty) {
+          final randomIndex = Random().nextInt(reflections.length);
+          setState(() => _activeReflection = reflections[randomIndex]);
+        } else {
+          setState(() => _activeReflection = null);
+        }
       }
     } catch (e) {
-      debugPrint('Dashboard - Erro ao carregar reflexão: $e');
+      debugPrint('Dashboard - Erro ao carregar reflexões: $e');
     }
   }
 
@@ -349,7 +355,7 @@ Future<bool> _loadFinanceData() async {
                 imageUrl: _activeReflection?.imageUrl.isNotEmpty == true
                     ? _activeReflection!.imageUrl
                     : 'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800',
-                onEdit: () {},
+              
               ),
             ],
           ),

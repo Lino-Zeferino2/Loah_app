@@ -7,7 +7,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/task_model.dart';
 import '../../widgets/loah_app_bar.dart';
-import '../../widgets/loah_avatar_action.dart';
 import '../../widgets/loah_drawer.dart';
 import '../../widgets/section_header.dart';
 import 'add_task_screen.dart';
@@ -136,7 +135,7 @@ class _TasksScreenState extends State<TasksScreen> {
 
     return Scaffold(
       drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
-      appBar: const LoahAppBar(title: 'Minhas Tarefas', actions: [LoahAvatarAction()]),
+      appBar: const LoahAppBar(title: 'Minhas Tarefas'),
       body: SafeArea(
         child: StreamBuilder<QuerySnapshot>(
           stream: _taskService.getTasksStream(),
