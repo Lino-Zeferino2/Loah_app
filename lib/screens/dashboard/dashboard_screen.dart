@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/theme/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/services/auth_service.dart';
@@ -360,6 +361,20 @@ Future<bool> _loadFinanceData() async {
             ],
           ),
         ),
+      ),
+       floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primary,
+        heroTag: 'goals_fab',
+        onPressed: (){showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: false,
+                    backgroundColor: context.loahColors.cardBackground,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    builder: (_) => const NewItemModalSheet(),
+                  );},
+        child: const Icon(Icons.add),
       ),
     );
   }
