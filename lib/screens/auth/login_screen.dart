@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
@@ -32,6 +33,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final UserService _userService = UserService();
 
   @override
+  void initState() {
+    super.initState();
+    // O signOut já foi feito pelo drawer antes de navegar para cá,
+    // por isso não é necessário repeti-lo aqui.
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -60,13 +68,38 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _submitting = true);
 
     try {
-      await _authService.signInWithEmail(
+      final userCredential = await _authService.signInWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
       if (!mounted) return;
 
+      // Verificar se o utilizador está bloqueado no Firestore
+      final uid = userCredential.user?.uid;
+      if (uid != null) {
+        final userDoc = await _userService.getUserProfile(uid);
+        if (userDoc.exists) {
+          final userData = userDoc.data() as Map<String, dynamic>;
+          if (userData['blocked'] == true) {
+            // Utilizador bloqueado - faz logout e mostra erro
+            await _authService.signOut();
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('A sua conta foi bloqueada. Contacte o administrador.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            setState(() => _submitting = false);
+            return;
+          }
+        }
+      }
+
+      // Reativa a rede do Firestore que foi desligada no logout
+      await FirebaseFirestore.instance.enableNetwork();
+      // ignore: use_build_context_synchronously
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const RootShell()),
         (route) => false,
@@ -116,8 +149,24 @@ class _LoginScreenState extends State<LoginScreen> {
             name: user.displayName ?? 'Usuario',
             email: user.email ?? '',
           );
+        } else {
+          // Verificar se o utilizador está bloqueado
+          final userData = doc.data() as Map<String, dynamic>;
+          if (userData['blocked'] == true) {
+            await _authService.signOut();
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('A sua conta foi bloqueada. Contacte o administrador.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
         }
         if (!mounted) return;
+        // Reativa a rede do Firestore que foi desligada no logout
+        await FirebaseFirestore.instance.enableNetwork();
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const RootShell()),
           (route) => false,
@@ -176,8 +225,24 @@ class _LoginScreenState extends State<LoginScreen> {
             name: user.displayName ?? 'Usuario Apple',
             email: user.email ?? '',
           );
+        } else {
+          // Verificar se o utilizador está bloqueado
+          final userData = doc.data() as Map<String, dynamic>;
+          if (userData['blocked'] == true) {
+            await _authService.signOut();
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('A sua conta foi bloqueada. Contacte o administrador.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
         }
         if (!mounted) return;
+        // Reativa a rede do Firestore que foi desligada no logout
+        await FirebaseFirestore.instance.enableNetwork();
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const RootShell()),
           (route) => false,

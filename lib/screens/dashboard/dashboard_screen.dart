@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_types_as_parameter_names
 
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -48,19 +49,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double _totalWealth = 0;
   double _progressToGoal = 0;
   int _unreadCount = 0;
+  StreamSubscription? _notificationSub;
 
   @override
   void initState() {
     super.initState();
     _loadData();
-    _notificationRepo.getUnreadCountStream().listen((count) {
+    _notificationSub = _notificationRepo.getUnreadCountStream().listen((count) {
       if (mounted) setState(() => _unreadCount = count);
     });
+  }
+
+  @override
+  void dispose() {
+    _notificationSub?.cancel();
+    super.dispose();
   }
 
   /// Tenta carregar os dados financeiros (contas + ativos).
   /// Retorna true se conseguiu carregar.
 Future<bool> _loadFinanceData() async {
+    // Guarda de segurança: se o widget foi desmontado ou o user já
+    // deslogou, aborta para evitar queries Firestore com token inválido.
+    if (!mounted || FirebaseAuth.instance.currentUser == null) return false;
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
@@ -97,7 +108,7 @@ Future<bool> _loadFinanceData() async {
       debugPrint('Dashboard - monthlyIncome: $monthlyIncome, monthlyExpense: $monthlyExpense');
 
       final progress = monthlyIncome > 0
-          ? ((monthlyExpense / monthlyIncome).clamp(0.0, 1.0) as double)
+          ? (monthlyExpense / monthlyIncome).clamp(0.0, 1.0)
           : 0.0;
 
       if (mounted) {
@@ -116,6 +127,8 @@ Future<bool> _loadFinanceData() async {
   }
 
   Future<void> _loadData() async {
+    // Guarda de segurança: aborta se widget foi desmontado ou user deslogou
+    if (!mounted || FirebaseAuth.instance.currentUser == null) return;
     // Carrega finanças primeiro — o saldo aparece mesmo que o resto falhe
     await _loadFinanceData();
 

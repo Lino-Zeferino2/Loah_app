@@ -20,20 +20,37 @@ class NotificationRepository {
 
   String? get _userId => FirebaseAuth.instance.currentUser?.uid;
 
-  CollectionReference get _notificationsCollection =>
-      _firestore.collection('users').doc(_userId).collection('notifications');
+  /// Returns a reference to the user's notifications collection, or null
+  /// if the user is not authenticated.
+  CollectionReference? get _notificationsCollection {
+    final uid = _userId;
+    if (uid == null) return null;
+    return _firestore.collection('users').doc(uid).collection('notifications');
+  }
+
+  CollectionReference _requireCollection() {
+    final col = _notificationsCollection;
+    if (col == null) throw Exception('User not authenticated');
+    return col;
+  }
 
   /// Returns a stream of all notifications for the current user,
-  /// ordered by timestamp descending (newest first).
+  /// ordered by timestamp descending (newest first). Returns an empty
+  /// stream if the user is not authenticated.
   Stream<QuerySnapshot> getNotificationsStream() {
-    return _notificationsCollection
+    final col = _notificationsCollection;
+    if (col == null) return const Stream.empty();
+    return col
         .orderBy('timestamp', descending: true)
         .snapshots();
   }
 
-  /// Returns a stream of only unread notifications.
+  /// Returns a stream of only unread notifications. Returns an empty
+  /// stream if the user is not authenticated.
   Stream<QuerySnapshot> getUnreadNotificationsStream() {
-    return _notificationsCollection
+    final col = _notificationsCollection;
+    if (col == null) return const Stream.empty();
+    return col
         .where('isRead', isEqualTo: false)
         .orderBy('timestamp', descending: true)
         .snapshots();
@@ -45,19 +62,20 @@ class NotificationRepository {
   Future<String> addNotification(AppNotification notification) async {
     final data = notification.toFirestore();
     data['createdAt'] = FieldValue.serverTimestamp();
+    final col = _requireCollection();
 
     if (notification.id.isNotEmpty) {
-      await _notificationsCollection.doc(notification.id).set(data);
+      await col.doc(notification.id).set(data);
       return notification.id;
     } else {
-      final docRef = await _notificationsCollection.add(data);
+      final docRef = await col.add(data);
       return docRef.id;
     }
   }
 
   /// Marks a single notification as read.
   Future<void> markAsRead(String notificationId) async {
-    await _notificationsCollection.doc(notificationId).update({
+    await _requireCollection().doc(notificationId).update({
       'isRead': true,
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -66,7 +84,8 @@ class NotificationRepository {
   /// Marks all notifications as read.
   Future<void> markAllAsRead() async {
     final batch = _firestore.batch();
-    final snapshot = await _notificationsCollection
+    final col = _requireCollection();
+    final snapshot = await col
         .where('isRead', isEqualTo: false)
         .get();
 
@@ -82,13 +101,14 @@ class NotificationRepository {
 
   /// Deletes a specific notification.
   Future<void> deleteNotification(String notificationId) async {
-    await _notificationsCollection.doc(notificationId).delete();
+    await _requireCollection().doc(notificationId).delete();
   }
 
   /// Clears all notifications for the current user.
   Future<void> clearAll() async {
     final batch = _firestore.batch();
-    final snapshot = await _notificationsCollection.get();
+    final col = _requireCollection();
+    final snapshot = await col.get();
 
     for (final doc in snapshot.docs) {
       batch.delete(doc.reference);
@@ -99,15 +119,22 @@ class NotificationRepository {
 
   /// Returns the count of unread notifications.
   Future<int> getUnreadCount() async {
-    final snapshot = await _notificationsCollection
+    final col = _requireCollection();
+    final snapshot = await col
         .where('isRead', isEqualTo: false)
         .get();
     return snapshot.docs.length;
   }
 
   /// Returns a stream of the unread count (useful for badge indicators).
+  /// Se o utilizador nao estiver autenticado, retorna um stream vazio
+  /// (0) para evitar erros PERMISSION_DENIED que podem travar a app.
   Stream<int> getUnreadCountStream() {
-    return _notificationsCollection
+    final col = _notificationsCollection;
+    if (col == null) {
+      return Stream<int>.value(0);
+    }
+    return col
         .where('isRead', isEqualTo: false)
         .snapshots()
         .map((snapshot) => snapshot.docs.length);

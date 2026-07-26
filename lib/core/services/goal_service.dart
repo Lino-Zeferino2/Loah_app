@@ -14,13 +14,21 @@ class GoalService {
 
   String? get _userId => FirebaseAuth.instance.currentUser?.uid;
 
-  CollectionReference get _goalsCollection =>
-      _firestore.collection('users').doc(_userId).collection('goals');
+  /// Retorna a referência à coleção de metas, ou null se o utilizador
+  /// não estiver autenticado.
+  CollectionReference? _getGoalsCollection() {
+    final uid = _userId;
+    if (uid == null) return null;
+    return _firestore.collection('users').doc(uid).collection('goals');
+  }
 
   /// Retorna um [Stream] de [QuerySnapshot] para ser usado com
   /// [StreamBuilder] na tela de metas.
+  /// Devolve um stream vazio se não houver sessão autenticada.
   Stream<QuerySnapshot> getGoalsStream() {
-    return _goalsCollection.orderBy('createdAt', descending: true).snapshots();
+    final col = _getGoalsCollection();
+    if (col == null) return const Stream.empty();
+    return col.orderBy('createdAt', descending: true).snapshots();
   }
 
   /// Converte um [DocumentSnapshot] para [GoalModel].
@@ -77,24 +85,32 @@ class GoalService {
 
   /// Adiciona uma nova meta ao Firestore.
   Future<void> addGoal(GoalModel goal) async {
+    final col = _getGoalsCollection();
+    if (col == null) return;
     final data = _goalToMap(goal);
     data['createdAt'] = FieldValue.serverTimestamp();
-    await _goalsCollection.doc(goal.id).set(data);
+    await col.doc(goal.id).set(data);
   }
 
   /// Atualiza uma meta existente.
   Future<void> updateGoal(GoalModel goal) async {
-    await _goalsCollection.doc(goal.id).update(_goalToMap(goal));
+    final col = _getGoalsCollection();
+    if (col == null) return;
+    await col.doc(goal.id).update(_goalToMap(goal));
   }
 
   /// Apaga uma meta.
   Future<void> deleteGoal(String goalId) async {
-    await _goalsCollection.doc(goalId).delete();
+    final col = _getGoalsCollection();
+    if (col == null) return;
+    await col.doc(goalId).delete();
   }
 
   /// Busca uma única meta pelo ID.
   Future<GoalModel?> getGoal(String goalId) async {
-    final doc = await _goalsCollection.doc(goalId).get();
+    final col = _getGoalsCollection();
+    if (col == null) return null;
+    final doc = await col.doc(goalId).get();
     if (!doc.exists) return null;
     return _fromDocument(doc);
   }

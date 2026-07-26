@@ -13,13 +13,21 @@ class ContactService {
 
   String? get _userId => FirebaseAuth.instance.currentUser?.uid;
 
-  CollectionReference get _contactsCollection =>
-      _firestore.collection('users').doc(_userId).collection('contacts');
+  /// Retorna a referência à coleção de contactos, ou null se o
+  /// utilizador não estiver autenticado.
+  CollectionReference? _getContactsCollection() {
+    final uid = _userId;
+    if (uid == null) return null;
+    return _firestore.collection('users').doc(uid).collection('contacts');
+  }
 
   /// Retorna um [Stream] de [QuerySnapshot] para ser usado com
   /// [StreamBuilder] na tela de contactos.
+  /// Devolve um stream vazio se não houver sessão autenticada.
   Stream<QuerySnapshot> getContactsStream() {
-    return _contactsCollection.orderBy('name').snapshots();
+    final col = _getContactsCollection();
+    if (col == null) return const Stream.empty();
+    return col.orderBy('name').snapshots();
   }
 
   /// Converte um [DocumentSnapshot] para [ContactModel].
@@ -79,24 +87,32 @@ class ContactService {
   /// Se [contactId] for fornecido, usa esse ID; caso contrário, gera um
   /// automaticamente.
   Future<void> addContact(ContactModel contact) async {
+    final col = _getContactsCollection();
+    if (col == null) return;
     final data = _contactToMap(contact);
     data['createdAt'] = FieldValue.serverTimestamp();
-    await _contactsCollection.doc(contact.id).set(data);
+    await col.doc(contact.id).set(data);
   }
 
   /// Atualiza um contacto existente.
   Future<void> updateContact(ContactModel contact) async {
-    await _contactsCollection.doc(contact.id).update(_contactToMap(contact));
+    final col = _getContactsCollection();
+    if (col == null) return;
+    await col.doc(contact.id).update(_contactToMap(contact));
   }
 
   /// Apaga um contacto.
   Future<void> deleteContact(String contactId) async {
-    await _contactsCollection.doc(contactId).delete();
+    final col = _getContactsCollection();
+    if (col == null) return;
+    await col.doc(contactId).delete();
   }
 
   /// Busca um único contacto pelo ID.
   Future<ContactModel?> getContact(String contactId) async {
-    final doc = await _contactsCollection.doc(contactId).get();
+    final col = _getContactsCollection();
+    if (col == null) return null;
+    final doc = await col.doc(contactId).get();
     if (!doc.exists) return null;
     return _fromDocument(doc);
   }

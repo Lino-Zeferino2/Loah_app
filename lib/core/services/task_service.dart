@@ -14,13 +14,22 @@ class TaskService {
 
   String? get _userId => FirebaseAuth.instance.currentUser?.uid;
 
-  CollectionReference get _tasksCollection =>
-      _firestore.collection('users').doc(_userId).collection('tasks');
+  /// Retorna a referência à coleção de tarefas do utilizador autenticado,
+  /// ou null se não houver sessão.
+  CollectionReference? _getTasksCollection() {
+    final uid = _userId;
+    if (uid == null) return null;
+    return _firestore.collection('users').doc(uid).collection('tasks');
+  }
 
   /// Retorna um [Stream] de [QuerySnapshot] para ser usado com
   /// [StreamBuilder] nas telas de tarefas.
+  /// Devolve um stream vazio se o utilizador não estiver autenticado,
+  /// evitando erros PERMISSION_DENIED após logout.
   Stream<QuerySnapshot> getTasksStream() {
-    return _tasksCollection.orderBy('createdAt', descending: false).snapshots();
+    final col = _getTasksCollection();
+    if (col == null) return const Stream.empty();
+    return col.orderBy('createdAt', descending: false).snapshots();
   }
 
   /// Converte um [DocumentSnapshot] para [TaskModel].
@@ -85,30 +94,40 @@ class TaskService {
 
   /// Adiciona uma nova tarefa ao Firestore.
   Future<void> addTask(TaskModel task) async {
+    final col = _getTasksCollection();
+    if (col == null) return;
     final data = _taskToMap(task);
-    await _tasksCollection.doc(task.id).set(data);
+    await col.doc(task.id).set(data);
   }
 
   /// Atualiza uma tarefa existente.
   Future<void> updateTask(TaskModel task) async {
-    await _tasksCollection.doc(task.id).update(_taskToMap(task));
+    final col = _getTasksCollection();
+    if (col == null) return;
+    await col.doc(task.id).update(_taskToMap(task));
   }
 
   /// Apaga uma tarefa.
   Future<void> deleteTask(String taskId) async {
-    await _tasksCollection.doc(taskId).delete();
+    final col = _getTasksCollection();
+    if (col == null) return;
+    await col.doc(taskId).delete();
   }
 
   /// Busca uma única tarefa pelo ID.
   Future<TaskModel?> getTask(String taskId) async {
-    final doc = await _tasksCollection.doc(taskId).get();
+    final col = _getTasksCollection();
+    if (col == null) return null;
+    final doc = await col.doc(taskId).get();
     if (!doc.exists) return null;
     return _fromDocument(doc);
   }
 
   /// Busca todas as tarefas vinculadas a uma meta específica.
   Future<List<TaskModel>> getTasksByGoalId(String goalId) async {
-    final querySnapshot = await _tasksCollection
+    final col = _getTasksCollection();
+    if (col == null) return [];
+    final querySnapshot = await col
         .where('goalId', isEqualTo: goalId)
         .get();
     return querySnapshot.docs.map((doc) => _fromDocument(doc)).toList();

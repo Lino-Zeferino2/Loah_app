@@ -1,7 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
+import 'package:loah_app/screens/admin/manage_help_center_screen.dart';
+import 'package:loah_app/screens/admin/manage_reflections_screen.dart';
+import 'package:loah_app/screens/admin/manage_users_screen.dart';
 import 'package:loah_app/screens/auth/login_screen.dart';
 import 'package:loah_app/widgets/loah_app_bar.dart';
 import '../core/theme/app_theme.dart';
@@ -131,39 +135,50 @@ class _LoahDrawerState extends State<LoahDrawer> {
                                 ),
                           Row(
                             children: [
-                              _loadingProfile
-                                  ? SizedBox(
-                                      width: 100,
-                                      height: 12,
-                                      child: LinearProgressIndicator(
-                                        backgroundColor: colors.cardBackgroundAlt,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _loadingProfile
+                                        ? SizedBox(
+                                            width: 100,
+                                            height: 12,
+                                            child: LinearProgressIndicator(
+                                              backgroundColor: colors.cardBackgroundAlt,
+                                            ),
+                                          )
+                                        : Text(
+                                            _userEmail,
+                                            style: TextStyle(
+                                              color: colors.accentBlue,
+                                              fontSize: 12.5,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                    if (!_loadingProfile && _userRole == 'admin')
+                                      const Padding(
+                                        padding: EdgeInsets.only(top: 4),
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            color: Colors.amber,
+                                            borderRadius: BorderRadius.all(Radius.circular(6)),
+                                          ),
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            child: Text(
+                                              'Admin',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                    )
-                                  : Text(
-                                      _userEmail,
-                                      style: TextStyle(
-                                        color: colors.accentBlue,
-                                        fontSize: 12.5,
-                                      ),
-                                    ),
-                              if (!_loadingProfile && _userRole == 'admin') ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.shade700,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Text(
-                                    'Admin',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ],
                           ),
                         ],
@@ -329,6 +344,65 @@ class _LoahDrawerState extends State<LoahDrawer> {
                       ],
                     ),
 
+                    // ── Admin section (only visible for admin users) ──
+                    if (_userRole == 'admin') ...[
+                      const SizedBox(height: 12),
+                      Divider(color: colors.border),
+                      const SizedBox(height: 8),
+                      Text(
+                        'ADMIN',
+                        style: TextStyle(
+                          fontSize: 11,
+                          letterSpacing: 0.6,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.amber.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      DrawerNavItem(
+                        icon: Icons.people_outline,
+                        label: 'Gerir Utilizadores',
+                        selected: false,
+                        onTap: () {
+                          Navigator.of(context).pop(); // close drawer
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const ManageUsersScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      DrawerNavItem(
+                        icon: Icons.auto_stories_outlined,
+                        label: 'Gerir Reflexões do Dia',
+                        selected: false,
+                        onTap: () {
+                          Navigator.of(context).pop(); // close drawer
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const ManageReflectionsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      DrawerNavItem(
+                        icon: Icons.support_agent_outlined,
+                        label: 'Gerir Central de Ajuda',
+                        selected: false,
+                        onTap: () {
+                          Navigator.of(context).pop(); // close drawer
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const ManageHelpCenterScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+
                     const SizedBox(height: 12),
                     Divider(color: colors.border),
                     const SizedBox(height: 8),
@@ -363,14 +437,17 @@ class _LoahDrawerState extends State<LoahDrawer> {
                       child: OutlinedButton.icon(
                         onPressed: () async {
                           Navigator.of(context).pop(); // close drawer
-                          // Faz logout no Firebase Auth, eliminando o token
-                          // de refresh persistido no dispositivo. Isto força
-                          // o utilizador a fazer login novamente na próxima
-                          // vez que abrir o app.
+                          // 1) Desliga a rede do Firestore para interromper
+                          //    todos os listeners ativos (IndexedStack mantém
+                          //    as screens vivas com streams de tasks, contacts,
+                          //    notifications, etc.) sem causar erros
+                          //    PERMISSION_DENIED que podem travar a app.
+                          await FirebaseFirestore.instance.disableNetwork();
+                          // 2) Faz signOut para revogar o token Firebase
                           await AuthService().signOut();
+                          // 3) Agora navega para o Login com stack limpo
                           if (!context.mounted) return;
-                          // Remove todo o stack de navegação e volta ao login
-                          Navigator.of(context).pushAndRemoveUntil(
+                          await Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(
                               builder: (_) => const LoginScreen(),
                             ),

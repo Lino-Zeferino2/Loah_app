@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/auth_service.dart';
+import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
 import 'package:loah_app/main.dart';
 import '../auth/login_screen.dart';
@@ -29,6 +30,7 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
   bool _leaving = false;
   bool _navigated = false; // Evita navegação duplicada
   final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
   StreamSubscription<User?>? _authSubscription;
 
   @override
@@ -66,8 +68,8 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
     _authSubscription = _authService.authStateChanges.listen((user) {
       if (!mounted || _navigated) return;
       if (user != null) {
-        // Utilizador já tem sessão ativa → navega para o dashboard
-        _navigateToRoot();
+        // Utilizador já tem sessão ativa → verifica se está bloqueado
+        _checkAndNavigate(user);
       }
     });
 
@@ -77,12 +79,32 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
       if (status == AnimationStatus.completed && mounted && !_navigated) {
         final user = _authService.currentUser;
         if (user != null) {
-          _navigateToRoot();
+          _checkAndNavigate(user);
         } else {
           _navigateToLogin();
         }
       }
     });
+  }
+
+  Future<void> _checkAndNavigate(User user) async {
+    try {
+      final doc = await _userService.getUserProfile(user.uid);
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        if (data['blocked'] == true) {
+          // Utilizador bloqueado - faz logout e vai para login
+          await _authService.signOut();
+          if (!mounted) return;
+          _navigateToLogin();
+          return;
+        }
+      }
+    } catch (_) {
+      // Em caso de erro, permite o acesso normal
+    }
+    if (!mounted) return;
+    _navigateToRoot();
   }
 
   void _navigateToRoot() {
