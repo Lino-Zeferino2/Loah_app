@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/services/notification_scheduler.dart';
 import '../../core/services/task_service.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/theme/app_colors.dart';
@@ -97,9 +99,16 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   Future<void> _toggle(TaskModel task) async {
+    final wasDone = task.isDone;
     final updated = task.copyWith(isDone: !task.isDone);
     await _taskService.updateTask(updated);
     setState(() {});
+
+    // Se acabou de marcar como concluída, verifica se todas as
+    // tarefas independentes foram completadas e envia notificação.
+    if (!wasDone && updated.isDone) {
+      NotificationScheduler().checkAllTasksDone();
+    }
   }
 
   Future<void> _openTask(TaskModel task) async {
@@ -203,7 +212,7 @@ class _TasksScreenState extends State<TasksScreen> {
             return ListView(
               padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
-                Text('Quinta-feira, 24 de Outubro',
+                Text(DateFormat('EEEE, d \'de\' MMMM', 'pt_PT').format(DateTime.now()),
                     style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(height: AppSpacing.md),
                 TaskSearchBar(

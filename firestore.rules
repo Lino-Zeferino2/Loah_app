@@ -99,11 +99,14 @@ service cloud.firestore {
 
     // === CENTRAL DE AJUDA - MENSAGENS DOS USERS ===
     // Qualquer user autenticado pode criar uma mensagem.
-    // Apenas admins podem ler, atualizar status, responder e apagar.
+    // O próprio autor pode ler as suas mensagens; admins podem ler todas.
+    // Apenas admins podem atualizar status, responder e apagar.
     match /helpCenterMessages/{messageId} {
       allow create: if request.auth != null;
-      allow read: if request.auth != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
       allow update: if request.auth != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
       allow delete: if request.auth != null &&

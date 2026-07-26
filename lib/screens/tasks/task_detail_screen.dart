@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/goal_service.dart';
+import '../../core/services/notification_scheduler.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/goal_model.dart';
 import '../../models/task_model.dart';
@@ -45,10 +46,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   void _toggleDone() async {
+    final wasDone = _task.isDone;
     final updated = _task.copyWith(isDone: !_task.isDone);
     try {
       await _taskService.updateTask(updated);
       if (mounted) setState(() => _task = updated);
+
+      // Se acabou de marcar como concluída, verifica se todas as
+      // tarefas independentes foram completadas e envia notificação.
+      if (!wasDone && updated.isDone) {
+        NotificationScheduler().checkAllTasksDone();
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

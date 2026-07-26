@@ -1,16 +1,28 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
 import 'core/navigation/navigation_controller.dart';
+import 'core/services/contact_service.dart';
+import 'core/services/goal_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/notification_scheduler.dart';
+import 'core/services/task_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
+import 'models/app_notification.dart';
+import 'models/contact_model.dart';
+import 'models/goal_model.dart';
+import 'models/task_model.dart';
 import 'screens/contacts/contacts_screen.dart';
+import 'screens/contacts/contact_detail_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
-import 'screens/finances/finances_screen.dart';
 import 'screens/goals/goals_screen.dart';
+import 'screens/goals/goal_detail_screen.dart';
+import 'screens/finances/finances_screen.dart';
+import 'screens/notifications/notifications_screen.dart';
 import 'screens/tasks/tasks_screen.dart';
+import 'screens/tasks/task_detail_screen.dart';
 import 'widgets/loah_bottom_nav.dart';
 import 'screens/splash/splash_screen.dart';
 
@@ -91,6 +103,82 @@ class _RootShellState extends State<RootShell> {
   ];
 
   void _navigateTo(int index) => setState(() => _index = index);
+
+  /// Navega para a tela apropriada quando o usuário toca numa
+  /// notificação push. Conectado via [NotificationService.setNavigator].
+  /// Busca os dados completos do Firestore para abrir a tela de detalhes.
+  void _navigateFromNotification(AppNotification notification) {
+    switch (notification.category) {
+      case NotificationCategory.contacts:
+        if (notification.relatedId != null) {
+          _openContactDetail(notification.relatedId!);
+        } else {
+          _navigateTo(4);
+        }
+        break;
+      case NotificationCategory.tasks:
+        if (notification.relatedId != null) {
+          _openTaskDetail(notification.relatedId!);
+        }
+        break;
+      case NotificationCategory.goals:
+        if (notification.relatedId != null) {
+          _openGoalDetail(notification.relatedId!);
+        } else {
+          _navigateTo(1);
+        }
+        break;
+      case NotificationCategory.finance:
+        _navigateTo(3);
+        break;
+      case NotificationCategory.system:
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+        );
+        break;
+    }
+  }
+
+  /// Busca o contacto completo do Firestore e abre a tela de detalhes.
+  Future<void> _openContactDetail(String contactId) async {
+    final contact = await ContactService().getContact(contactId);
+    if (contact == null || !context.mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ContactDetailScreen(contact: contact),
+      ),
+    );
+  }
+
+  /// Busca a tarefa completa do Firestore e abre a tela de detalhes.
+  Future<void> _openTaskDetail(String taskId) async {
+    final task = await TaskService().getTask(taskId);
+    if (task == null || !context.mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TaskDetailScreen(task: task),
+      ),
+    );
+  }
+
+  /// Busca a meta completa do Firestore e abre a tela de detalhes.
+  Future<void> _openGoalDetail(String goalId) async {
+    final goal = await GoalService().getGoal(goalId);
+    if (goal == null || !context.mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => GoalDetailScreen(goal: goal),
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Conecta o callback de navegação para quando o usuário tocar
+    // numa notificação push (FCM) ou local notification.
+    NotificationService().setNavigator(_navigateFromNotification);
+  }
 
   @override
   Widget build(BuildContext context) {
