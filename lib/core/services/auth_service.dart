@@ -82,6 +82,41 @@ class AuthService {
     await _auth.sendPasswordResetEmail(email: email.trim());
   }
 
+  /// Altera a senha do usuario atual, verificando a senha atual primeiro.
+  /// Reautentica o usuario com [currentPassword] e, se bem-sucedido,
+  /// atualiza para [newPassword].
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'not-authenticated',
+        message: 'Nenhum usuario autenticado',
+      );
+    }
+
+    final email = user.email;
+    if (email == null) {
+      throw FirebaseAuthException(
+        code: 'no-email',
+        message: 'Conta sem email associado (login social)',
+      );
+    }
+
+    // Reautenticar com a senha atual
+    final credential = EmailAuthProvider.credential(
+      email: email,
+      password: currentPassword,
+    );
+
+    await user.reauthenticateWithCredential(credential);
+
+    // Atualizar para a nova senha
+    await user.updatePassword(newPassword);
+  }
+
   /// Faz logout.
   Future<void> signOut() async {
     await _googleSignIn.signOut();

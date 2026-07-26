@@ -1,10 +1,9 @@
-# TODO - Gerir Sobre Loah
+# TODO: Implementar "Alterar Senha"
 
-## Passos
+## Etapas
 
-- [x] 1. Model - Adicionar `AboutLoahContent` a `help_center_models.dart`
-- [x] 2. Service - Adicionar métodos ao `HelpCenterService`
-- [x] 3. Admin Screen - Criar `manage_about_loah_screen.dart`
-- [x] 4. Drawer - Adicionar "Gerir Sobre Loah" na secção ADMIN
-- [x] 5. About Screen - Atualizar `about_loah_screen.dart` para dados dinâmicos
+- [x] 1. Adicionar método `changePassword` ao `AuthService` (`lib/core/services/auth_service.dart`)
+- [x] 2. Criar a tela `ChangePasswordScreen` (`lib/screens/auth/change_password_screen.dart`)
+- [x] 3. Atualizar `LoahDrawer` para navegar para a nova tela (`lib/widgets/loah_drawer.dart`)
+- [x] 4. Verificar com `flutter analyze` se há erros (1 warning de unused import corrigido)
 

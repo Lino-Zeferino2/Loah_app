@@ -7,6 +7,7 @@ import 'package:loah_app/screens/admin/manage_about_loah_screen.dart';
 import 'package:loah_app/screens/admin/manage_help_center_screen.dart';
 import 'package:loah_app/screens/admin/manage_reflections_screen.dart';
 import 'package:loah_app/screens/admin/manage_users_screen.dart';
+import 'package:loah_app/screens/auth/change_password_screen.dart';
 import 'package:loah_app/screens/auth/login_screen.dart';
 import 'package:loah_app/widgets/loah_app_bar.dart';
 import '../core/theme/app_theme.dart';
@@ -453,7 +454,11 @@ class _LoahDrawerState extends State<LoahDrawer> {
                           selected: false,
                           onTap: () {
                             Navigator.of(context).pop();
-                            // Placeholder: no navigation yet.
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const ChangePasswordScreen(),
+                              ),
+                            );
                           },
                         ),
                       ],

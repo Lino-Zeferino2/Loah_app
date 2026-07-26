@@ -214,6 +214,7 @@ class _ContentTab extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 48,)
         ],
       ),
     );
