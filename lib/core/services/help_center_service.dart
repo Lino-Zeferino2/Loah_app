@@ -163,6 +163,27 @@ class HelpCenterService {
         .snapshots();
   }
 
+  /// Get messages for a specific user (fire-and-forget, newest first).
+  Future<List<HelpMessage>> getUserMessages(String userId) async {
+    final snap = await _messages
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .get();
+    return snap.docs.map((doc) {
+      return HelpMessage.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+    }).toList();
+  }
+
+  /// Add a user follow-up (reply) to an existing message.
+  Future<void> addUserFollowUp(String messageId, String followUp) async {
+    await _messages.doc(messageId).update({
+      'userFollowUp': followUp,
+      'userFollowUpAt': FieldValue.serverTimestamp(),
+      'read': false,
+      'status': HelpMessageStatus.emAndamento.name,
+    });
+  }
+
   /// Send a new message (from a user).
   Future<void> sendMessage(HelpMessage message) async {
     await _messages.add(message.toMap());

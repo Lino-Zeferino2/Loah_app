@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/help_center_service.dart';
 import 'package:loah_app/models/help_center_models.dart';
 import 'article_detail_screen.dart';
+import 'my_messages_screen.dart';
 import 'send_message_screen.dart';
 
 /// Dynamic Help Center screen that loads categories and articles from Firebase.
@@ -597,7 +598,7 @@ class _PopularArticleTile extends StatelessWidget {
   }
 }
 
-/// Contact section with send message button.
+/// Contact section with send message button and my messages button.
 class _HelpContactSection extends StatelessWidget {
   final VoidCallback onSendMessage;
 
@@ -644,6 +645,29 @@ class _HelpContactSection extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: scheme.primary,
                 foregroundColor: scheme.onPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const MyMessagesScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.history_rounded, size: 18),
+              label: const Text('As Minhas Mensagens'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: scheme.primary,
+                side: BorderSide(color: scheme.primary.withValues(alpha: 0.4)),
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

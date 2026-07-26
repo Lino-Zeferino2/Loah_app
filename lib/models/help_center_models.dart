@@ -144,6 +144,8 @@ class HelpMessage {
   final bool read;
   final String? adminReply;
   final DateTime? adminReplyAt;
+  final String? userFollowUp;
+  final DateTime? userFollowUpAt;
   final DateTime? createdAt;
 
   const HelpMessage({
@@ -158,6 +160,8 @@ class HelpMessage {
     this.read = false,
     this.adminReply,
     this.adminReplyAt,
+    this.userFollowUp,
+    this.userFollowUpAt,
     this.createdAt,
   });
 
@@ -177,6 +181,8 @@ class HelpMessage {
       read: data['read'] as bool? ?? false,
       adminReply: data['adminReply'] as String?,
       adminReplyAt: (data['adminReplyAt'] as dynamic)?.toDate(),
+      userFollowUp: data['userFollowUp'] as String?,
+      userFollowUpAt: (data['userFollowUpAt'] as dynamic)?.toDate(),
       createdAt: (data['createdAt'] as dynamic)?.toDate(),
     );
   }
@@ -193,6 +199,8 @@ class HelpMessage {
       'read': read,
       'adminReply': adminReply,
       'adminReplyAt': adminReplyAt ?? FieldValue.serverTimestamp(),
+      'userFollowUp': userFollowUp,
+      'userFollowUpAt': userFollowUpAt ?? FieldValue.serverTimestamp(),
       'createdAt': createdAt ?? FieldValue.serverTimestamp(),
     };
   }
@@ -209,6 +217,8 @@ class HelpMessage {
     bool? read,
     String? adminReply,
     DateTime? adminReplyAt,
+    String? userFollowUp,
+    DateTime? userFollowUpAt,
     DateTime? createdAt,
   }) {
     return HelpMessage(
@@ -223,6 +233,8 @@ class HelpMessage {
       read: read ?? this.read,
       adminReply: adminReply ?? this.adminReply,
       adminReplyAt: adminReplyAt ?? this.adminReplyAt,
+      userFollowUp: userFollowUp ?? this.userFollowUp,
+      userFollowUpAt: userFollowUpAt ?? this.userFollowUpAt,
       createdAt: createdAt ?? this.createdAt,
     );
   }
