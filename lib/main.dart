@@ -41,25 +41,37 @@ void main() async {
   );
 
   // ── Firebase Analytics ────────────────────────────────────────
-  final analytics = FirebaseAnalytics.instance;
-  await analytics.setAnalyticsCollectionEnabled(true);
+  try {
+    final analytics = FirebaseAnalytics.instance;
+    await analytics.setAnalyticsCollectionEnabled(true);
+  } catch (e) {
+    debugPrint('[main] Analytics init error (non-fatal): $e');
+  }
 
   // ── Firebase Crashlytics ──────────────────────────────────────
   FlutterError.onError = (errorDetails) {
-    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+    try {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+    } catch (_) {}
   };
 
   // Passa os erros de zonas assíncronas para o Crashlytics
   PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    try {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    } catch (_) {}
     return true;
   };
 
   // ── Firestore Offline Persistence ─────────────────────────────
-  FirebaseFirestore.instance.settings = const Settings(
-    persistenceEnabled: true,
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-  );
+  try {
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
+  } catch (e) {
+    debugPrint('[main] Firestore settings error (non-fatal): $e');
+  }
 
   // ── FCM Push Notifications ────────────────────────────────────
   await NotificationService().initialize();
@@ -70,9 +82,13 @@ void main() async {
   NotificationScheduler().runAllChecks();
 
   // ── Configure Analytics user ──────────────────────────────────
-  final user = FirebaseAuth.instance.currentUser;
-  if (user != null) {
-    await AnalyticsService().setUserId(user.uid);
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await AnalyticsService().setUserId(user.uid);
+    }
+  } catch (e) {
+    debugPrint('[main] Analytics user config error (non-fatal): $e');
   }
 
   runApp(const LoahApp());
@@ -233,4 +249,3 @@ class _RootShellState extends State<RootShell> {
     );
   }
 }
-

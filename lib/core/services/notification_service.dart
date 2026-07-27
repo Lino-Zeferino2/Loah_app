@@ -256,11 +256,19 @@ class NotificationService {
       message: notification.body ?? data['message'] as String? ?? '',
       timestamp: DateTime.now(),
       relatedId: data['relatedId'] as String?,
-      progress: (data['progress'] as num?)?.toDouble(),
+      // FCM data payloads are always strings; parse safely.
+      progress: _parseProgress(data['progress']),
     );
+  }
+
+  /// Safely parses progress from FCM data (can be String or num).
+  double? _parseProgress(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is num) return raw.toDouble();
+    if (raw is String) return double.tryParse(raw);
+    return null;
   }
 
   /// Returns the current FCM token.
   String? get currentToken => _currentToken;
 }
-

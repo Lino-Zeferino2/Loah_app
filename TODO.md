@@ -28,3 +28,5 @@
 - [x] Melhorar `test/widget_test.dart` — smoke test, modelos AppNotification/ContactModel, CurrencyFormatter, goal progress validation
 - [x] Verificar com `flutter test` ✅ (17/17 testes passaram)
 
+## 🐛 Bugfix: Crashlytics `type 'String' is
+
