@@ -91,6 +91,32 @@ class ReportSummary {
         .fold<double>(0, (sum, t) => sum + t.amount);
   }
 
+  /// Computes a simple linear regression (trend line) for the given
+  /// balance history points. Returns `[slope, intercept]` where
+  /// `y = slope * x + intercept`, with `x` being the index of the point.
+  ///
+  /// Useful for drawing a trend overlay on the balance chart.
+  static List<double>? trendLine(List<MonthlyBalancePoint> points) {
+    if (points.length < 2) return null;
+
+    final n = points.length.toDouble();
+    double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+
+    for (var i = 0; i < points.length; i++) {
+      final x = i.toDouble();
+      final y = points[i].balance;
+      sumX += x;
+      sumY += y;
+      sumXY += x * y;
+      sumX2 += x * x;
+    }
+
+    final slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    final intercept = (sumY - slope * sumX) / n;
+
+    return [slope, intercept];
+  }
+
   /// This month vs. last month, for every expense category that has
   /// spend in either period — sorted by current month's spend
   /// (biggest first).

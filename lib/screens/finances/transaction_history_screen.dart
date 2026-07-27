@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/utils/transaction_filters.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
@@ -6,6 +9,7 @@ import '../../core/services/finance_service.dart';
 import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
 import '../../widgets/loah_app_bar_simple.dart';
+import '../../core/utils/csv_export.dart';
 import 'add_transaction_screen.dart';
 import 'widgets/transaction_filter_sheet.dart';
 import 'widgets/transaction_list_item.dart';
@@ -90,6 +94,25 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     return grouped;
   }
 
+  Future<void> _exportCsv() async {
+    try {
+      final csv = CsvExport.transactionsToCsv(_transactions);
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/loah_transacoes.csv');
+      await file.writeAsString(csv);
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Transações Loah',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao exportar: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
@@ -97,7 +120,16 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     final months = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return Scaffold(
-      appBar: const LoahAppBarSimple(title: 'Histórico'),
+      appBar: LoahAppBarSimple(
+        title: 'Histórico',
+        actions: [
+          IconButton(
+            onPressed: _exportCsv,
+            tooltip: 'Exportar CSV',
+            icon: Icon(Icons.file_download_outlined, color: context.loahColors.accentBlue),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [

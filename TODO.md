@@ -1,32 +1,18 @@
-# Plano de Melhorias — Loah App
+# Implementation Progress
 
-## 🔴 1. Deploy das Cloud Functions (CRÍTICO)
-- [x] Executar `firebase deploy --only functions`
-- [x] Verificar deploy no Firebase Console ✅ (Todas as 8 funções deployed com sucesso)
-  - sendNotificationOnWrite
-  - checkOverdueContacts (scheduler 08:00)
-  - checkUpcomingTasks (scheduler 07:00/19:00)
-  - checkRecurringBills (scheduler 06:00)
-  - checkOverBudget (scheduler 1st/15th)
-  - checkGoalMilestones (scheduler 10:00)
-  - onSupportMessageCreated
-  - onSupportMessageReplied
+## Feature 1: Exportação de dados (CSV/PDF)
 
-## 🟡 2. Firebase Analytics & Crashlytics (RECOMENDADO)
-- [x] Adicionar `firebase_analytics` ao pubspec.yaml
-- [x] Adicionar `firebase_crashlytics` ao pubspec.yaml
-- [x] Executar `flutter pub get`
-- [x] Criar `lib/core/services/analytics_service.dart`
-- [x] Configurar Analytics + Crashlytics no `main.dart`
-- [x] Configurar Error Widget para Crashlytics (FlutterError.onError + PlatformDispatcher)
+- [x] Step 1: Add dependencies (`share_plus`, `path_provider`, `pdf`) to pubspec.yaml
+- [x] Step 2: Create `lib/core/utils/csv_export.dart` - CSV generation utility
+- [x] Step 3: Create `lib/core/utils/pdf_export.dart` - PDF report generator
+- [x] Step 4: Modify `reports_screen.dart` - Add CSV/PDF export buttons + export logic
+- [x] Step 5: Modify `transaction_history_screen.dart` - Add CSV export button
 
-## 🟡 3. Modo Offline (Firestore Persistence)
-- [x] Ativar `persistenceEnabled` no Firestore no `main.dart`
-- [x] Configurado com `cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED`
+## Feature 2: Gráficos financeiros avançados (Pie Charts + Trend Lines)
 
-## 🟡 4. Testes Automatizados
-- [x] Melhorar `test/widget_test.dart` — smoke test, modelos AppNotification/ContactModel, CurrencyFormatter, goal progress validation
-- [x] Verificar com `flutter test` ✅ (17/17 testes passaram)
+- [x] Step 6: Modify `report_summary.dart` - Add `trendLine()` linear regression helper
+- [x] Step 7: Modify `balance_bar_chart.dart` - Add CustomPainter for trend line overlay
+- [x] Step 8: Modify `reports_screen.dart` - Add pie chart card using existing DonutChart + trend line
 
-## 🐛 Bugfix: Crashlytics `type 'String' is
+✅ **All steps completed!**
 
