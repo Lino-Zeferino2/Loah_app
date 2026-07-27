@@ -1,18 +1,23 @@
-# TODO: Internacionalizar (i18n) os ecrãs de Contactos
+# TODO - Internacionalização (i18n) dos ecrãs de Tarefas
 
-## Progresso
+## Plano de Trabalho
 
-- [x] 1. `lib/core/l10n/app_localizations.dart` — Adicionar novas chaves de tradução para contactos ✅
-- [x] 2. `lib/models/contact_model.dart` — Remover strings hardcoded do InteractionTypeLabel ✅
-- [x] 3. `lib/screens/contacts/contacts_screen.dart` — Substituir strings por traduções ✅
-- [x] 4. `lib/screens/contacts/add_contact_screen.dart` — Substituir strings por traduções ✅
-- [x] 5. `lib/screens/contacts/contact_detail_screen.dart` — Substituir strings por traduções ✅
-- [x] 6. `lib/screens/contacts/widgets/contact_filter_sheet.dart` — Substituir strings por traduções ✅
-- [x] 7. `lib/screens/contacts/widgets/contact_search_bar.dart` — Substituir hint por tradução ✅
-- [x] 8. `lib/screens/contacts/widgets/country_code_picker_sheet.dart` — Substituir strings por traduções ✅
-- [x] 9. `lib/screens/contacts/widgets/contact_list_tile.dart` — Substituir relationshipTag por tradução ✅
-- [x] 10. `lib/screens/contacts/widgets/favorite_contact_avatar.dart` — Substituir relationshipTag por tradução ✅
-- [x] 11. Executar `flutter analyze` — 0 erros, apenas 6 informações pré-existentes ✅
+- [x] 1. Análise dos ficheiros relevantes concluída
+- [x] 2. Plano aprovado
 
-## Concluído ✅
-Todas as strings visíveis nos ecrãs de contactos usam agora `AppLocales.of(context).translate(...)` para suportar português e inglês.
+## Edições
+
+- [x] 3. `lib/core/l10n/app_localizations.dart` - Adicionar chaves de tradução para horizontes de metas, prioridades, status, ecrã add task
+- [x] 4. `lib/screens/tasks/add_task_screen.dart` - Corrigir string hardcoded no _delete()
+- [x] 5. `lib/screens/tasks/widgets/priority_selector.dart` - Usar AppLocales para labels
+- [x] 6. `lib/screens/tasks/widgets/task_list_item.dart` - Usar AppLocales para priority label
+- [x] 7. `lib/screens/tasks/task_detail_screen.dart` - Internacionalizar todas as strings
+- [x] 8. `lib/screens/tasks/widgets/task_filter_sheet.dart` - Internacionalizar strings
+- [x] 9. `lib/screens/tasks/widgets/related_goal_card.dart` - Internacionalizar strings
+- [x] 10. `lib/screens/tasks/tasks_screen.dart` - Internacionalizar labels de filtros ativos
+- [x] 11. `lib/screens/tasks/widgets/goal_picker_sheet.dart` - Internacionalizar labels
+
+## Verificação
+
+- [ ] 12. Executar `flutter analyze` para verificar erros
+

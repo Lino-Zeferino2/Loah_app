@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../models/goal_model.dart';
 import '../../goals/widgets/goal_term_section.dart'; // GoalTermVisuals (icon/color)
 
@@ -22,6 +23,7 @@ class GoalPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maxHeight = MediaQuery.of(context).size.height * 0.7;
+    final loc = AppLocales.of(context);
 
     return SafeArea(
       child: ConstrainedBox(
@@ -33,7 +35,7 @@ class GoalPickerSheet extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Text(
-                'Vincular a uma meta',
+                loc.translate('goalPicker_titulo'),
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
@@ -48,7 +50,7 @@ class GoalPickerSheet extends StatelessWidget {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.close),
-                    title: const Text('Nenhuma (tarefa avulsa)'),
+                    title: Text(loc.translate('goalPicker_nenhuma')),
                     onTap: () => Navigator.of(context).pop(),
                   ),
                   for (final goal in goals)
@@ -75,3 +77,4 @@ class GoalPickerSheet extends StatelessWidget {
     );
   }
 }
+

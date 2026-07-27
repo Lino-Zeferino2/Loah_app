@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/services/notification_scheduler.dart';
@@ -60,7 +61,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar tarefa: $e')),
+          SnackBar(content: Text('${AppLocales.of(context).translate('taskDetail_erro_atualizar')}$e')),
         );
       }
     }
@@ -108,7 +109,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Alterar Status',
+                AppLocales.of(ctx).translate('taskDetail_alterar_status'),
                 style: Theme.of(ctx)
                     .textTheme
                     .titleMedium
@@ -144,15 +145,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              status.label,
+                              _statusLabel(ctx, status),
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             Text(
-                              status == TaskStatus.pendente
-                                  ? 'Tarefa ainda não iniciada'
-                                  : status == TaskStatus.emProgresso
-                                      ? 'Tarefa em andamento'
-                                      : 'Tarefa finalizada',
+                              _statusSubtitle(ctx, status),
                               style: Theme.of(ctx).textTheme.bodySmall,
                             ),
                           ],
@@ -184,10 +181,28 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar status: $e')),
+          SnackBar(content: Text('${AppLocales.of(context).translate('taskDetail_erro_status')}$e')),
         );
       }
     }
+  }
+
+  String _statusLabel(BuildContext context, TaskStatus status) {
+    final loc = AppLocales.of(context);
+    return switch (status) {
+      TaskStatus.pendente => loc.translate('status_nao_iniciada'),
+      TaskStatus.emProgresso => loc.translate('status_em_progresso'),
+      TaskStatus.concluida => loc.translate('status_concluida'),
+    };
+  }
+
+  String _statusSubtitle(BuildContext context, TaskStatus status) {
+    final loc = AppLocales.of(context);
+    return switch (status) {
+      TaskStatus.pendente => loc.translate('taskDetail_status_pendente_sub'),
+      TaskStatus.emProgresso => loc.translate('taskDetail_status_progresso_sub'),
+      TaskStatus.concluida => loc.translate('taskDetail_status_concluida_sub'),
+    };
   }
 
   Color _statusColor(BuildContext context, TaskStatus status) {
@@ -196,6 +211,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       TaskStatus.pendente => context.textSecondary,
       TaskStatus.emProgresso => Colors.deepPurpleAccent,
       TaskStatus.concluida => colors.positive,
+    };
+  }
+
+  String _priorityShortLabel(BuildContext context, TaskPriority priority) {
+    final loc = AppLocales.of(context);
+    return switch (priority) {
+      TaskPriority.alta => loc.translate('prio_alta_short'),
+      TaskPriority.media => loc.translate('prio_media_short'),
+      TaskPriority.baixa => loc.translate('prio_baixa_short'),
     };
   }
 
@@ -216,7 +240,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     final statusColor = _statusColor(context, task.effectiveStatus);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalhes da Tarefa')),
+      appBar: AppBar(title: Text(AppLocales.of(context).translate('taskDetail_titulo'))),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -245,7 +269,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           borderRadius: BorderRadius.circular(100),
                         ),
                         child: Text(
-                          task.effectiveStatus.label,
+                          _statusLabel(context, task.effectiveStatus),
                           style: TextStyle(
                             color: statusColor,
                             fontWeight: FontWeight.w700,
@@ -275,7 +299,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             const SizedBox(height: 20),
 
             if (goal != null) ...[
-              const _SectionLabel('META RELACIONADA'),
+              _SectionLabel(AppLocales.of(context).translate('taskDetail_meta_label')),
               const SizedBox(height: 8),
               RelatedGoalCard(
                 goal: goal,
@@ -288,7 +312,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             ],
 
             if (task.description != null) ...[
-              const _SectionLabel('DESCRIÇÃO'),
+              _SectionLabel(AppLocales.of(context).translate('taskDetail_descricao_label')),
               const SizedBox(height: 8),
               LoahCard(
                 child: Text(
@@ -302,13 +326,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             if (task.dueDateLongLabel != null)
               _InfoRow(
                 icon: Icons.calendar_today_outlined,
-                label: 'Data de Entrega',
+                label: AppLocales.of(context).translate('taskDetail_data_entrega'),
                 trailing: Text(task.dueDateLongLabel!, style: Theme.of(context).textTheme.bodyMedium),
               ),
             if (task.priority != null)
               _InfoRow(
                 icon: Icons.flag_outlined,
-                label: 'Prioridade',
+                label: AppLocales.of(context).translate('taskDetail_prioridade'),
                 trailing: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
@@ -316,7 +340,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     borderRadius: BorderRadius.circular(100),
                   ),
                   child: Text(
-                    task.priority!.shortLabel,
+                    _priorityShortLabel(context, task.priority!),
                     style: TextStyle(
                       color: _priorityColor(context, task.priority!),
                       fontWeight: FontWeight.w700,
@@ -329,12 +353,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               onTap: () => _showStatusPicker(),
               child: _InfoRow(
                 icon: Icons.sync_outlined,
-                label: 'Status',
+                label: AppLocales.of(context).translate('taskDetail_status'),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      task.effectiveStatus.label,
+                      _statusLabel(context, task.effectiveStatus),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: statusColor,
                             fontWeight: FontWeight.w600,
@@ -354,7 +378,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 onPressed: _toggleDone,
                 icon: Icon(task.isDone ? Icons.replay : Icons.check_circle_outline, size: 18),
                 label: Text(
-                  task.isDone ? 'Reabrir Tarefa' : 'Marcar como Concluída',
+                  task.isDone
+                      ? AppLocales.of(context).translate('taskDetail_reabrir')
+                      : AppLocales.of(context).translate('taskDetail_marcar_concluida'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -371,7 +397,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               child: OutlinedButton.icon(
                 onPressed: _editTask,
                 icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Editar Tarefa'),
+                label: Text(AppLocales.of(context).translate('taskDetail_editar')),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

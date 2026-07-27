@@ -641,6 +641,36 @@ class AppLocales {
       'en': 'No goal selected (standalone task)',
     },
 
+// ═══════ GOAL TERM ═══════
+    'goalTerm_curto_prazo': {
+      'pt': 'Curto Prazo',
+      'en': 'Short Term',
+    },
+    'goalTerm_medio_prazo': {
+      'pt': 'Médio Prazo',
+      'en': 'Medium Term',
+    },
+    'goalTerm_longo_prazo': {
+      'pt': 'Longo Prazo',
+      'en': 'Long Term',
+    },
+    'goalTerm_horizon_curto_prazo': {
+      'pt': 'Este Mês',
+      'en': 'This Month',
+    },
+    'goalTerm_horizon_medio_prazo': {
+      'pt': 'Este Ano',
+      'en': 'This Year',
+    },
+    'goalTerm_horizon_longo_prazo': {
+      'pt': '2+ Anos',
+      'en': '2+ Years',
+    },
+    'goalTerm_meta_de': {
+      'pt': 'Meta de ',
+      'en': 'Goal of ',
+    },
+
     // ═══════ GOAL PICKER ═══════
     'goalPicker_titulo': {
       'pt': 'Vincular a uma meta',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/task_model.dart';
 import '../../../widgets/loah_card.dart';
@@ -14,6 +15,16 @@ class TaskListItem extends StatelessWidget {
   final VoidCallback? onTap;
 
   const TaskListItem({super.key, required this.task, required this.onToggle, this.onTap});
+
+  String _priorityLabel(BuildContext context, TaskPriority priority) {
+    final loc = AppLocales.of(context);
+    return switch (priority) {
+      TaskPriority.alta => loc.translate('prio_alta'),
+      TaskPriority.media => loc.translate('prio_media'),
+      TaskPriority.baixa => loc.translate('prio_baixa'),
+    };
+  }
+
   Color _priorityColor(BuildContext context, TaskPriority priority) {
     final colors = context.loahColors;
     return switch (priority) {
@@ -51,7 +62,7 @@ class TaskListItem extends StatelessWidget {
                     children: [
                       if (task.priority != null)
                         _PriorityPill(
-                          label: task.priority!.label,
+                          label: _priorityLabel(context, task.priority!),
                           color: _priorityColor(context, task.priority!),
                         )
                       else if (task.dueLabel != null)

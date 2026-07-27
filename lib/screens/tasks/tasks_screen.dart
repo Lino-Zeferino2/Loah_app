@@ -353,14 +353,32 @@ class _ActiveFiltersBar extends StatelessWidget {
     required this.onClear,
   });
 
+  String _statusLabel(BuildContext context, TaskStatus status) {
+    final loc = AppLocales.of(context);
+    return switch (status) {
+      TaskStatus.pendente => loc.translate('status_nao_iniciada'),
+      TaskStatus.emProgresso => loc.translate('status_em_progresso'),
+      TaskStatus.concluida => loc.translate('status_concluida'),
+    };
+  }
+
+  String _priorityShortLabel(BuildContext context, TaskPriority priority) {
+    final loc = AppLocales.of(context);
+    return switch (priority) {
+      TaskPriority.alta => loc.translate('prio_alta_short'),
+      TaskPriority.media => loc.translate('prio_media_short'),
+      TaskPriority.baixa => loc.translate('prio_baixa_short'),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final chips = <Widget>[];
     for (final status in filters.statusFilter) {
-      chips.add(_FilterChip(label: status.label));
+      chips.add(_FilterChip(label: _statusLabel(context, status)));
     }
     for (final priority in filters.priorityFilter) {
-      chips.add(_FilterChip(label: priority.shortLabel));
+      chips.add(_FilterChip(label: _priorityShortLabel(context, priority)));
     }
 if (filters.dateFilter != null) {
       final loc = AppLocales.of(context);

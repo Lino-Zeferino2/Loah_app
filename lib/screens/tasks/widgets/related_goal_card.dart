@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/goal_model.dart';
 import '../../../widgets/loah_card.dart';
@@ -29,6 +30,18 @@ class RelatedGoalCard extends StatelessWidget {
       : trailingIcon = Icons.lock_outline,
         onTap = null;
 
+  String _termLabel(BuildContext context, GoalTerm term) {
+    final loc = AppLocales.of(context);
+    return switch (term) {
+      GoalTerm.curtoPrazo =>
+        '${loc.translate('relatedGoal_meta_de')}${loc.translate('goalTerm_curto_prazo')}',
+      GoalTerm.medioPrazo =>
+        '${loc.translate('relatedGoal_meta_de')}${loc.translate('goalTerm_medio_prazo')}',
+      GoalTerm.longoPrazo =>
+        '${loc.translate('relatedGoal_meta_de')}${loc.translate('goalTerm_longo_prazo')}',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return LoahCard(
@@ -47,7 +60,7 @@ class RelatedGoalCard extends StatelessWidget {
               children: [
                 Text(goal.title, style: const TextStyle(fontWeight: FontWeight.w700)),
                 Text(
-                  'Meta de ${goal.term.label}',
+                  _termLabel(context, goal.term),
                   style: TextStyle(fontSize: 12, color: goal.progressColor),
                 ),
               ],
@@ -75,7 +88,7 @@ class NoGoalCard extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Nenhuma meta selecionada (tarefa avulsa)',
+              AppLocales.of(context).translate('relatedGoal_nenhuma'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
@@ -85,3 +98,4 @@ class NoGoalCard extends StatelessWidget {
     );
   }
 }
+

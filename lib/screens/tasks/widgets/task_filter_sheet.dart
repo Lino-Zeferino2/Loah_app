@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/task_model.dart';
 
@@ -90,9 +91,28 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
     });
   }
 
+  String _statusLabel(BuildContext context, TaskStatus status) {
+    final loc = AppLocales.of(context);
+    return switch (status) {
+      TaskStatus.pendente => loc.translate('status_nao_iniciada'),
+      TaskStatus.emProgresso => loc.translate('status_em_progresso'),
+      TaskStatus.concluida => loc.translate('status_concluida'),
+    };
+  }
+
+  String _priorityShortLabel(BuildContext context, TaskPriority priority) {
+    final loc = AppLocales.of(context);
+    return switch (priority) {
+      TaskPriority.alta => loc.translate('prio_alta_short'),
+      TaskPriority.media => loc.translate('prio_media_short'),
+      TaskPriority.baixa => loc.translate('prio_baixa_short'),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    final loc = AppLocales.of(context);
     final hasActiveFilters =
         _statusFilter.isNotEmpty || _priorityFilter.isNotEmpty || _dateFilter != null;
 
@@ -108,7 +128,7 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Filtrar Tarefas',
+                  loc.translate('taskFilter_titulo'),
                   style: Theme.of(context)
                       .textTheme
                       .titleLarge
@@ -120,7 +140,7 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
                     if (hasActiveFilters)
                       TextButton(
                         onPressed: _clearAll,
-                        child: const Text('Limpar tudo'),
+                        child: Text(loc.translate('taskFilter_limpar_tudo')),
                       ),
                     IconButton(
                       icon: const Icon(Icons.close),
@@ -134,7 +154,7 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
 
             // Status Section
             Text(
-              'STATUS',
+              loc.translate('taskFilter_status'),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     letterSpacing: 0.6,
                     color: context.textSecondary,
@@ -175,7 +195,7 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
                             child: Icon(Icons.check, size: 14, color: statusColor),
                           ),
                         Text(
-                          status.label,
+                          _statusLabel(context, status),
                           style: TextStyle(
                             color: selected ? statusColor : null,
                             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
@@ -192,7 +212,7 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
 
             // Priority Section
             Text(
-              'PRIORIDADE',
+              loc.translate('taskFilter_prioridade'),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     letterSpacing: 0.6,
                     color: context.textSecondary,
@@ -233,7 +253,7 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
                             child: Icon(Icons.check, size: 14, color: priorityColor),
                           ),
                         Text(
-                          priority.shortLabel,
+                          _priorityShortLabel(context, priority),
                           style: TextStyle(
                             color: selected ? priorityColor : null,
                             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
@@ -250,7 +270,7 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
 
             // Date Section
             Text(
-              'DATA',
+              loc.translate('taskFilter_data'),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     letterSpacing: 0.6,
                     color: context.textSecondary,
@@ -262,28 +282,28 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
               runSpacing: 8,
               children: [
                 _DateChip(
-                  label: 'Hoje',
+                  label: loc.translate('tasks_hoje'),
                   value: 'hoje',
                   selected: _dateFilter == 'hoje',
                   onTap: () => _setDateFilter('hoje'),
                   colors: colors,
                 ),
                 _DateChip(
-                  label: 'Amanhã',
+                  label: loc.translate('tasks_amanha'),
                   value: 'amanha',
                   selected: _dateFilter == 'amanha',
                   onTap: () => _setDateFilter('amanha'),
                   colors: colors,
                 ),
                 _DateChip(
-                  label: 'Esta Semana',
+                  label: loc.translate('tasks_esta_semana'),
                   value: 'esta_semana',
                   selected: _dateFilter == 'esta_semana',
                   onTap: () => _setDateFilter('esta_semana'),
                   colors: colors,
                 ),
                 _DateChip(
-                  label: 'Este Mês',
+                  label: loc.translate('tasks_este_mes'),
                   value: 'este_mes',
                   selected: _dateFilter == 'este_mes',
                   onTap: () => _setDateFilter('este_mes'),
@@ -312,9 +332,9 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Aplicar Filtros',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                child: Text(
+                  loc.translate('taskFilter_aplicar'),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
             ),

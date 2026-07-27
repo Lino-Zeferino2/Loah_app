@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/theme/app_theme.dart';
@@ -135,7 +136,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   Future<void> _submit() async {
     final title = _titleController.text.trim();
     if (title.isEmpty) {
-      setState(() => _titleError = 'Dê um nome para a tarefa.');
+      setState(() => _titleError = AppLocales.of(context).translate('addTask_nome_erro'));
       return;
     }
 
@@ -168,7 +169,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar tarefa: $e')),
+          SnackBar(content: Text('${AppLocales.of(context).translate('addTask_erro_salvar')}$e')),
         );
       }
     } finally {
@@ -183,58 +184,61 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Excluir Tarefa',
-                style: Theme.of(sheetContext)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Tem certeza? Essa ação não pode ser desfeita.',
-                style: Theme.of(sheetContext).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(false),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+      builder: (sheetContext) {
+        final sheetLoc = AppLocales.of(sheetContext);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sheetLoc.translate('addTask_excluir_titulo'),
+                  style: Theme.of(sheetContext)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  sheetLoc.translate('addTask_excluir_msg'),
+                  style: Theme.of(sheetContext).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(false),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text(sheetLoc.translate('addTask_cancelar')),
                       ),
-                      child: const Text('Cancelar'),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () => Navigator.of(sheetContext).pop(true),
+                        child: Text(sheetLoc.translate('addTask_excluir_confirmar')),
                       ),
-                      onPressed: () => Navigator.of(sheetContext).pop(true),
-                      child: const Text('Excluir'),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
     if (confirmed != true || !mounted) return;
 
@@ -244,7 +248,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao excluir tarefa: $e')),
+      SnackBar(content: Text('${AppLocales.of(context).translate('addTask_erro_excluir')}$e')),
         );
       }
     }
@@ -255,13 +259,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     final colors = context.loahColors;
     final isEditing = widget.isEditing;
 
+    final loc = AppLocales.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Editar Tarefa' : 'Adicionar Tarefa')),
+      appBar: AppBar(
+        title: Text(isEditing ? loc.translate('addTask_editar') : loc.translate('addTask_adicionar')),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const _SectionLabel('NOME DA TAREFA'),
+            _SectionLabel(loc.translate('addTask_nome_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
@@ -269,7 +277,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 if (_titleError != null) setState(() => _titleError = null);
               },
               decoration: InputDecoration(
-                hintText: 'Ex: Pesquisar modelos de SUV',
+                hintText: loc.translate('addTask_nome_hint'),
                 errorText: _titleError,
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
@@ -281,7 +289,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('META RELACIONADA'),
+            _SectionLabel(loc.translate('addTask_meta_label')),
             const SizedBox(height: 8),
             if (_selectedGoal != null)
               RelatedGoalCard(
@@ -293,13 +301,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               NoGoalCard(onTap: _pickGoal),
             const SizedBox(height: 20),
 
-            const _SectionLabel('DESCRIÇÃO'),
+            _SectionLabel(loc.translate('addTask_descricao_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _descriptionController,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: 'Detalhes importantes para esta etapa...',
+                hintText: loc.translate('addTask_descricao_hint'),
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
                 border: OutlineInputBorder(
@@ -310,7 +318,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('DATA DE ENTREGA'),
+            _SectionLabel(loc.translate('addTask_data_label')),
             const SizedBox(height: 8),
             InkWell(
               onTap: _pickDate,
@@ -327,7 +335,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     const SizedBox(width: 10),
                     Text(
                       _dueDate == null
-                          ? 'dd/mm/aaaa'
+                          ? loc.translate('addTask_data_hint')
                           : '${_dueDate!.day.toString().padLeft(2, '0')}/'
                               '${_dueDate!.month.toString().padLeft(2, '0')}/'
                               '${_dueDate!.year}',
@@ -341,7 +349,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('PRIORIDADE'),
+            _SectionLabel(loc.translate('addTask_prioridade_label')),
             const SizedBox(height: 8),
             PrioritySelector(
               selected: _priority,
@@ -363,8 +371,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Lembre-se: pequenas tarefas são mais fáceis de completar. '
-                        'Tente dividir metas grandes em passos de 15 a 30 minutos.',
+                        loc.translate('addTask_dica'),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4),
                       ),
                     ),
@@ -377,7 +384,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 child: OutlinedButton.icon(
                   onPressed: _delete,
                   icon: const Icon(Icons.delete_outline, size: 18),
-                  label: const Text('Excluir Tarefa'),
+                  label: Text(loc.translate('addTask_excluir')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.redAccent,
                     side: const BorderSide(color: Colors.redAccent),
@@ -409,7 +416,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         ),
                       )
                     : Text(
-                        isEditing ? 'Salvar Alterações' : 'Criar Tarefa',
+                        isEditing ? loc.translate('addTask_salvar_alteracoes') : loc.translate('addTask_criar'),
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
               ),
@@ -418,7 +425,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             Center(
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(null),
-                child: const Text('Cancelar'),
+                child: Text(loc.translate('addTask_cancelar')),
               ),
             ),
           ],

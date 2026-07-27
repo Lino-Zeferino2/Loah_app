@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/task_model.dart';
 
@@ -13,6 +14,15 @@ class PrioritySelector extends StatelessWidget {
   final ValueChanged<TaskPriority> onChanged;
 
   const PrioritySelector({super.key, required this.selected, required this.onChanged});
+
+  String _priorityLabel(BuildContext context, TaskPriority priority) {
+    final loc = AppLocales.of(context);
+    return switch (priority) {
+      TaskPriority.alta => loc.translate('prio_alta_short'),
+      TaskPriority.media => loc.translate('prio_media_short'),
+      TaskPriority.baixa => loc.translate('prio_baixa_short'),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +49,7 @@ class PrioritySelector extends StatelessWidget {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    priority.shortLabel,
+                    _priorityLabel(context, priority),
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 13,
