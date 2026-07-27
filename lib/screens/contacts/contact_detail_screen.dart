@@ -382,7 +382,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: Text(
-                      contact.relationshipTag,
+                      AppLocales.of(context).translateRelationshipTag(contact.relationshipTag),
                       style: TextStyle(color: colors.accentBlue, fontWeight: FontWeight.w600),
                     ),
                   ),

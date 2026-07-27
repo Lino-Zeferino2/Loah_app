@@ -97,7 +97,7 @@ class _ContactFilterSheetState extends State<ContactFilterSheet> {
               children: [
                 for (final tag in widget.availableRelationships)
                   FilterChip(
-                    label: Text(tag),
+                    label: Text(loc.translateRelationshipTag(tag)),
                     selected: _relationships.contains(tag),
                     onSelected: (selected) => setState(() {
                       if (selected) {

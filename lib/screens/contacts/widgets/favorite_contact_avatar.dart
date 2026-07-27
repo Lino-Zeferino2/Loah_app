@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/contact_model.dart';
 import '../../../widgets/goal_image.dart'; // generic network-or-file image renderer
@@ -64,8 +65,8 @@ class FavoriteContactAvatar extends StatelessWidget {
                 color: ringColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(100),
               ),
-              child: Text(
-                contact.relationshipTag,
+child: Text(
+                AppLocales.of(context).translateRelationshipTag(contact.relationshipTag),
                 style: TextStyle(
                   fontSize: 9.5,
                   fontWeight: FontWeight.w600,

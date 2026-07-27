@@ -725,6 +725,36 @@ class AppLocales {
       'en': 'Other',
     },
 
+// ═══════ RELATIONSHIP TAGS (Grau de Conexão) ═══════
+    'rel_familiar': {
+      'pt': 'Familiar',
+      'en': 'Family',
+    },
+    'rel_amigo': {
+      'pt': 'Amigo',
+      'en': 'Friend',
+    },
+    'rel_namorada': {
+      'pt': 'Namorada',
+      'en': 'Girlfriend',
+    },
+    'rel_pai': {
+      'pt': 'Pai',
+      'en': 'Father',
+    },
+    'rel_mae': {
+      'pt': 'Mãe',
+      'en': 'Mother',
+    },
+    'rel_conhecido': {
+      'pt': 'Conhecido',
+      'en': 'Acquaintance',
+    },
+    'rel_colega': {
+      'pt': 'Colega',
+      'en': 'Colleague',
+    },
+
     // ═══════ MONTH ABBREVIATIONS ═══════
     'mes_jan': {'pt': 'Jan', 'en': 'Jan'},
     'mes_fev': {'pt': 'Fev', 'en': 'Feb'},
@@ -746,6 +776,13 @@ class AppLocales {
     final langMap = _strings[key];
     if (langMap == null) return key;
     return langMap[locale.languageCode] ?? langMap['pt'] ?? key;
+  }
+
+/// Traduz uma relationshipTag armazenada em português (ex: "Amigo", "Familiar")
+  /// para o idioma atualmente selecionado.
+  String translateRelationshipTag(String tag) {
+    final key = 'rel_${tag.toLowerCase()}';
+    return translate(key);
   }
 
   // ── Getters nomeados (conveniência) ────────────────────────────

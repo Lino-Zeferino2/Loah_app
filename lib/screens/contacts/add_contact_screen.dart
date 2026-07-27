@@ -26,14 +26,14 @@ class AddContactScreen extends StatefulWidget {
 }
 
 class _AddContactScreenState extends State<AddContactScreen> {
-  static const _relationships = [
-    ChipOption('Familiar', 'Familiar'),
-    ChipOption('Amigo', 'Amigo'),
-    ChipOption('Namorada', 'Namorada'),
-    ChipOption('Pai', 'Pai'),
-    ChipOption('Mãe', 'Mãe'),
-    ChipOption('Conhecido', 'Conhecido'),
-    ChipOption('Colega', 'Colega'),
+static const _relationshipValues = [
+    'Familiar',
+    'Amigo',
+    'Namorada',
+    'Pai',
+    'Mãe',
+    'Conhecido',
+    'Colega',
   ];
 
   late final _nameController =
@@ -323,10 +323,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel(loc.translate('addContact_grau_label')),
+_SectionLabel(loc.translate('addContact_grau_label')),
             const SizedBox(height: 8),
             ChipSelector<String>(
-              options: _relationships,
+              options: _relationshipValues.map((v) => ChipOption(loc.translate('rel_${v.toLowerCase()}'), v)).toList(),
               selected: _relationship,
               onChanged: (v) => setState(() => _relationship = v),
             ),

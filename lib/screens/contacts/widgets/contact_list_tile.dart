@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/call_utils.dart';
 import '../../../models/contact_model.dart';
@@ -93,8 +94,8 @@ class ContactListTile extends StatelessWidget {
                       color: colors.cardBackgroundAlt,
                       borderRadius: BorderRadius.circular(100),
                     ),
-                    child: Text(
-                      contact.relationshipTag,
+child: Text(
+                      AppLocales.of(context).translateRelationshipTag(contact.relationshipTag),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelSmall,
