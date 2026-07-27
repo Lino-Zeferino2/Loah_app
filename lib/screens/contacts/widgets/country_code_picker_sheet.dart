@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/utils/country_codes.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// Bottom sheet for picking a phone country code: a searchable list of
@@ -23,6 +24,7 @@ class _CountryCodePickerSheetState extends State<CountryCodePickerSheet> {
   }
 
   Future<void> _enterManually(BuildContext context) async {
+    final loc = AppLocales.of(context);
     final controller = TextEditingController();
     final custom = await showModalBottomSheet<String>(
       context: context,
@@ -43,7 +45,7 @@ class _CountryCodePickerSheetState extends State<CountryCodePickerSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Digitar código manualmente',
+              loc.translate('countryPicker_digitar_manualmente'),
               style: Theme.of(sheetContext)
                   .textTheme
                   .titleMedium
@@ -78,7 +80,7 @@ class _CountryCodePickerSheetState extends State<CountryCodePickerSheet> {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Usar este código'),
+                child: Text(loc.translate('countryPicker_usar_codigo')),
               ),
             ),
           ],
@@ -90,6 +92,7 @@ class _CountryCodePickerSheetState extends State<CountryCodePickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
     final maxHeight = MediaQuery.of(context).size.height * 0.75;
     final colors = context.loahColors;
 
@@ -103,7 +106,7 @@ class _CountryCodePickerSheetState extends State<CountryCodePickerSheet> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
-                'Código do País',
+                loc.translate('countryPicker_titulo'),
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
@@ -116,7 +119,7 @@ class _CountryCodePickerSheetState extends State<CountryCodePickerSheet> {
                 autofocus: false,
                 onChanged: (v) => setState(() => _query = v),
                 decoration: InputDecoration(
-                  hintText: 'Buscar país ou código...',
+                  hintText: loc.translate('countryPicker_buscar'),
                   prefixIcon: const Icon(Icons.search, size: 20),
                   filled: true,
                   fillColor: colors.cardBackgroundAlt,
@@ -138,7 +141,7 @@ class _CountryCodePickerSheetState extends State<CountryCodePickerSheet> {
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(Icons.edit_outlined, color: colors.accentBlue),
                     title: Text(
-                      'Não encontrei — digitar código',
+                      loc.translate('countryPicker_digitar'),
                       style: TextStyle(color: colors.accentBlue, fontWeight: FontWeight.w600),
                     ),
                     onTap: () => _enterManually(context),

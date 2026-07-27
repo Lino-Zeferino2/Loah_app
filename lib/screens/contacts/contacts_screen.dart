@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/services/contact_service.dart';
 import '../../core/theme/app_theme.dart';
@@ -89,7 +90,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
     if (contact.phone == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhum número de telefone')),
+        SnackBar(content: Text(AppLocales.of(context).translate('contacts_sem_telefone'))),
       );
       return;
     }
@@ -108,16 +109,18 @@ class _ContactsScreenState extends State<ContactsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao atualizar favorito: $e')),
+        SnackBar(content: Text('${AppLocales.of(context).translate('contacts_erro_favorito')}$e')),
       );
     }
   }
 
   /// Constrói o conteúdo da lista de contactos (sem a search bar).
   Widget _buildContactListContent(AsyncSnapshot<QuerySnapshot> snapshot) {
+    final loc = AppLocales.of(context);
+
     if (snapshot.hasError) {
       return Center(
-        child: Text('Erro ao carregar contatos: ${snapshot.error}'),
+        child: Text('${loc.translate('contacts_erro_carregar')}${snapshot.error}'),
       );
     }
 
@@ -147,7 +150,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
         child: Padding(
           padding: const EdgeInsets.only(top: 40),
           child: Text(
-            'Nenhum contato ainda. Adicione um novo contato!',
+            loc.translate('contacts_sem_contatos'),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
@@ -159,7 +162,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
       children: [
         if (favorites.isNotEmpty) ...[
           Text(
-            'FAVORITOS',
+            loc.translate('contacts_favoritos'),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 0.6,
                   color: context.textSecondary,
@@ -196,8 +199,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
             child: Center(
               child: Text(
                 _query.isNotEmpty || _filters.isActive
-                    ? 'Nenhum contato encontrado com esses filtros.'
-                    : 'Nenhum contato ainda. Adicione um novo contato!',
+                    ? loc.translate('contacts_sem_filtros')
+                    : loc.translate('contacts_sem_contatos'),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
@@ -305,7 +308,7 @@ child: ContactListTile(
 
     return Scaffold(
       drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
-      appBar: const LoahAppBar(title: 'Meus Contactos', actions: [LoahAvatarAction()]),
+      appBar: LoahAppBar(title: AppLocales.of(context).translate('contacts_titulo'), actions: const [LoahAvatarAction()]),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

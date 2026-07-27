@@ -1,14 +1,5 @@
 enum InteractionType { call, message, meeting, other }
 
-extension InteractionTypeLabel on InteractionType {
-  String get label => switch (this) {
-        InteractionType.call => 'Ligação',
-        InteractionType.message => 'Mensagem',
-        InteractionType.meeting => 'Encontro',
-        InteractionType.other => 'Outro',
-      };
-}
-
 /// One logged touchpoint with a contact — a call, a message, meeting up
 /// in person, etc. Stored as a dated event (not a running counter) so
 /// "how many times this week/month" can always be computed fresh

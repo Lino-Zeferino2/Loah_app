@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/services/contact_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/contact_model.dart';
@@ -88,12 +89,12 @@ class _AddContactScreenState extends State<AddContactScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Escolher da Galeria'),
+              title: Text(AppLocales.of(sheetContext).translate('addContact_escolher_galeria')),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
             ),
             ListTile(
               leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Tirar Foto'),
+              title: Text(AppLocales.of(sheetContext).translate('addContact_tirar_foto')),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
             ),
             const SizedBox(height: 8),
@@ -138,7 +139,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
   Future<void> _submit() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _nameError = 'Dê um nome para o contato.');
+      setState(() => _nameError = AppLocales.of(context).translate('addContact_nome_erro'));
       return;
     }
 
@@ -171,7 +172,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar contato: $e')),
+        SnackBar(content: Text('${AppLocales.of(context).translate('addContact_erro_salvar')}$e')),
       );
     } finally {
       if (mounted) {}
@@ -180,17 +181,18 @@ class _AddContactScreenState extends State<AddContactScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
     final colors = context.loahColors;
     final isEditing = widget.isEditing;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Editar Contato' : 'Novo Contato'),
+        title: Text(isEditing ? loc.translate('addContact_titulo_editar') : loc.translate('addContact_titulo_novo')),
         actions: [
           TextButton(
             onPressed: _submit,
             child: Text(
-              'Salvar',
+              loc.translate('addContact_salvar'),
               style: TextStyle(color: colors.accentBlue, fontWeight: FontWeight.w700),
             ),
           ),
@@ -231,7 +233,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Toque para adicionar foto',
+                    loc.translate('addContact_toque_foto'),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -239,7 +241,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 26),
 
-            const _SectionLabel('NOME COMPLETO'),
+            _SectionLabel(loc.translate('addContact_nome_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
@@ -247,7 +249,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                 if (_nameError != null) setState(() => _nameError = null);
               },
               decoration: InputDecoration(
-                hintText: 'Nome completo',
+              hintText: loc.translate('addContact_nome_hint'),
                 errorText: _nameError,
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
@@ -259,13 +261,13 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('E-MAIL (OPCIONAL)'),
+            _SectionLabel(loc.translate('addContact_email_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
-                hintText: 'email@exemplo.com',
+                hintText: loc.translate('addContact_email_hint'),
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
                 border: OutlineInputBorder(
@@ -276,7 +278,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('TELEFONE'),
+            _SectionLabel(loc.translate('addContact_telefone_label')),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -307,7 +309,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
-                      hintText: '9xxxxxxxx',
+                      hintText: loc.translate('addContact_telefone_hint'),
                       filled: true,
                       fillColor: colors.cardBackgroundAlt,
                       border: OutlineInputBorder(
@@ -321,7 +323,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('GRAU DE CONEXÃO'),
+            _SectionLabel(loc.translate('addContact_grau_label')),
             const SizedBox(height: 8),
             ChipSelector<String>(
               options: _relationships,
@@ -336,7 +338,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                 onPressed: _submit,
                 icon: const Icon(Icons.save_outlined, size: 18),
                 label: Text(
-                  isEditing ? 'Salvar Alterações' : 'Salvar Contato',
+                  isEditing ? loc.translate('addContact_salvar_alteracoes') : loc.translate('addContact_salvar_contato'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 style: ElevatedButton.styleFrom(

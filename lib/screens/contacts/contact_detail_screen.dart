@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/services/contact_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/call_utils.dart';
@@ -593,11 +594,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                             color: colors.accentBlue,
                           ),
                           const SizedBox(width: 10),
-                          Expanded(
+Expanded(
                             child: Text(
                               interaction.type == InteractionType.other && interaction.note != null
                                   ? interaction.note!
-                                  : interaction.type.label,
+                                  : AppLocales.of(context).translate('interaction_${interaction.type.name}'),
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),

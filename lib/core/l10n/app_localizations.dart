@@ -350,6 +350,394 @@ class AppLocales {
       'pt': 'Concluídas',
       'en': 'Completed',
     },
+
+    // ═══════ CONTACTS SCREEN ═══════
+    'contacts_titulo': {
+      'pt': 'Meus Contactos',
+      'en': 'My Contacts',
+    },
+    'contacts_favoritos': {
+      'pt': 'FAVORITOS',
+      'en': 'FAVORITES',
+    },
+    'contacts_sem_contatos': {
+      'pt': 'Nenhum contato ainda. Adicione um novo contato!',
+      'en': 'No contacts yet. Add a new contact!',
+    },
+    'contacts_sem_filtros': {
+      'pt': 'Nenhum contato encontrado com esses filtros.',
+      'en': 'No contacts found with these filters.',
+    },
+    'contacts_erro_carregar': {
+      'pt': 'Erro ao carregar contatos: ',
+      'en': 'Error loading contacts: ',
+    },
+    'contacts_erro_favorito': {
+      'pt': 'Erro ao atualizar favorito: ',
+      'en': 'Error updating favorite: ',
+    },
+    'contacts_sem_telefone': {
+      'pt': 'Nenhum número de telefone',
+      'en': 'No phone number',
+    },
+
+    // ═══════ ADD / EDIT CONTACT ═══════
+    'addContact_titulo_novo': {
+      'pt': 'Novo Contato',
+      'en': 'New Contact',
+    },
+    'addContact_titulo_editar': {
+      'pt': 'Editar Contato',
+      'en': 'Edit Contact',
+    },
+    'addContact_salvar': {
+      'pt': 'Salvar',
+      'en': 'Save',
+    },
+    'addContact_escolher_galeria': {
+      'pt': 'Escolher da Galeria',
+      'en': 'Choose from Gallery',
+    },
+    'addContact_tirar_foto': {
+      'pt': 'Tirar Foto',
+      'en': 'Take Photo',
+    },
+    'addContact_toque_foto': {
+      'pt': 'Toque para adicionar foto',
+      'en': 'Tap to add photo',
+    },
+    'addContact_nome_label': {
+      'pt': 'NOME COMPLETO',
+      'en': 'FULL NAME',
+    },
+    'addContact_nome_hint': {
+      'pt': 'Nome completo',
+      'en': 'Full name',
+    },
+    'addContact_nome_erro': {
+      'pt': 'Dê um nome para o contato.',
+      'en': 'Give a name to the contact.',
+    },
+    'addContact_email_label': {
+      'pt': 'E-MAIL (OPCIONAL)',
+      'en': 'EMAIL (OPTIONAL)',
+    },
+    'addContact_email_hint': {
+      'pt': 'email@exemplo.com',
+      'en': 'email@example.com',
+    },
+    'addContact_telefone_label': {
+      'pt': 'TELEFONE',
+      'en': 'PHONE',
+    },
+    'addContact_telefone_hint': {
+      'pt': '9xxxxxxxx',
+      'en': '9xxxxxxxx',
+    },
+    'addContact_grau_label': {
+      'pt': 'GRAU DE CONEXÃO',
+      'en': 'CONNECTION DEGREE',
+    },
+    'addContact_salvar_alteracoes': {
+      'pt': 'Salvar Alterações',
+      'en': 'Save Changes',
+    },
+    'addContact_salvar_contato': {
+      'pt': 'Salvar Contato',
+      'en': 'Save Contact',
+    },
+    'addContact_erro_salvar': {
+      'pt': 'Erro ao salvar contato: ',
+      'en': 'Error saving contact: ',
+    },
+
+    // ═══════ CONTACT DETAIL ═══════
+    'contactDetail_favoritar_titulo': {
+      'pt': 'Adicionar aos favoritos',
+      'en': 'Add to favorites',
+    },
+    'contactDetail_desfavoritar_titulo': {
+      'pt': 'Remover dos favoritos',
+      'en': 'Remove from favorites',
+    },
+    'contactDetail_favoritar_msg': {
+      'pt': 'Deseja adicionar',
+      'en': 'Do you want to add',
+    },
+    'contactDetail_desfavoritar_msg': {
+      'pt': 'Deseja remover',
+      'en': 'Do you want to remove',
+    },
+    'contactDetail_aos_favoritos': {
+      'pt': 'aos favoritos?',
+      'en': 'to favorites?',
+    },
+    'contactDetail_dos_favoritos': {
+      'pt': 'dos favoritos?',
+      'en': 'from favorites?',
+    },
+    'contactDetail_confirmar': {
+      'pt': 'Confirmar',
+      'en': 'Confirm',
+    },
+    'contactDetail_cancelar': {
+      'pt': 'Cancelar',
+      'en': 'Cancel',
+    },
+    'contactDetail_erro_favorito': {
+      'pt': 'Erro ao atualizar favorito: ',
+      'en': 'Error updating favorite: ',
+    },
+    'contactDetail_erro_interacao': {
+      'pt': 'Erro ao registrar interação: ',
+      'en': 'Error logging interaction: ',
+    },
+    'contactDetail_erro_remover_interacao': {
+      'pt': 'Erro ao remover interação: ',
+      'en': 'Error removing interaction: ',
+    },
+    'contactDetail_erro_remover_contato': {
+      'pt': 'Erro ao remover contato: ',
+      'en': 'Error removing contact: ',
+    },
+    'contactDetail_remover_contato_titulo': {
+      'pt': 'Remover contato',
+      'en': 'Remove contact',
+    },
+    'contactDetail_remover_contato_msg': {
+      'pt': 'Tem certeza que deseja remover',
+      'en': 'Are you sure you want to remove',
+    },
+    'contactDetail_remover_contato_suffix': {
+      'pt': 'da sua lista de contatos? Esta ação não pode ser desfeita.',
+      'en': 'from your contact list? This action cannot be undone.',
+    },
+    'contactDetail_remover': {
+      'pt': 'Remover',
+      'en': 'Remove',
+    },
+    'contactDetail_ultimo_contato': {
+      'pt': 'ÚLTIMO CONTATO',
+      'en': 'LAST CONTACT',
+    },
+    'contactDetail_nenhum_ainda': {
+      'pt': 'Nenhum ainda',
+      'en': 'None yet',
+    },
+    'contactDetail_sem_lembrete': {
+      'pt': 'Sem lembrete',
+      'en': 'No reminder',
+    },
+    'contactDetail_toda_semana': {
+      'pt': 'Toda semana',
+      'en': 'Every week',
+    },
+    'contactDetail_15_dias': {
+      'pt': 'A cada 15 dias',
+      'en': 'Every 15 days',
+    },
+    'contactDetail_todo_mes': {
+      'pt': 'Todo mês',
+      'en': 'Every month',
+    },
+    'contactDetail_a_cada': {
+      'pt': 'A cada',
+      'en': 'Every',
+    },
+    'contactDetail_dias': {
+      'pt': 'dias',
+      'en': 'days',
+    },
+    'contactDetail_tipo_interacao': {
+      'pt': 'Tipo de Interação',
+      'en': 'Interaction Type',
+    },
+    'contactDetail_presencial': {
+      'pt': 'Presencial',
+      'en': 'In Person',
+    },
+    'contactDetail_presencial_sub': {
+      'pt': 'Encontrou pessoalmente',
+      'en': 'Met in person',
+    },
+    'contactDetail_redes_sociais': {
+      'pt': 'Redes Sociais',
+      'en': 'Social Media',
+    },
+    'contactDetail_redes_sociais_sub': {
+      'pt': 'Instagram, WhatsApp, Twitter...',
+      'en': 'Instagram, WhatsApp, Twitter...',
+    },
+    'contactDetail_email_interacao': {
+      'pt': 'Email',
+      'en': 'Email',
+    },
+    'contactDetail_email_interacao_sub': {
+      'pt': 'Enviou ou respondeu um email',
+      'en': 'Sent or replied to an email',
+    },
+    'contactDetail_presente': {
+      'pt': 'Presente',
+      'en': 'Gift',
+    },
+    'contactDetail_presente_sub': {
+      'pt': 'Enviou ou recebeu um presente',
+      'en': 'Sent or received a gift',
+    },
+    'contactDetail_outro': {
+      'pt': 'Outro',
+      'en': 'Other',
+    },
+    'contactDetail_outro_sub': {
+      'pt': 'Outro tipo de interação',
+      'en': 'Other type of interaction',
+    },
+    'contactDetail_sem_telefone': {
+      'pt': 'Nenhum número de telefone',
+      'en': 'No phone number',
+    },
+    'contactDetail_registrar_contato': {
+      'pt': 'Registrar Contato',
+      'en': 'Log Contact',
+    },
+    'contactDetail_ligacao': {
+      'pt': 'Ligação',
+      'en': 'Call',
+    },
+    'contactDetail_mensagem': {
+      'pt': 'Mensagem',
+      'en': 'Message',
+    },
+    'contactDetail_historico': {
+      'pt': 'Histórico',
+      'en': 'History',
+    },
+    'contactDetail_sem_interacoes': {
+      'pt': 'Nenhuma interação registrada ainda.',
+      'en': 'No interactions recorded yet.',
+    },
+    'contactDetail_remover_interacao_titulo': {
+      'pt': 'Remover interação',
+      'en': 'Remove interaction',
+    },
+    'contactDetail_remover_interacao_msg': {
+      'pt': 'Tem certeza que deseja remover esta interação do histórico?',
+      'en': 'Are you sure you want to remove this interaction from history?',
+    },
+    'contactDetail_editar_contato': {
+      'pt': 'Editar Contato',
+      'en': 'Edit Contact',
+    },
+    'contactDetail_remover_contato_btn': {
+      'pt': 'Remover Contato',
+      'en': 'Remove Contact',
+    },
+    'contactDetail_atrasado_prefix': {
+      'pt': 'Já se passaram',
+      'en': 'It has been',
+    },
+    'contactDetail_atrasado_dias': {
+      'pt': 'dias desde o último contato. Que tal ligar pra',
+      'en': 'days since the last contact. How about calling',
+    },
+    'contactDetail_atrasado_suffix': {
+      'pt': '?',
+      'en': '?',
+    },
+    'contactDetail_tooltip_favoritar': {
+      'pt': 'Adicionar aos favoritos',
+      'en': 'Add to favorites',
+    },
+    'contactDetail_tooltip_desfavoritar': {
+      'pt': 'Remover dos favoritos',
+      'en': 'Remove from favorites',
+    },
+    'contactDetail_erro_frequencia': {
+      'pt': 'Erro ao atualizar frequência: ',
+      'en': 'Error updating frequency: ',
+    },
+
+    // ═══════ CONTACT FILTER ═══════
+    'contactFilter_titulo': {
+      'pt': 'Filtrar Contatos',
+      'en': 'Filter Contacts',
+    },
+    'contactFilter_limpar': {
+      'pt': 'Limpar',
+      'en': 'Clear',
+    },
+    'contactFilter_favoritos': {
+      'pt': 'Somente favoritos',
+      'en': 'Favorites only',
+    },
+    'contactFilter_grau': {
+      'pt': 'GRAU DE CONEXÃO',
+      'en': 'CONNECTION DEGREE',
+    },
+    'contactFilter_aplicar': {
+      'pt': 'Aplicar Filtros',
+      'en': 'Apply Filters',
+    },
+
+    // ═══════ CONTACT SEARCH ═══════
+    'contactSearch_hint': {
+      'pt': 'Buscar contatos...',
+      'en': 'Search contacts...',
+    },
+
+    // ═══════ COUNTRY CODE PICKER ═══════
+    'countryPicker_titulo': {
+      'pt': 'Código do País',
+      'en': 'Country Code',
+    },
+    'countryPicker_buscar': {
+      'pt': 'Buscar país ou código...',
+      'en': 'Search country or code...',
+    },
+    'countryPicker_nao_encontrei': {
+      'pt': 'Não encontrei — digitar código',
+      'en': 'Not found — type code',
+    },
+    'countryPicker_usar_codigo': {
+      'pt': 'Usar este código',
+      'en': 'Use this code',
+    },
+    'countryPicker_digitar_manualmente': {
+      'pt': 'Digitar código manualmente',
+      'en': 'Type code manually',
+    },
+
+    // ═══════ INTERACTION TYPES ═══════
+    'interaction_ligacao': {
+      'pt': 'Ligação',
+      'en': 'Call',
+    },
+    'interaction_mensagem': {
+      'pt': 'Mensagem',
+      'en': 'Message',
+    },
+    'interaction_encontro': {
+      'pt': 'Encontro',
+      'en': 'Meeting',
+    },
+    'interaction_outro': {
+      'pt': 'Outro',
+      'en': 'Other',
+    },
+
+    // ═══════ MONTH ABBREVIATIONS ═══════
+    'mes_jan': {'pt': 'Jan', 'en': 'Jan'},
+    'mes_fev': {'pt': 'Fev', 'en': 'Feb'},
+    'mes_mar': {'pt': 'Mar', 'en': 'Mar'},
+    'mes_abr': {'pt': 'Abr', 'en': 'Apr'},
+    'mes_mai': {'pt': 'Mai', 'en': 'May'},
+    'mes_jun': {'pt': 'Jun', 'en': 'Jun'},
+    'mes_jul': {'pt': 'Jul', 'en': 'Jul'},
+    'mes_ago': {'pt': 'Ago', 'en': 'Aug'},
+    'mes_set': {'pt': 'Set', 'en': 'Sep'},
+    'mes_out': {'pt': 'Out', 'en': 'Oct'},
+    'mes_nov': {'pt': 'Nov', 'en': 'Nov'},
+    'mes_dez': {'pt': 'Dez', 'en': 'Dec'},
   };
 
   /// Retorna a string traduzida para a chave fornecida.

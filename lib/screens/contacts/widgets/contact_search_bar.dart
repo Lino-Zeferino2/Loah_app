@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// "Buscar contatos..." input at the top of the Contatos screen, with
@@ -20,6 +21,7 @@ class ContactSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
     final colors = context.loahColors;
     return Row(
       children: [
@@ -28,7 +30,7 @@ class ContactSearchBar extends StatelessWidget {
             controller: controller,
             onChanged: onChanged,
             decoration: InputDecoration(
-              hintText: 'Buscar contatos...',
+              hintText: loc.translate('contactSearch_hint'),
               prefixIcon: const Icon(Icons.search, size: 20),
               filled: true,
               fillColor: colors.cardBackgroundAlt,

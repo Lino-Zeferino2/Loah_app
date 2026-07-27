@@ -1,13 +1,13 @@
-# TODO: Internacionalização (i18n) - Language Selector Implementation
+# TODO: Internacionalizar (i18n) os ecrãs de Contactos
 
-## Steps
+## Passos
 
-- [x] 1. Create `lib/core/l10n/app_localizations.dart` - Translation class with pt/en strings
-- [x] 2. Create `lib/core/l10n/locale_controller.dart` - InheritedWidget for locale state
-- [x] 3. Update `pubspec.yaml` - Add flutter_localizations dependency
-- [x] 4. Update `lib/main.dart` - Wire up Localization delegates + LocaleController
-- [x] 5. Update `lib/widgets/loah_drawer.dart` - Make Idioma row clickable with bottom sheet
-- [x] 6. Update `lib/core/services/user_service.dart` - locale field already supported via updateUserProfile()
-- [x] 7. Run `flutter pub get`
-- [x] 8. Run `flutter analyze` - No issues found!
-
+- [x] 1. `lib/core/l10n/app_localizations.dart` — Adicionar novas chaves de tradução para contactos
+- [x] 2. `lib/models/contact_model.dart` — Remover strings hardcoded do InteractionTypeLabel
+- [x] 3. `lib/screens/contacts/contacts_screen.dart` — Substituir strings por traduções
+- [x] 4. `lib/screens/contacts/add_contact_screen.dart` — Substituir strings por traduções
+- [x] 5. `lib/screens/contacts/contact_detail_screen.dart` — Substituir strings por traduções
+- [x] 6. `lib/screens/contacts/widgets/contact_filter_sheet.dart` — Substituir strings por traduções
+- [x] 7. `lib/screens/contacts/widgets/contact_search_bar.dart` — Substituir hint por tradução
+- [x] 8. `lib/screens/contacts/widgets/country_code_picker_sheet.dart` — Substituir strings por traduções
+- [x] 9. Executar `flutter analyze` para verificar erros ✅ (0 issues)

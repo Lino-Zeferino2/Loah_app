@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// Result of the filter sheet: which relationship tags are checked and
@@ -43,6 +44,7 @@ class _ContactFilterSheetState extends State<ContactFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
     final colors = context.loahColors;
 
     return SafeArea(
@@ -56,7 +58,7 @@ class _ContactFilterSheetState extends State<ContactFilterSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Filtrar Contatos',
+                  loc.translate('contactFilter_titulo'),
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
@@ -68,21 +70,21 @@ class _ContactFilterSheetState extends State<ContactFilterSheet> {
                       _relationships = {};
                       _favoritesOnly = false;
                     }),
-                    child: const Text('Limpar'),
+                    child: Text(loc.translate('contactFilter_limpar')),
                   ),
               ],
             ),
             const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Somente favoritos'),
+              title: Text(loc.translate('contactFilter_favoritos')),
               value: _favoritesOnly,
               activeThumbColor: colors.accentBlue,
               onChanged: (v) => setState(() => _favoritesOnly = v),
             ),
             const SizedBox(height: 8),
             Text(
-              'GRAU DE CONEXÃO',
+              loc.translate('contactFilter_grau'),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     letterSpacing: 0.6,
                     color: context.textSecondary,
@@ -129,7 +131,7 @@ class _ContactFilterSheetState extends State<ContactFilterSheet> {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Aplicar Filtros', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
+                child: Text(loc.translate('contactFilter_aplicar'), style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
               ),
             ),
           ],
