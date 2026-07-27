@@ -25,20 +25,23 @@ class ContactDetailScreen extends StatefulWidget {
 class _ContactDetailScreenState extends State<ContactDetailScreen> {
   late ContactModel _contact = widget.contact;
 
-  static const _monthAbbrev = [
-    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
-  ];
-
   final ContactService _contactService = ContactService();
 
   /// Alterna o estado de favorito com confirmação por AlertDialog.
   Future<void> _toggleFavorite() async {
+    final loc = AppLocales.of(context);
     final newStatus = !_contact.isFavorite;
-    final acao = newStatus ? 'adicionar' : 'remover';
-    final titulo = newStatus ? 'Adicionar aos favoritos' : 'Remover dos favoritos';
-    final mensagem = 'Deseja $acao ${_contact.name.split(' ').first} '
-        '${newStatus ? 'aos' : 'dos'} favoritos?';
+
+    final titulo = newStatus
+        ? loc.translate('contactDetail_favoritar_titulo')
+        : loc.translate('contactDetail_desfavoritar_titulo');
+    final msgPrefix = newStatus
+        ? loc.translate('contactDetail_favoritar_msg')
+        : loc.translate('contactDetail_desfavoritar_msg');
+    final msgSuffix = newStatus
+        ? loc.translate('contactDetail_aos_favoritos')
+        : loc.translate('contactDetail_dos_favoritos');
+    final mensagem = '$msgPrefix ${_contact.name.split(' ').first} $msgSuffix';
 
     final confirm = await showDialog<bool>(
       context: context,
@@ -48,11 +51,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
+            child: Text(loc.translate('contactDetail_cancelar')),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Confirmar'),
+            child: Text(loc.translate('contactDetail_confirmar')),
           ),
         ],
       ),
@@ -67,12 +70,13 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao atualizar favorito: $e')),
+        SnackBar(content: Text('${loc.translate('contactDetail_erro_favorito')}$e')),
       );
     }
   }
 
   Future<void> _logInteraction(InteractionType type, {String? note}) async {
+    final loc = AppLocales.of(context);
     final updated = _contact.copyWith(
       interactions: [
         ..._contact.interactions,
@@ -86,12 +90,13 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao registrar interação: $e')),
+        SnackBar(content: Text('${loc.translate('contactDetail_erro_interacao')}$e')),
       );
     }
   }
 
   Future<void> _deleteInteraction(int index) async {
+    final loc = AppLocales.of(context);
     final updatedInteractions = List<ContactInteraction>.from(_contact.interactions)
       ..removeAt(index);
     final updated = _contact.copyWith(interactions: updatedInteractions);
@@ -102,26 +107,27 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao remover interação: $e')),
+        SnackBar(content: Text('${loc.translate('contactDetail_erro_remover_interacao')}$e')),
       );
     }
   }
 
   Future<void> _deleteContact() async {
+    final loc = AppLocales.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remover contato'),
-        content: Text('Tem certeza que deseja remover ${_contact.name.split(' ').first} da sua lista de contatos? Esta ação não pode ser desfeita.'),
+        title: Text(loc.translate('contactDetail_remover_contato_titulo')),
+        content: Text('${loc.translate('contactDetail_remover_contato_msg')} ${_contact.name.split(' ').first} ${loc.translate('contactDetail_remover_contato_suffix')}'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
+            child: Text(loc.translate('contactDetail_cancelar')),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Remover'),
+            child: Text(loc.translate('contactDetail_remover')),
           ),
         ],
       ),
@@ -131,11 +137,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     try {
       await _contactService.deleteContact(_contact.id);
       if (!mounted) return;
-      Navigator.of(context).pop(); // Volta para a lista de contactos
+      Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao remover contato: $e')),
+        SnackBar(content: Text('${loc.translate('contactDetail_erro_remover_contato')}$e')),
       );
     }
   }
@@ -148,6 +154,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   }
 
   Future<void> _pickFrequency() async {
+    final loc = AppLocales.of(context);
     final result = await showModalBottomSheet<int?>(
       context: context,
       backgroundColor: context.loahColors.cardBackground,
@@ -159,19 +166,19 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text('Sem lembrete'),
-              onTap: () => Navigator.of(sheetContext).pop(-1), // -1 = "clear"
+              title: Text(loc.translate('contactDetail_sem_lembrete')),
+              onTap: () => Navigator.of(sheetContext).pop(-1),
             ),
             ListTile(
-              title: const Text('Toda semana'),
+              title: Text(loc.translate('contactDetail_toda_semana')),
               onTap: () => Navigator.of(sheetContext).pop(7),
             ),
             ListTile(
-              title: const Text('A cada 15 dias'),
+              title: Text(loc.translate('contactDetail_15_dias')),
               onTap: () => Navigator.of(sheetContext).pop(15),
             ),
             ListTile(
-              title: const Text('Todo mês'),
+              title: Text(loc.translate('contactDetail_todo_mes')),
               onTap: () => Navigator.of(sheetContext).pop(30),
             ),
             const SizedBox(height: 8),
@@ -192,27 +199,36 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao atualizar frequência: $e')),
+        SnackBar(content: Text('${AppLocales.of(context).translate('contactDetail_erro_frequencia')}$e')),
       );
     }
   }
 
-  String _frequencyLabel(int? days) => switch (days) {
-        null => 'Sem lembrete',
-        7 => 'Toda semana',
-        15 => 'A cada 15 dias',
-        30 => 'Todo mês',
-        _ => 'A cada $days dias',
-      };
+  String _frequencyLabel(int? days) {
+    final loc = AppLocales.of(context);
+    return switch (days) {
+      null => loc.translate('contactDetail_sem_lembrete'),
+      7 => loc.translate('contactDetail_toda_semana'),
+      15 => loc.translate('contactDetail_15_dias'),
+      30 => loc.translate('contactDetail_todo_mes'),
+      _ => '${loc.translate('contactDetail_a_cada')} $days ${loc.translate('contactDetail_dias')}',
+    };
+  }
 
   String _relativeLabel(DateTime date) {
+    final loc = AppLocales.of(context);
     final now = DateTime.now();
     final diff = now.difference(date);
-    if (diff.inMinutes < 60) return 'há ${diff.inMinutes} min';
-    if (diff.inHours < 24) return 'há ${diff.inHours}h';
-    if (diff.inDays == 1) return 'ontem';
-    if (diff.inDays < 7) return 'há ${diff.inDays} dias';
-    return '${date.day} ${_monthAbbrev[date.month - 1]}';
+    if (diff.inMinutes < 60) return '${loc.translate('relative_ha')} ${diff.inMinutes} ${loc.translate('relative_min')}';
+    if (diff.inHours < 24) return '${loc.translate('relative_ha')} ${diff.inHours}h';
+    if (diff.inDays == 1) return loc.translate('relative_ontem');
+    if (diff.inDays < 7) return '${loc.translate('relative_ha')} ${diff.inDays} ${loc.translate('relative_dias')}';
+    return '${date.day} ${loc.translate('mes_${_monthAbbrevIdx(date.month)}')}';
+  }
+
+  String _monthAbbrevIdx(int month) {
+    const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    return months[month - 1];
   }
 
   IconData _interactionIcon(InteractionType type, {String? note}) {
@@ -234,6 +250,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   }
 
   Future<void> _showOtherInteractionSheet() async {
+    final loc = AppLocales.of(context);
     final colors = context.loahColors;
     final result = await showModalBottomSheet<String?>(
       context: context,
@@ -247,38 +264,38 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           children: [
             const SizedBox(height: 12),
             Text(
-              'Tipo de Interação',
+              loc.translate('contactDetail_tipo_interacao'),
               style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             _InteractionOptionTile(
               icon: Icons.person_pin,
-              label: 'Presencial',
-              subtitle: 'Encontrou pessoalmente',
+              label: loc.translate('contactDetail_presencial'),
+              subtitle: loc.translate('contactDetail_presencial_sub'),
               onTap: () => Navigator.of(sheetContext).pop('Presencial'),
             ),
             _InteractionOptionTile(
               icon: Icons.alternate_email,
-              label: 'Redes Sociais',
-              subtitle: 'Instagram, WhatsApp, Twitter...',
+              label: loc.translate('contactDetail_redes_sociais'),
+              subtitle: loc.translate('contactDetail_redes_sociais_sub'),
               onTap: () => Navigator.of(sheetContext).pop('Redes Sociais'),
             ),
             _InteractionOptionTile(
               icon: Icons.email_outlined,
-              label: 'Email',
-              subtitle: 'Enviou ou respondeu um email',
+              label: loc.translate('contactDetail_email_interacao'),
+              subtitle: loc.translate('contactDetail_email_interacao_sub'),
               onTap: () => Navigator.of(sheetContext).pop('Email'),
             ),
             _InteractionOptionTile(
               icon: Icons.card_giftcard,
-              label: 'Presente',
-              subtitle: 'Enviou ou recebeu um presente',
+              label: loc.translate('contactDetail_presente'),
+              subtitle: loc.translate('contactDetail_presente_sub'),
               onTap: () => Navigator.of(sheetContext).pop('Presente'),
             ),
             _InteractionOptionTile(
               icon: Icons.more_horiz,
-              label: 'Outro',
-              subtitle: 'Outro tipo de interação',
+              label: loc.translate('contactDetail_outro'),
+              subtitle: loc.translate('contactDetail_outro_sub'),
               onTap: () => Navigator.of(sheetContext).pop('Outro'),
             ),
             const SizedBox(height: 8),
@@ -296,12 +313,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     if (_contact.phone == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhum número de telefone')),
+        SnackBar(content: Text(AppLocales.of(context).translate('contactDetail_sem_telefone'))),
       );
       return;
     }
 
-    // Abre o modal WhatsApp/Chamada
     bool interagiu = false;
     if (!mounted) return;
     try {
@@ -314,18 +330,18 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       if (!mounted) return;
       debugPrint('call_utils: Erro em showCallOptions: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: $e')),
+        SnackBar(content: Text('${AppLocales.of(context).translate('common_erro')}: $e')),
       );
       return;
     }
 
-    // Só regista a interação se o usuário realmente escolheu uma opção
     if (!mounted || !interagiu) return;
     await _logInteraction(InteractionType.call);
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
     final colors = context.loahColors;
     final contact = _contact;
     final sortedInteractions = [...contact.interactions]..sort((a, b) => b.date.compareTo(a.date));
@@ -335,7 +351,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         title: contact.name,
         actions: [
           IconButton(
-            tooltip: contact.isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos',
+            tooltip: contact.isFavorite
+                ? loc.translate('contactDetail_desfavoritar_titulo')
+                : loc.translate('contactDetail_favoritar_titulo'),
             onPressed: _toggleFavorite,
             icon: Icon(
               contact.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
@@ -382,7 +400,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: Text(
-                      AppLocales.of(context).translateRelationshipTag(contact.relationshipTag),
+                      loc.translateRelationshipTag(contact.relationshipTag),
                       style: TextStyle(color: colors.accentBlue, fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -399,7 +417,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _editContact,
                       icon: const Icon(Icons.edit_outlined, size: 16),
-                      label: const Text('Editar Contato'),
+                      label: Text(loc.translate('contactDetail_editar_contato')),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -412,7 +430,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _deleteContact,
                       icon: Icon(Icons.delete_outline, size: 16, color: colors.negative),
-                      label: Text('Remover Contato', style: TextStyle(color: colors.negative)),
+                      label: Text(loc.translate('contactDetail_remover_contato_btn'), style: TextStyle(color: colors.negative)),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -440,8 +458,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Já se passaram ${contact.daysSinceLastContact} dias desde o último '
-                        'contato. Que tal ligar pra ${contact.name.split(' ').first}?',
+                        '${loc.translate('contactDetail_atrasado_prefix')} ${contact.daysSinceLastContact} ${loc.translate('contactDetail_atrasado_dias')} '
+                        '${loc.translate('contactDetail_atrasado_meio')} ${contact.name.split(' ').first}?',
                         style: TextStyle(color: colors.negative, fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                     ),
@@ -456,10 +474,10 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('ÚLTIMO CONTATO', style: Theme.of(context).textTheme.labelSmall),
+                      Text(loc.translate('contactDetail_ultimo_contato'), style: Theme.of(context).textTheme.labelSmall),
                       Text(
                         contact.lastContactedAt == null
-                            ? 'Nenhum ainda'
+                            ? loc.translate('contactDetail_nenhum_ainda')
                             : _relativeLabel(contact.lastContactedAt!),
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
@@ -483,7 +501,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             const SizedBox(height: 16),
 
             Text(
-              'Registrar Contato',
+              loc.translate('contactDetail_registrar_contato'),
               style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
@@ -492,7 +510,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 Expanded(
                   child: _QuickLogButton(
                     icon: Icons.call_outlined,
-                    label: 'Ligação',
+                    label: loc.translate('contactDetail_ligacao'),
                     onTap: _onCallButtonPressed,
                   ),
                 ),
@@ -500,7 +518,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 Expanded(
                   child: _QuickLogButton(
                     icon: Icons.chat_bubble_outline,
-                    label: 'Mensagem',
+                    label: loc.translate('contactDetail_mensagem'),
                     onTap: () async {
                       if (_contact.phone != null) {
                         final interagiu = await showMessageOptions(
@@ -513,7 +531,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       } else {
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Nenhum número de telefone')),
+                          SnackBar(content: Text(loc.translate('contactDetail_sem_telefone'))),
                         );
                       }
                     },
@@ -523,7 +541,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 Expanded(
                   child: _QuickLogButton(
                     icon: Icons.more_horiz,
-                    label: 'Outro',
+                    label: loc.translate('contactDetail_outro'),
                     onTap: _showOtherInteractionSheet,
                   ),
                 ),
@@ -532,13 +550,13 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             const SizedBox(height: 20),
 
             Text(
-              'Histórico',
+              loc.translate('contactDetail_historico'),
               style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
             if (sortedInteractions.isEmpty)
               Text(
-                'Nenhuma interação registrada ainda.',
+                loc.translate('contactDetail_sem_interacoes'),
                 style: Theme.of(context).textTheme.bodySmall,
               )
             else
@@ -561,17 +579,17 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       final confirm = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
-                          title: const Text('Remover interação'),
-                          content: const Text('Tem certeza que deseja remover esta interação do histórico?'),
+                          title: Text(loc.translate('contactDetail_remover_interacao_titulo')),
+                          content: Text(loc.translate('contactDetail_remover_interacao_msg')),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(ctx).pop(false),
-                              child: const Text('Cancelar'),
+                              child: Text(loc.translate('contactDetail_cancelar')),
                             ),
                             TextButton(
                               onPressed: () => Navigator.of(ctx).pop(true),
                               style: TextButton.styleFrom(foregroundColor: Colors.red),
-                              child: const Text('Remover'),
+                              child: Text(loc.translate('contactDetail_remover')),
                             ),
                           ],
                         ),
@@ -594,11 +612,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                             color: colors.accentBlue,
                           ),
                           const SizedBox(width: 10),
-Expanded(
+                          Expanded(
                             child: Text(
                               interaction.type == InteractionType.other && interaction.note != null
                                   ? interaction.note!
-                                  : AppLocales.of(context).translate('interaction_${interaction.type.name}'),
+                                  : loc.translate('interaction_${interaction.type.name}'),
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -677,3 +695,4 @@ class _QuickLogButton extends StatelessWidget {
     );
   }
 }
+
