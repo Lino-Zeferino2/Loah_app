@@ -9,6 +9,7 @@ import 'package:loah_app/screens/admin/manage_reflections_screen.dart';
 import 'package:loah_app/screens/admin/manage_users_screen.dart';
 import 'package:loah_app/screens/auth/change_password_screen.dart';
 import 'package:loah_app/screens/auth/login_screen.dart';
+import 'package:loah_app/screens/profile/profile_screen.dart';
 import 'package:loah_app/widgets/loah_app_bar.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/theme_controller.dart';
@@ -448,6 +449,19 @@ class _LoahDrawerState extends State<LoahDrawer> {
                     const SizedBox(height: 10),
                     Column(
                       children: [
+                        DrawerNavItem(
+                          icon: Icons.person_outline,
+                          label: 'Editar Perfil',
+                          selected: false,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const ProfileScreen(),
+                              ),
+                            );
+                          },
+                        ),
                         DrawerNavItem(
                           icon: Icons.lock_outline,
                           label: 'Alterar senha',

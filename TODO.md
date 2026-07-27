@@ -21,3 +21,8 @@ Implement notification sending when:
 - [x] Adicionar chamada a `NotificationScheduler().checkAllTasksDone()` em `_toggle` do `tasks_screen.dart`
 - [x] Adicionar chamada a `NotificationScheduler().checkAllTasksDone()` em `_toggleDone` do `task_detail_screen.dart`
 
+### Step 6: Tela de Perfil do Utilizador
+- [x] Criar `lib/screens/profile/profile_screen.dart` — editar nome, telefone, foto de perfil (câmera/galeria + upload Firebase Storage)
+- [x] Adicionar "Editar Perfil" no drawer (secção CONTA)
+- [x] Adicionar regra `storage.rules` para fotos de perfil (`profilePhotos/{userId}/{fileName}`)
+

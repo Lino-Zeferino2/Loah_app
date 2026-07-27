@@ -1,4 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
@@ -11,9 +12,6 @@ import 'core/services/task_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'models/app_notification.dart';
-import 'models/contact_model.dart';
-import 'models/goal_model.dart';
-import 'models/task_model.dart';
 import 'screens/contacts/contacts_screen.dart';
 import 'screens/contacts/contact_detail_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';

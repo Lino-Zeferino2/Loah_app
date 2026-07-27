@@ -15,5 +15,12 @@ service firebase.storage {
       allow delete: if request.auth != null &&
         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
+
+    // === FOTOS DE PERFIL: cada user pode ler/escrever apenas as suas próprias fotos ===
+    match /profilePhotos/{userId}/{fileName} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
   }
 }
