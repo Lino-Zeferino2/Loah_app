@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/l10n/app_localizations.dart';
+import 'package:loah_app/core/l10n/locale_controller.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/screens/admin/manage_about_loah_screen.dart';
@@ -93,12 +95,69 @@ class _LoahDrawerState extends State<LoahDrawer> {
   }
 
   static const _navItems = [
-    (icon: Icons.grid_view_rounded, label: 'Dashboard'),
-    (icon: Icons.track_changes_outlined, label: 'Metas'),
-    (icon: Icons.check_circle_outline, label: 'Tarefas'),
-    (icon: Icons.account_balance_wallet_outlined, label: 'Finanças'),
-    (icon: Icons.contacts_outlined, label: 'Contatos'),
+    (icon: Icons.grid_view_rounded, key: 'drawer_dashboard'),
+    (icon: Icons.track_changes_outlined, key: 'drawer_metas'),
+    (icon: Icons.check_circle_outline, key: 'drawer_tarefas'),
+    (icon: Icons.account_balance_wallet_outlined, key: 'drawer_financas'),
+    (icon: Icons.contacts_outlined, key: 'drawer_contatos'),
   ];
+
+  /// Abre um bottom sheet para o utilizador selecionar o idioma.
+  void _showLanguagePicker(BuildContext context) {
+    final localeController = LocaleController.of(context);
+    final currentLocale = localeController.locale.languageCode;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.loahColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                AppLocales.of(context).langSelecionar,
+                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.check_circle, color: Colors.green),
+                title: const Text('Português'),
+                trailing: currentLocale == 'pt'
+                    ? const Icon(Icons.check, color: Colors.green)
+                    : null,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  if (currentLocale != 'pt') {
+                    localeController.onLocaleChanged(const Locale('pt'));
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.language),
+                title: const Text('English'),
+                trailing: currentLocale == 'en'
+                    ? const Icon(Icons.check, color: Colors.green)
+                    : null,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  if (currentLocale != 'en') {
+                    localeController.onLocaleChanged(const Locale('en'));
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +260,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                     for (var i = 0; i < _navItems.length; i++)
                       DrawerNavItem(
                         icon: _navItems[i].icon,
-                        label: _navItems[i].label,
+                        label: AppLocales.of(context).translate(_navItems[i].key),
                         selected: i == widget.currentIndex,
                         onTap: () {
                           Navigator.of(context).pop(); // close drawer
@@ -224,7 +283,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                     Divider(color: colors.border),
                     const SizedBox(height: 8),
                     Text(
-                      'CONFIGURAÇÕES',
+                      AppLocales.of(context).drawerConfiguracoes,
                       style: TextStyle(
                         fontSize: 11,
                         letterSpacing: 0.6,
@@ -253,10 +312,10 @@ class _LoahDrawerState extends State<LoahDrawer> {
                             color: context.textSecondary,
                           ),
                           const SizedBox(width: 10),
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              'Tema',
-                              style: TextStyle(fontWeight: FontWeight.w600),
+                              AppLocales.of(context).drawerTema,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),
                           ThemeToggleSwitch(
@@ -268,35 +327,41 @@ class _LoahDrawerState extends State<LoahDrawer> {
                     ),
                     const SizedBox(height: 10),
 
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.language,
-                            size: 18,
-                            color: context.textSecondary,
-                          ),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: Text(
-                              'Idioma',
-                              style: TextStyle(fontWeight: FontWeight.w600),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => _showLanguagePicker(context),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.language,
+                              size: 18,
+                              color: context.textSecondary,
                             ),
-                          ),
-                          Text(
-                            'Português',
-                            style: TextStyle(
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                AppLocales.of(context).drawerIdioma,
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            Text(
+                              LocaleController.of(context).locale.languageCode == 'en'
+                                  ? 'English'
+                                  : 'Português',
+                              style: TextStyle(
+                                color: colors.accentBlue,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right,
+                              size: 18,
                               color: colors.accentBlue,
-                              fontWeight: FontWeight.w600,
                             ),
-                          ),
-                          Icon(
-                            Icons.chevron_right,
-                            size: 18,
-                            color: colors.accentBlue,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
 
@@ -306,8 +371,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                     const SizedBox(height: 8),
                     // --- Support section ---
                     Text(
-                      'SUPORTE',
-
+                      AppLocales.of(context).drawerSuporte,
                       style: TextStyle(
                         fontSize: 11,
                         letterSpacing: 0.6,
@@ -321,7 +385,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                       children: [
                         DrawerNavItem(
                           icon: Icons.help_center_outlined,
-                          label: 'Central de Ajuda',
+                          label: AppLocales.of(context).drawerAjuda,
                           selected: false,
                           onTap: () {
                             Navigator.of(context).pop(); // close drawer
@@ -334,7 +398,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                         ),
                         DrawerNavItem(
                           icon: Icons.info_outline,
-                          label: 'Sobre Loah',
+                          label: AppLocales.of(context).drawerSobre,
                           selected: false,
                           onTap: () {
                             Navigator.of(context).pop(); // close drawer
@@ -347,7 +411,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                         ),
                         DrawerNavItem(
                           icon: Icons.description_outlined,
-                          label: 'Termos e Políticas',
+                          label: AppLocales.of(context).drawerTermos,
                           selected: false,
                           onTap: () {
                             Navigator.of(context).pop(); // close drawer
@@ -367,7 +431,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                       Divider(color: colors.border),
                       const SizedBox(height: 8),
                       Text(
-                        'ADMIN',
+                        AppLocales.of(context).drawerAdmin,
                         style: TextStyle(
                           fontSize: 11,
                           letterSpacing: 0.6,
@@ -378,7 +442,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                       const SizedBox(height: 10),
                       DrawerNavItem(
                         icon: Icons.people_outline,
-                        label: 'Gerir Utilizadores',
+                        label: AppLocales.of(context).drawerGerirUtilizadores,
                         selected: false,
                         onTap: () {
                           Navigator.of(context).pop(); // close drawer
@@ -392,7 +456,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                       ),
                       DrawerNavItem(
                         icon: Icons.auto_stories_outlined,
-                        label: 'Gerir Reflexões do Dia',
+                        label: AppLocales.of(context).drawerGerirReflexoes,
                         selected: false,
                         onTap: () {
                           Navigator.of(context).pop(); // close drawer
@@ -406,7 +470,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                       ),
                       DrawerNavItem(
                         icon: Icons.support_agent_outlined,
-                        label: 'Gerir Central de Ajuda',
+                        label: AppLocales.of(context).drawerGerirAjuda,
                         selected: false,
                         onTap: () {
                           Navigator.of(context).pop(); // close drawer
@@ -420,7 +484,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                       ),
                       DrawerNavItem(
                         icon: Icons.description_outlined,
-                        label: 'Gerir Sobre Loah',
+                        label: AppLocales.of(context).drawerGerirSobre,
                         selected: false,
                         onTap: () {
                           Navigator.of(context).pop(); // close drawer
@@ -438,7 +502,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                     Divider(color: colors.border),
                     const SizedBox(height: 8),
                     Text(
-                      'CONTA',
+                      AppLocales.of(context).drawerConta,
                       style: TextStyle(
                         fontSize: 11,
                         letterSpacing: 0.6,
@@ -451,7 +515,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                       children: [
                         DrawerNavItem(
                           icon: Icons.person_outline,
-                          label: 'Editar Perfil',
+                          label: AppLocales.of(context).drawerEditarPerfil,
                           selected: false,
                           onTap: () {
                             Navigator.of(context).pop();
@@ -464,7 +528,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
                         ),
                         DrawerNavItem(
                           icon: Icons.lock_outline,
-                          label: 'Alterar senha',
+                          label: AppLocales.of(context).drawerAlterarSenha,
                           selected: false,
                           onTap: () {
                             Navigator.of(context).pop();
@@ -507,9 +571,9 @@ class _LoahDrawerState extends State<LoahDrawer> {
                           size: 18,
                           color: Colors.redAccent,
                         ),
-                        label: const Text(
-                          'Sair',
-                          style: TextStyle(
+                        label: Text(
+                          AppLocales.of(context).drawerSair,
+                          style: const TextStyle(
                             color: Colors.redAccent,
                             fontWeight: FontWeight.w600,
                           ),

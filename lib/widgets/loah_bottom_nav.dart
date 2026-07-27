@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/l10n/app_localizations.dart';
 import '../core/theme/app_theme.dart';
 
 class LoahBottomNav extends StatelessWidget {
@@ -12,11 +13,11 @@ class LoahBottomNav extends StatelessWidget {
   });
 
   static const _items = [
-    (icon: Icons.grid_view_rounded, label: 'Dashboard'),
-    (icon: Icons.flag_outlined, label: 'Metas'),
-    (icon: Icons.check_circle_outline, label: 'Tarefas'),
-    (icon: Icons.account_balance_wallet_outlined, label: 'Finanças'),
-    (icon: Icons.contacts_outlined, label: 'Contatos'),
+    (icon: Icons.grid_view_rounded, key: 'nav_dashboard'),
+    (icon: Icons.flag_outlined, key: 'nav_metas'),
+    (icon: Icons.check_circle_outline, key: 'nav_tarefas'),
+    (icon: Icons.account_balance_wallet_outlined, key: 'nav_financas'),
+    (icon: Icons.contacts_outlined, key: 'drawer_contatos'),
   ];
 
 
@@ -48,7 +49,7 @@ class LoahBottomNav extends StatelessWidget {
                       Icon(item.icon, color: color, size: 22),
                       const SizedBox(height: 2),
                       Text(
-                        item.label,
+                        AppLocales.of(context).translate(item.key),
                         style: TextStyle(
                           fontSize: 10,
                           color: color,

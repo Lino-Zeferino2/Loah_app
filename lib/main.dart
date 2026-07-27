@@ -7,7 +7,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart';
+import 'core/l10n/locale_controller.dart';
 import 'core/navigation/navigation_controller.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/contact_service.dart';
@@ -15,6 +17,7 @@ import 'core/services/goal_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/notification_scheduler.dart';
 import 'core/services/task_service.dart';
+import 'core/services/user_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'models/app_notification.dart';
@@ -105,6 +108,7 @@ class LoahApp extends StatefulWidget {
 
 class _LoahAppState extends State<LoahApp> {
   ThemeMode _themeMode = ThemeMode.dark;
+  Locale _locale = const Locale('pt');
 
   void _toggleTheme() {
     setState(() {
@@ -112,18 +116,86 @@ class _LoahAppState extends State<LoahApp> {
     });
   }
 
+  void _onLocaleChanged(Locale locale) {
+    setState(() => _locale = locale);
+    // Persiste a preferência no Firestore (se o user estiver autenticado)
+    _persistLocalePreference(locale);
+  }
+
+  Future<void> _persistLocalePreference(Locale locale) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await UserService().updateUserProfile(
+          uid: user.uid,
+          data: {'locale': locale.languageCode},
+        );
+      }
+    } catch (e) {
+      debugPrint('[Locale] Erro ao persistir preferência: $e');
+    }
+  }
+
+  /// Tenta carregar a preferência de idioma do Firestore.
+  Future<void> _loadLocalePreference() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final doc = await UserService().getUserProfile(user.uid);
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          final savedLocale = data['locale'] as String?;
+          if (savedLocale != null && savedLocale.isNotEmpty) {
+            setState(() => _locale = Locale(savedLocale));
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[Locale] Erro ao carregar preferência: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocalePreference();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return LoahThemeController(
-      themeMode: _themeMode,
-      toggleTheme: _toggleTheme,
-      child: MaterialApp(
-        title: 'Loah',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
+    return LocaleController(
+      locale: _locale,
+      onLocaleChanged: _onLocaleChanged,
+      child: LoahThemeController(
         themeMode: _themeMode,
-       home: const SplashScreenVistoso(),   // pra testar a versão vistosa
+        toggleTheme: _toggleTheme,
+        child: MaterialApp(
+          title: 'Loah',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: _themeMode,
+          locale: _locale,
+          supportedLocales: const [
+            Locale('pt'),
+            Locale('en'),
+          ],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          localeResolutionCallback: (locale, supportedLocales) {
+            if (locale == null) return const Locale('pt');
+            for (final supported in supportedLocales) {
+              if (supported.languageCode == locale.languageCode) {
+                return supported;
+              }
+            }
+            return const Locale('pt');
+          },
+          home: const SplashScreenVistoso(),   // pra testar a versão vistosa
+        ),
       ),
     );
   }
