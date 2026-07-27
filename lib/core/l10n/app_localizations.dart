@@ -350,6 +350,306 @@ class AppLocales {
       'pt': 'Concluídas',
       'en': 'Completed',
     },
+    'tasks_minhas_tarefas': {
+      'pt': 'Minhas Tarefas',
+      'en': 'My Tasks',
+    },
+    'tasks_hoje': {
+      'pt': 'Hoje',
+      'en': 'Today',
+    },
+    'tasks_proximos_dias': {
+      'pt': 'Próximos Dias',
+      'en': 'Upcoming Days',
+    },
+    'tasks_concluidos': {
+      'pt': 'Concluídos',
+      'en': 'Completed',
+    },
+    'tasks_nenhuma_hoje': {
+      'pt': 'Nenhuma tarefa para hoje.',
+      'en': 'No tasks for today.',
+    },
+    'tasks_nenhuma_futura': {
+      'pt': 'Nenhuma tarefa futura.',
+      'en': 'No upcoming tasks.',
+    },
+    'tasks_nenhuma_concluida': {
+      'pt': 'Nenhuma tarefa concluída.',
+      'en': 'No completed tasks.',
+    },
+    'tasks_erro_carregar': {
+      'pt': 'Erro ao carregar tarefas: ',
+      'en': 'Error loading tasks: ',
+    },
+    'tasks_amanha': {
+      'pt': 'Amanhã',
+      'en': 'Tomorrow',
+    },
+    'tasks_esta_semana': {
+      'pt': 'Esta Semana',
+      'en': 'This Week',
+    },
+    'tasks_este_mes': {
+      'pt': 'Este Mês',
+      'en': 'This Month',
+    },
+    'tasks_limpar': {
+      'pt': 'Limpar',
+      'en': 'Clear',
+    },
+    'tasks_limpar_filtros': {
+      'pt': 'Limpar Filtros',
+      'en': 'Clear Filters',
+    },
+
+    // ═══════ WEEKDAYS ═══════
+    'weekday_segunda': {'pt': 'Segunda-feira', 'en': 'Monday'},
+    'weekday_terca': {'pt': 'Terça-feira', 'en': 'Tuesday'},
+    'weekday_quarta': {'pt': 'Quarta-feira', 'en': 'Wednesday'},
+    'weekday_quinta': {'pt': 'Quinta-feira', 'en': 'Thursday'},
+    'weekday_sexta': {'pt': 'Sexta-feira', 'en': 'Friday'},
+    'weekday_sabado': {'pt': 'Sábado', 'en': 'Saturday'},
+    'weekday_domingo': {'pt': 'Domingo', 'en': 'Sunday'},
+
+    // ═══════ FULL MONTHS ═══════
+    'mes_full_janeiro': {'pt': 'Janeiro', 'en': 'January'},
+    'mes_full_fevereiro': {'pt': 'Fevereiro', 'en': 'February'},
+    'mes_full_marco': {'pt': 'Março', 'en': 'March'},
+    'mes_full_abril': {'pt': 'Abril', 'en': 'April'},
+    'mes_full_maio': {'pt': 'Maio', 'en': 'May'},
+    'mes_full_junho': {'pt': 'Junho', 'en': 'June'},
+    'mes_full_julho': {'pt': 'Julho', 'en': 'July'},
+    'mes_full_agosto': {'pt': 'Agosto', 'en': 'August'},
+    'mes_full_setembro': {'pt': 'Setembro', 'en': 'September'},
+    'mes_full_outubro': {'pt': 'Outubro', 'en': 'October'},
+    'mes_full_novembro': {'pt': 'Novembro', 'en': 'November'},
+    'mes_full_dezembro': {'pt': 'Dezembro', 'en': 'December'},
+
+    // ═══════ TASK PRIORITY ═══════
+    'prio_alta': {'pt': 'Alta Prioridade', 'en': 'High Priority'},
+    'prio_media': {'pt': 'Média Prioridade', 'en': 'Medium Priority'},
+    'prio_baixa': {'pt': 'Baixa Prioridade', 'en': 'Low Priority'},
+    'prio_alta_short': {'pt': 'Alta', 'en': 'High'},
+    'prio_media_short': {'pt': 'Média', 'en': 'Medium'},
+    'prio_baixa_short': {'pt': 'Baixa', 'en': 'Low'},
+
+    // ═══════ TASK STATUS ═══════
+    'status_nao_iniciada': {'pt': 'Não Iniciada', 'en': 'Not Started'},
+    'status_em_progresso': {'pt': 'Em Progresso', 'en': 'In Progress'},
+    'status_concluida': {'pt': 'Concluída', 'en': 'Completed'},
+
+    // ═══════ ADD TASK SCREEN ═══════
+    'addTask_editar': {
+      'pt': 'Editar Tarefa',
+      'en': 'Edit Task',
+    },
+    'addTask_adicionar': {
+      'pt': 'Adicionar Tarefa',
+      'en': 'Add Task',
+    },
+    'addTask_nome_label': {
+      'pt': 'NOME DA TAREFA',
+      'en': 'TASK NAME',
+    },
+    'addTask_nome_hint': {
+      'pt': 'Ex: Pesquisar modelos de SUV',
+      'en': 'E.g.: Research SUV models',
+    },
+    'addTask_nome_erro': {
+      'pt': 'Dê um nome para a tarefa.',
+      'en': 'Give a name to the task.',
+    },
+    'addTask_meta_label': {
+      'pt': 'META RELACIONADA',
+      'en': 'RELATED GOAL',
+    },
+    'addTask_descricao_label': {
+      'pt': 'DESCRIÇÃO',
+      'en': 'DESCRIPTION',
+    },
+    'addTask_descricao_hint': {
+      'pt': 'Detalhes importantes para esta etapa...',
+      'en': 'Important details for this step...',
+    },
+    'addTask_data_label': {
+      'pt': 'DATA DE ENTREGA',
+      'en': 'DUE DATE',
+    },
+    'addTask_data_hint': {
+      'pt': 'dd/mm/aaaa',
+      'en': 'dd/mm/yyyy',
+    },
+    'addTask_prioridade_label': {
+      'pt': 'PRIORIDADE',
+      'en': 'PRIORITY',
+    },
+    'addTask_dica': {
+      'pt': 'Lembre-se: pequenas tarefas são mais fáceis de completar. Tente dividir metas grandes em passos de 15 a 30 minutos.',
+      'en': 'Remember: small tasks are easier to complete. Try breaking big goals into 15-30 minute steps.',
+    },
+    'addTask_excluir': {
+      'pt': 'Excluir Tarefa',
+      'en': 'Delete Task',
+    },
+    'addTask_salvar_alteracoes': {
+      'pt': 'Salvar Alterações',
+      'en': 'Save Changes',
+    },
+    'addTask_criar': {
+      'pt': 'Criar Tarefa',
+      'en': 'Create Task',
+    },
+    'addTask_cancelar': {
+      'pt': 'Cancelar',
+      'en': 'Cancel',
+    },
+    'addTask_erro_salvar': {
+      'pt': 'Erro ao salvar tarefa: ',
+      'en': 'Error saving task: ',
+    },
+    'addTask_erro_excluir': {
+      'pt': 'Erro ao excluir tarefa: ',
+      'en': 'Error deleting task: ',
+    },
+    'addTask_excluir_titulo': {
+      'pt': 'Excluir Tarefa',
+      'en': 'Delete Task',
+    },
+    'addTask_excluir_msg': {
+      'pt': 'Tem certeza? Essa ação não pode ser desfeita.',
+      'en': 'Are you sure? This action cannot be undone.',
+    },
+    'addTask_excluir_confirmar': {
+      'pt': 'Excluir',
+      'en': 'Delete',
+    },
+    'addTask_meta_vincular': {
+      'pt': 'Vincular a uma meta',
+      'en': 'Link to a goal',
+    },
+
+    // ═══════ TASK DETAIL ═══════
+    'taskDetail_titulo': {
+      'pt': 'Detalhes da Tarefa',
+      'en': 'Task Details',
+    },
+    'taskDetail_meta_label': {
+      'pt': 'META RELACIONADA',
+      'en': 'RELATED GOAL',
+    },
+    'taskDetail_descricao_label': {
+      'pt': 'DESCRIÇÃO',
+      'en': 'DESCRIPTION',
+    },
+    'taskDetail_data_entrega': {
+      'pt': 'Data de Entrega',
+      'en': 'Due Date',
+    },
+    'taskDetail_prioridade': {
+      'pt': 'Prioridade',
+      'en': 'Priority',
+    },
+    'taskDetail_status': {
+      'pt': 'Status',
+      'en': 'Status',
+    },
+    'taskDetail_alterar_status': {
+      'pt': 'Alterar Status',
+      'en': 'Change Status',
+    },
+    'taskDetail_status_pendente_sub': {
+      'pt': 'Tarefa ainda não iniciada',
+      'en': 'Task not yet started',
+    },
+    'taskDetail_status_progresso_sub': {
+      'pt': 'Tarefa em andamento',
+      'en': 'Task in progress',
+    },
+    'taskDetail_status_concluida_sub': {
+      'pt': 'Tarefa finalizada',
+      'en': 'Task completed',
+    },
+    'taskDetail_marcar_concluida': {
+      'pt': 'Marcar como Concluída',
+      'en': 'Mark as Completed',
+    },
+    'taskDetail_reabrir': {
+      'pt': 'Reabrir Tarefa',
+      'en': 'Reopen Task',
+    },
+    'taskDetail_editar': {
+      'pt': 'Editar Tarefa',
+      'en': 'Edit Task',
+    },
+    'taskDetail_erro_atualizar': {
+      'pt': 'Erro ao atualizar tarefa: ',
+      'en': 'Error updating task: ',
+    },
+    'taskDetail_erro_status': {
+      'pt': 'Erro ao atualizar status: ',
+      'en': 'Error updating status: ',
+    },
+    'taskDetail_criada_em': {
+      'pt': 'Criada em ',
+      'en': 'Created on ',
+    },
+    'taskDetail_concluido_em': {
+      'pt': 'Concluído em ',
+      'en': 'Completed on ',
+    },
+
+    // ═══════ TASK FILTER ═══════
+    'taskFilter_titulo': {
+      'pt': 'Filtrar Tarefas',
+      'en': 'Filter Tasks',
+    },
+    'taskFilter_limpar_tudo': {
+      'pt': 'Limpar tudo',
+      'en': 'Clear all',
+    },
+    'taskFilter_status': {
+      'pt': 'STATUS',
+      'en': 'STATUS',
+    },
+    'taskFilter_prioridade': {
+      'pt': 'PRIORIDADE',
+      'en': 'PRIORITY',
+    },
+    'taskFilter_data': {
+      'pt': 'DATA',
+      'en': 'DATE',
+    },
+    'taskFilter_aplicar': {
+      'pt': 'Aplicar Filtros',
+      'en': 'Apply Filters',
+    },
+
+    // ═══════ TASK SEARCH ═══════
+    'taskSearch_hint': {
+      'pt': 'Buscar tarefas...',
+      'en': 'Search tasks...',
+    },
+
+    // ═══════ RELATED GOAL ═══════
+    'relatedGoal_meta_de': {
+      'pt': 'Meta de ',
+      'en': 'Goal of ',
+    },
+    'relatedGoal_nenhuma': {
+      'pt': 'Nenhuma meta selecionada (tarefa avulsa)',
+      'en': 'No goal selected (standalone task)',
+    },
+
+    // ═══════ GOAL PICKER ═══════
+    'goalPicker_titulo': {
+      'pt': 'Vincular a uma meta',
+      'en': 'Link to a goal',
+    },
+    'goalPicker_nenhuma': {
+      'pt': 'Nenhuma (tarefa avulsa)',
+      'en': 'None (standalone task)',
+    },
 
     // ═══════ CONTACTS SCREEN ═══════
     'contacts_titulo': {
@@ -632,13 +932,17 @@ class AppLocales {
       'pt': 'Remover Contato',
       'en': 'Remove Contact',
     },
-    'contactDetail_atrasado_prefix': {
+'contactDetail_atrasado_prefix': {
       'pt': 'Já se passaram',
       'en': 'It has been',
     },
     'contactDetail_atrasado_dias': {
       'pt': 'dias desde o último contato. Que tal ligar pra',
       'en': 'days since the last contact. How about calling',
+    },
+    'contactDetail_atrasado_meio': {
+      'pt': '',
+      'en': '',
     },
     'contactDetail_atrasado_suffix': {
       'pt': '?',
@@ -694,7 +998,11 @@ class AppLocales {
       'pt': 'Buscar país ou código...',
       'en': 'Search country or code...',
     },
-    'countryPicker_nao_encontrei': {
+'countryPicker_nao_encontrei': {
+      'pt': 'Não encontrei — digitar código',
+      'en': 'Not found — type code',
+    },
+    'countryPicker_digitar': {
       'pt': 'Não encontrei — digitar código',
       'en': 'Not found — type code',
     },
@@ -753,6 +1061,24 @@ class AppLocales {
     'rel_colega': {
       'pt': 'Colega',
       'en': 'Colleague',
+    },
+
+// ═══════ RELATIVE TIME ═══════
+    'relative_ha': {
+      'pt': 'há',
+      'en': '',
+    },
+    'relative_min': {
+      'pt': 'min',
+      'en': 'min',
+    },
+    'relative_ontem': {
+      'pt': 'ontem',
+      'en': 'yesterday',
+    },
+    'relative_dias': {
+      'pt': 'dias',
+      'en': 'days',
     },
 
     // ═══════ MONTH ABBREVIATIONS ═══════

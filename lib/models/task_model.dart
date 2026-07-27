@@ -158,4 +158,13 @@ class TaskModel {
 
   /// e.g. "18 de Outubro, 2024". Null if [dueDate] wasn't set.
   String? get dueDateLongLabel => dueDate == null ? null : longDate(dueDate!);
+
+  /// Formata data curta com tradução dos meses (ex: "15 Out").
+  /// Usa [monthTranslator] para obter o nome do mês abreviado no idioma atual.
+  static String shortDateLocale(DateTime date, String Function(int month) monthTranslator) =>
+      '${date.day} ${monthTranslator(date.month - 1)}';
+
+  /// Formata data longa com tradução dos meses (ex: "15 de Outubro, 2024").
+  static String longDateLocale(DateTime date, String Function(int month) monthTranslator) =>
+      '${date.day} de ${monthTranslator(date.month - 1)}, ${date.year}';
 }

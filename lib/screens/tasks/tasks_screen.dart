@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/services/notification_scheduler.dart';
 import '../../core/services/task_service.dart';
 import '../../core/navigation/navigation_controller.dart';
@@ -37,19 +38,22 @@ class _TasksScreenState extends State<TasksScreen> {
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  /// Formata a data atual em português sem depender de locale packages.
-  String _formatPortugueseDate(DateTime date) {
-    const weekdays = [
-      'Segunda-feira', 'Terça-feira', 'Quarta-feira',
-      'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'
+/// Formata a data atual no idioma selecionado.
+  String _formatDateLocale(DateTime date) {
+    final loc = AppLocales.of(context);
+    const weekdayKeys = [
+      'weekday_segunda', 'weekday_terca', 'weekday_quarta',
+      'weekday_quinta', 'weekday_sexta', 'weekday_sabado', 'weekday_domingo'
     ];
-    const months = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    const monthKeys = [
+      'mes_full_janeiro', 'mes_full_fevereiro', 'mes_full_marco', 'mes_full_abril',
+      'mes_full_maio', 'mes_full_junho', 'mes_full_julho', 'mes_full_agosto',
+      'mes_full_setembro', 'mes_full_outubro', 'mes_full_novembro', 'mes_full_dezembro',
     ];
-    final weekday = weekdays[date.weekday - 1];
-    final month = months[date.month - 1];
-    return '$weekday, ${date.day} de $month';
+    final weekday = loc.translate(weekdayKeys[date.weekday - 1]);
+    final month = loc.translate(monthKeys[date.month - 1]);
+    final day = date.day.toString();
+    return '$weekday, $day de $month';
   }
 
   /// Verifica se a tarefa vence hoje.
@@ -158,7 +162,7 @@ class _TasksScreenState extends State<TasksScreen> {
 
     return Scaffold(
       drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
-      appBar: const LoahAppBar(title: 'Minhas Tarefas'),
+appBar: LoahAppBar(title: AppLocales.of(context).translate('tasks_minhas_tarefas')),
       body: SafeArea(
         child: StreamBuilder<QuerySnapshot>(
           stream: _taskService.getTasksStream(),
@@ -168,7 +172,7 @@ class _TasksScreenState extends State<TasksScreen> {
             }
             if (snapshot.hasError) {
               return Center(
-                child: Text('Erro ao carregar tarefas: ${snapshot.error}'),
+                child: Text('${AppLocales.of(context).translate('tasks_erro_carregar')}${snapshot.error}'),
               );
             }
 
@@ -226,7 +230,7 @@ class _TasksScreenState extends State<TasksScreen> {
             return ListView(
               padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
-                Text(_formatPortugueseDate(DateTime.now()),
+Text(_formatDateLocale(DateTime.now()),
                     style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(height: AppSpacing.md),
                 TaskSearchBar(
@@ -242,7 +246,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 ],
                 const SizedBox(height: AppSpacing.lg),
                 SectionHeader(
-                  title: 'Hoje',
+title: AppLocales.of(context).translate('tasks_hoje'),
                   trailing: CircleAvatar(
                     radius: 9,
                     child: Text('${today.length}',
@@ -254,7 +258,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Text(
-                      'Nenhuma tarefa para hoje.',
+AppLocales.of(context).translate('tasks_nenhuma_hoje'),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   )
@@ -268,13 +272,13 @@ class _TasksScreenState extends State<TasksScreen> {
                     const SizedBox(height: AppSpacing.md),
                   ],
                 const SizedBox(height: AppSpacing.sm),
-                const SectionHeader(title: 'Próximos Dias'),
+SectionHeader(title: AppLocales.of(context).translate('tasks_proximos_dias')),
                 const SizedBox(height: AppSpacing.md),
                 if (upcoming.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Text(
-                      'Nenhuma tarefa futura.',
+AppLocales.of(context).translate('tasks_nenhuma_futura'),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   )
@@ -292,7 +296,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   onTap: () => setState(() => _showDone = !_showDone),
                   child: Row(
                     children: [
-                      Text('Concluídos',
+Text(AppLocales.of(context).translate('tasks_concluidos'),
                           style: Theme.of(context)
                               .textTheme
                               .titleSmall
@@ -310,7 +314,7 @@ class _TasksScreenState extends State<TasksScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Text(
-                        'Nenhuma tarefa concluída.',
+AppLocales.of(context).translate('tasks_nenhuma_concluida'),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     )
@@ -358,12 +362,13 @@ class _ActiveFiltersBar extends StatelessWidget {
     for (final priority in filters.priorityFilter) {
       chips.add(_FilterChip(label: priority.shortLabel));
     }
-    if (filters.dateFilter != null) {
+if (filters.dateFilter != null) {
+      final loc = AppLocales.of(context);
       final dateLabels = {
-        'hoje': 'Hoje',
-        'amanha': 'Amanhã',
-        'esta_semana': 'Esta Semana',
-        'este_mes': 'Este Mês',
+        'hoje': loc.translate('tasks_hoje'),
+        'amanha': loc.translate('tasks_amanha'),
+        'esta_semana': loc.translate('tasks_esta_semana'),
+        'este_mes': loc.translate('tasks_este_mes'),
       };
       chips.add(_FilterChip(label: dateLabels[filters.dateFilter] ?? filters.dateFilter!));
     }
@@ -385,14 +390,14 @@ class _ActiveFiltersBar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(100),
                   border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
                 ),
-                child: const Row(
+child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.close, size: 12, color: Colors.redAccent),
-                    SizedBox(width: 4),
+                    const Icon(Icons.close, size: 12, color: Colors.redAccent),
+                    const SizedBox(width: 4),
                     Text(
-                      'Limpar',
-                      style: TextStyle(
+                      AppLocales.of(context).translate('tasks_limpar'),
+                      style: const TextStyle(
                         fontSize: 11,
                         color: Colors.redAccent,
                         fontWeight: FontWeight.w600,
