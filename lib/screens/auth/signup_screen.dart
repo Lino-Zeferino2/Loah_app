@@ -4,7 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
-import 'package:loah_app/main.dart';
+import 'package:loah_app/screens/onboarding/onboarding_screen.dart';
 import 'package:loah_app/screens/contacts/widgets/country_code_picker_sheet.dart';
 import 'package:loah_app/screens/support/terms_privacy_screen.dart';
 import 'widgets/wave_lines/wave_card_header.dart';
@@ -123,10 +123,10 @@ class _SignupScreenState extends State<SignupScreen> {
         dialCode: _dialCode,
       );
 
-      if (!mounted) return;
+if (!mounted) return;
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const RootShell()),
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {
@@ -199,9 +199,9 @@ class _SignupScreenState extends State<SignupScreen> {
           name: user.displayName ?? 'Usuario',
           email: user.email ?? '',
         );
-        if (!mounted) return;
+if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const RootShell()),
+          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
           (route) => false,
         );
       }
@@ -256,9 +256,9 @@ class _SignupScreenState extends State<SignupScreen> {
           name: user.displayName ?? 'Usuario Apple',
           email: user.email ?? '',
         );
-        if (!mounted) return;
+if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const RootShell()),
+          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
           (route) => false,
         );
       }
