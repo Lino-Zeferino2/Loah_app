@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/services/notification_scheduler.dart';
 import '../../core/services/task_service.dart';
@@ -37,6 +36,21 @@ class _TasksScreenState extends State<TasksScreen> {
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+
+  /// Formata a data atual em português sem depender de locale packages.
+  String _formatPortugueseDate(DateTime date) {
+    const weekdays = [
+      'Segunda-feira', 'Terça-feira', 'Quarta-feira',
+      'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'
+    ];
+    const months = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    final weekday = weekdays[date.weekday - 1];
+    final month = months[date.month - 1];
+    return '$weekday, ${date.day} de $month';
+  }
 
   /// Verifica se a tarefa vence hoje.
   bool _isDueToday(TaskModel task) {
@@ -212,7 +226,7 @@ class _TasksScreenState extends State<TasksScreen> {
             return ListView(
               padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
-                Text(DateFormat('EEEE, d \'de\' MMMM', 'pt_PT').format(DateTime.now()),
+                Text(_formatPortugueseDate(DateTime.now()),
                     style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(height: AppSpacing.md),
                 TaskSearchBar(
