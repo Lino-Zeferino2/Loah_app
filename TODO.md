@@ -1,28 +1,30 @@
-# TODO: Notificações de Suporte (SMS Admin/User)
+# Plano de Melhorias — Loah App
 
-## Objective
-Implement notification sending when:
-1. A user sends a support message → notify admin(s)
-2. Admin replies to a support message → notify the user
+## 🔴 1. Deploy das Cloud Functions (CRÍTICO)
+- [x] Executar `firebase deploy --only functions`
+- [x] Verificar deploy no Firebase Console ✅ (Todas as 8 funções deployed com sucesso)
+  - sendNotificationOnWrite
+  - checkOverdueContacts (scheduler 08:00)
+  - checkUpcomingTasks (scheduler 07:00/19:00)
+  - checkRecurringBills (scheduler 06:00)
+  - checkOverBudget (scheduler 1st/15th)
+  - checkGoalMilestones (scheduler 10:00)
+  - onSupportMessageCreated
+  - onSupportMessageReplied
 
-## Steps
+## 🟡 2. Firebase Analytics & Crashlytics (RECOMENDADO)
+- [x] Adicionar `firebase_analytics` ao pubspec.yaml
+- [x] Adicionar `firebase_crashlytics` ao pubspec.yaml
+- [x] Executar `flutter pub get`
+- [x] Criar `lib/core/services/analytics_service.dart`
+- [x] Configurar Analytics + Crashlytics no `main.dart`
+- [x] Configurar Error Widget para Crashlytics (FlutterError.onError + PlatformDispatcher)
 
-- [x] Step 0: Analyze codebase (HelpCenterService, functions/index.js, notification infrastructure)
-- [x] Step 1: Create/edit `functions/index.js` - Add Cloud Function `onSupportMessageCreated` (trigger on `helpCenterMessages` onCreate → notify admins)
-- [x] Step 2: Create/edit `functions/index.js` - Add Cloud Function `onSupportMessageReplied` (trigger on `helpCenterMessages` onUpdate when `adminReply` changes → notify user)
-- [x] Step 3: **Deploy the functions** - Run `firebase deploy --only functions` when ready
+## 🟡 3. Modo Offline (Firestore Persistence)
+- [x] Ativar `persistenceEnabled` no Firestore no `main.dart`
+- [x] Configurado com `cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED`
 
-## Additional Improvements
-
-### Step 4: Navegação com dados completos do Firestore via Notificação Push
-- [x] Melhorar `_navigateFromNotification` no `RootShell` em `main.dart` para buscar dados completos (ContactModel, TaskModel, GoalModel) do Firestore antes de navegar para as telas de detalhes, em vez de criar modelos parciais.
-
-### Step 5: Notificação "todas as tarefas concluídas" ao marcar tarefas como feitas
-- [x] Adicionar chamada a `NotificationScheduler().checkAllTasksDone()` em `_toggle` do `tasks_screen.dart`
-- [x] Adicionar chamada a `NotificationScheduler().checkAllTasksDone()` em `_toggleDone` do `task_detail_screen.dart`
-
-### Step 6: Tela de Perfil do Utilizador
-- [x] Criar `lib/screens/profile/profile_screen.dart` — editar nome, telefone, foto de perfil (câmera/galeria + upload Firebase Storage)
-- [x] Adicionar "Editar Perfil" no drawer (secção CONTA)
-- [x] Adicionar regra `storage.rules` para fotos de perfil (`profilePhotos/{userId}/{fileName}`)
+## 🟡 4. Testes Automatizados
+- [x] Melhorar `test/widget_test.dart` — smoke test, modelos AppNotification/ContactModel, CurrencyFormatter, goal progress validation
+- [x] Verificar com `flutter test` ✅ (17/17 testes passaram)
 

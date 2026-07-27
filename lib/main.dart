@@ -1,9 +1,15 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
 import 'core/navigation/navigation_controller.dart';
+import 'core/services/analytics_service.dart';
 import 'core/services/contact_service.dart';
 import 'core/services/goal_service.dart';
 import 'core/services/notification_service.dart';
@@ -24,19 +30,50 @@ import 'screens/tasks/task_detail_screen.dart';
 import 'widgets/loah_bottom_nav.dart';
 import 'screens/splash/splash_screen.dart';
 
+/// Global navigator key for accessing NavigatorState from anywhere
+/// (e.g., from Crashlytics error recovery).
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize FCM push notifications
+  // ── Firebase Analytics ────────────────────────────────────────
+  final analytics = FirebaseAnalytics.instance;
+  await analytics.setAnalyticsCollectionEnabled(true);
+
+  // ── Firebase Crashlytics ──────────────────────────────────────
+  FlutterError.onError = (errorDetails) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+  };
+
+  // Passa os erros de zonas assíncronas para o Crashlytics
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
+  // ── Firestore Offline Persistence ─────────────────────────────
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
+
+  // ── FCM Push Notifications ────────────────────────────────────
   await NotificationService().initialize();
 
   // Start periodic checks for local notifications (contact overdue,
   // tasks due, recurring bills, budgets over limit, etc.)
   NotificationScheduler().startPeriodicChecks(intervalMinutes: 30);
   NotificationScheduler().runAllChecks();
+
+  // ── Configure Analytics user ──────────────────────────────────
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    await AnalyticsService().setUserId(user.uid);
+  }
 
   runApp(const LoahApp());
 }
