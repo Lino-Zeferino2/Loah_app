@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/task_model.dart';
 
@@ -68,11 +69,13 @@ class GoalMilestoneTile extends StatelessWidget {
                           color: task.isDone ? context.textSecondary : null,
                         ),
                       ),
-                      if (task.completedLabel != null)
+                      if (task.isDone && task.completedAt != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 2),
                           child: Text(
-                            task.completedLabel!,
+                            AppLocales.of(context)
+                                .translate('task_completed_label')
+                                .replaceAll('{date}', TaskModel.shortDate(task.completedAt!)),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ),

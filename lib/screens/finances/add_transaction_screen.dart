@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/utils/transaction_categories.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/finance_service.dart';
@@ -97,10 +98,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _submit() async {
+    final loc = AppLocales.of(context);
     if (_accounts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Crie uma conta primeiro antes de adicionar transações.'),
+        SnackBar(
+          content: Text(loc.translate('addTxn_sem_conta')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -112,11 +114,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     var hasError = false;
     if (title.isEmpty) {
-      setState(() => _titleError = 'Dê um nome para a transação.');
+      setState(() => _titleError = loc.translate('addTxn_nome_erro'));
       hasError = true;
     }
     if (amount == null || amount <= 0) {
-      setState(() => _amountError = 'Informe um valor válido.');
+      setState(() => _amountError = loc.translate('addTxn_valor_erro'));
       hasError = true;
     }
     if (hasError) return;
@@ -142,13 +144,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: $e')),
+          SnackBar(content: Text('${loc.translate('addTxn_erro_salvar')}$e')),
         );
       }
     }
   }
 
-  Future<void> _delete() async {
+Future<void> _delete() async {
+    final sheetLoc = AppLocales.of(context);
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: context.loahColors.cardBackground,
@@ -163,7 +166,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Excluir Transação',
+                sheetLoc.translate('addTxn_excluir_titulo'),
                 style: Theme.of(sheetContext)
                     .textTheme
                     .titleMedium
@@ -171,7 +174,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Tem certeza? Essa ação não pode ser desfeita.',
+                sheetLoc.translate('addTxn_excluir_msg'),
                 style: Theme.of(sheetContext).textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),
@@ -184,7 +187,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Cancelar'),
+                      child: Text(sheetLoc.translate('addTxn_cancelar')),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -196,7 +199,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () => Navigator.of(sheetContext).pop(true),
-                      child: const Text('Excluir'),
+                      child: Text(sheetLoc.translate('addTxn_excluir_confirmar')),
                     ),
                   ),
                 ],
@@ -213,8 +216,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
+        final loc = AppLocales.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao excluir: $e')),
+          SnackBar(content: Text('${loc.translate('addTxn_erro_excluir')}$e')),
         );
       }
     }
@@ -225,26 +229,27 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final colors = context.loahColors;
     final isEditing = widget.isEditing;
     final categories = TransactionCategories.forType(_type);
+    final loc = AppLocales.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Editar Transação' : 'Nova Transação')),
+      appBar: AppBar(title: Text(isEditing ? loc.translate('addTxn_editar') : loc.translate('addTxn_novo'))),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const _SectionLabel('TIPO'),
+            _SectionLabel(loc.translate('addTxn_tipo_label')),
             const SizedBox(height: 8),
             ChipSelector<TransactionType>(
-              options: const [
-                ChipOption('Despesa', TransactionType.expense),
-                ChipOption('Receita', TransactionType.income),
+              options: [
+                ChipOption(loc.translate('addTxn_tipo_despesa'), TransactionType.expense),
+                ChipOption(loc.translate('addTxn_tipo_receita'), TransactionType.income),
               ],
               selected: _type,
               onChanged: _onTypeChanged,
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('VALOR'),
+            _SectionLabel(loc.translate('addTxn_valor_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _amountController,
@@ -254,7 +259,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               },
               decoration: InputDecoration(
                 prefixText: 'R\$ ',
-                hintText: '0,00',
+                hintText: loc.translate('addTxn_valor_hint'),
                 errorText: _amountError,
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
@@ -266,7 +271,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('NOME'),
+            _SectionLabel(loc.translate('addTxn_nome_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
@@ -274,7 +279,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 if (_titleError != null) setState(() => _titleError = null);
               },
               decoration: InputDecoration(
-                hintText: 'Ex: Mercado Central',
+                hintText: loc.translate('addTxn_nome_hint'),
                 errorText: _titleError,
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
@@ -286,7 +291,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('CATEGORIA'),
+            _SectionLabel(loc.translate('addTxn_categoria_label')),
             const SizedBox(height: 8),
             ChipSelector<String>(
               options: [for (final c in categories) ChipOption(c, c)],
@@ -295,11 +300,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('CONTA'),
+            _SectionLabel(loc.translate('addTxn_conta_label')),
             const SizedBox(height: 8),
             if (_accounts.isEmpty)
               Text(
-                'Nenhuma conta cadastrada — crie uma na tela de Contas antes de lançar transações.',
+                loc.translate('addTxn_conta_vazia'),
                 style: Theme.of(context).textTheme.bodySmall,
               )
             else
@@ -310,7 +315,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('DATA'),
+            _SectionLabel(loc.translate('addTxn_data_label')),
             const SizedBox(height: 8),
             InkWell(
               onTap: _pickDate,
@@ -341,9 +346,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 child: TextButton.icon(
                   onPressed: _delete,
                   icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-                  label: const Text(
-                    'Excluir Transação',
-                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                  label: Text(
+                    loc.translate('addTxn_excluir'),
+                    style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -361,7 +366,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(
-                  isEditing ? 'Salvar Alterações' : 'Adicionar Transação',
+                  isEditing ? loc.translate('addTxn_salvar') : loc.translate('addTxn_adicionar'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),

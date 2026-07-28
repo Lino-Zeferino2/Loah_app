@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'locale_controller.dart';
+import '../../models/task_model.dart';
 
 /// Classe de tradução centralizada para a app Loah.
 /// Suporta português (pt) e inglês (en) com fallback para português.
@@ -289,7 +290,7 @@ class AppLocales {
       'en': 'Tasks',
     },
 
-    // ═══════ FINANCES ═══════
+// ═══════ FINANCES ═══════
     'financas_titulo': {
       'pt': 'Finanças',
       'en': 'Finances',
@@ -317,6 +318,350 @@ class AppLocales {
     'financas_ativos': {
       'pt': 'Ativos',
       'en': 'Assets',
+    },
+
+    // ═══════ TRANSACTION CATEGORIES ═══════
+    'txn_cat_alimentação': {
+      'pt': 'Alimentação',
+      'en': 'Food',
+    },
+    'txn_cat_moradia': {
+      'pt': 'Moradia',
+      'en': 'Housing',
+    },
+    'txn_cat_transporte': {
+      'pt': 'Transporte',
+      'en': 'Transport',
+    },
+    'txn_cat_compras': {
+      'pt': 'Compras',
+      'en': 'Shopping',
+    },
+    'txn_cat_saúde': {
+      'pt': 'Saúde',
+      'en': 'Health',
+    },
+    'txn_cat_lazer': {
+      'pt': 'Lazer',
+      'en': 'Leisure',
+    },
+    'txn_cat_outros': {
+      'pt': 'Outros',
+      'en': 'Others',
+    },
+    'txn_cat_salário': {
+      'pt': 'Salário',
+      'en': 'Salary',
+    },
+    'txn_cat_freelance': {
+      'pt': 'Freelance',
+      'en': 'Freelance',
+    },
+    'txn_cat_investimentos': {
+      'pt': 'Investimentos',
+      'en': 'Investments',
+    },
+
+    // ═══════ ADD TRANSACTION SCREEN ═══════
+    'addTxn_editar': {
+      'pt': 'Editar Transação',
+      'en': 'Edit Transaction',
+    },
+    'addTxn_novo': {
+      'pt': 'Nova Transação',
+      'en': 'New Transaction',
+    },
+    'addTxn_tipo_label': {
+      'pt': 'TIPO',
+      'en': 'TYPE',
+    },
+    'addTxn_tipo_despesa': {
+      'pt': 'Despesa',
+      'en': 'Expense',
+    },
+    'addTxn_tipo_receita': {
+      'pt': 'Receita',
+      'en': 'Income',
+    },
+    'addTxn_valor_label': {
+      'pt': 'VALOR',
+      'en': 'AMOUNT',
+    },
+    'addTxn_valor_hint': {
+      'pt': '0,00',
+      'en': '0.00',
+    },
+    'addTxn_valor_erro': {
+      'pt': 'Informe um valor válido.',
+      'en': 'Enter a valid amount.',
+    },
+    'addTxn_nome_label': {
+      'pt': 'NOME',
+      'en': 'NAME',
+    },
+    'addTxn_nome_hint': {
+      'pt': 'Ex: Mercado Central',
+      'en': 'E.g.: Central Market',
+    },
+    'addTxn_nome_erro': {
+      'pt': 'Dê um nome para a transação.',
+      'en': 'Give a name to the transaction.',
+    },
+    'addTxn_categoria_label': {
+      'pt': 'CATEGORIA',
+      'en': 'CATEGORY',
+    },
+    'addTxn_conta_label': {
+      'pt': 'CONTA',
+      'en': 'ACCOUNT',
+    },
+    'addTxn_conta_vazia': {
+      'pt': 'Nenhuma conta cadastrada — crie uma na tela de Contas antes de lançar transações.',
+      'en': 'No accounts yet — create one on the Accounts screen before adding transactions.',
+    },
+    'addTxn_data_label': {
+      'pt': 'DATA',
+      'en': 'DATE',
+    },
+    'addTxn_excluir': {
+      'pt': 'Excluir Transação',
+      'en': 'Delete Transaction',
+    },
+    'addTxn_salvar': {
+      'pt': 'Salvar Alterações',
+      'en': 'Save Changes',
+    },
+    'addTxn_adicionar': {
+      'pt': 'Adicionar Transação',
+      'en': 'Add Transaction',
+    },
+    'addTxn_erro_salvar': {
+      'pt': 'Erro ao salvar: ',
+      'en': 'Error saving: ',
+    },
+    'addTxn_erro_excluir': {
+      'pt': 'Erro ao excluir: ',
+      'en': 'Error deleting: ',
+    },
+    'addTxn_excluir_titulo': {
+      'pt': 'Excluir Transação',
+      'en': 'Delete Transaction',
+    },
+    'addTxn_excluir_msg': {
+      'pt': 'Tem certeza? Essa ação não pode ser desfeita.',
+      'en': 'Are you sure? This action cannot be undone.',
+    },
+    'addTxn_excluir_confirmar': {
+      'pt': 'Excluir',
+      'en': 'Delete',
+    },
+    'addTxn_cancelar': {
+      'pt': 'Cancelar',
+      'en': 'Cancel',
+    },
+    'addTxn_sem_conta': {
+      'pt': 'Crie uma conta primeiro antes de adicionar transações.',
+      'en': 'Create an account first before adding transactions.',
+    },
+
+    // ═══════ FINANCES SCREEN ═══════
+    'finances_title': {
+      'pt': 'Minhas Finanças',
+      'en': 'My Finances',
+    },
+    'finances_patrimonio': {
+      'pt': 'Patrimônio',
+      'en': 'Assets',
+    },
+    'finances_orcamento': {
+      'pt': 'Orçamento',
+      'en': 'Budget',
+    },
+    'finances_recorrentes': {
+      'pt': 'Recorrentes',
+      'en': 'Recurring',
+    },
+    'finances_relatorios': {
+      'pt': 'Relatórios',
+      'en': 'Reports',
+    },
+    'finances_ativas': {
+      'pt': 'ativas',
+      'en': 'active',
+    },
+    'finances_ver_evolucao': {
+      'pt': 'Ver evolução',
+      'en': 'See evolution',
+    },
+    'finances_transacoes_recentes': {
+      'pt': 'Transações Recentes',
+      'en': 'Recent Transactions',
+    },
+    'finances_sem_transacoes': {
+      'pt': 'Nenhuma transação ainda. Toque no + para adicionar a primeira.',
+      'en': 'No transactions yet. Tap + to add your first one.',
+    },
+    'finances_ver_historico': {
+      'pt': 'VER TODO O HISTÓRICO',
+      'en': 'VIEW FULL HISTORY',
+    },
+    'finances_sem_despesas': {
+      'pt': 'Nenhuma despesa registrada este mês ainda — a distribuição de gastos aparece aqui assim que você adicionar transações.',
+      'en': 'No expenses recorded this month yet — the expense distribution will show up here once you add transactions.',
+    },
+    'finances_criar_conta_primeiro': {
+      'pt': 'Crie uma conta primeiro antes de adicionar transações.',
+      'en': 'Create an account first before adding transactions.',
+    },
+    'finances_total_balance': {
+      'pt': 'SALDO TOTAL',
+      'en': 'TOTAL BALANCE',
+    },
+    'finances_income': {
+      'pt': 'RECEITAS',
+      'en': 'INCOME',
+    },
+    'finances_expense': {
+      'pt': 'DESPESAS',
+      'en': 'EXPENSES',
+    },
+
+    // ═══════ EXPENSE DISTRIBUTION ═══════
+    'expDist_titulo': {
+      'pt': 'Distribuição de Gastos',
+      'en': 'Expense Distribution',
+    },
+    'expDist_detalhes': {
+      'pt': 'DETALHES',
+      'en': 'DETAILS',
+    },
+    'expDist_mes_vs_anterior': {
+      'pt': 'Este mês vs. Anterior',
+      'en': 'This month vs. Last month',
+    },
+    'expDist_gasto_total': {
+      'pt': 'gasto total',
+      'en': 'total spent',
+    },
+    'expDist_total_gasto_label': {
+      'pt': 'TOTAL GASTO (ESTE MÊS)',
+      'en': 'TOTAL SPENT (THIS MONTH)',
+    },
+    'expDist_categorias': {
+      'pt': 'Categorias',
+      'en': 'Categories',
+    },
+    'expDist_detalhamento': {
+      'pt': 'Detalhamento por Categoria',
+      'en': 'Breakdown by Category',
+    },
+    'expDist_sem_despesas': {
+      'pt': 'Nenhuma despesa registrada este mês ainda.',
+      'en': 'No expenses recorded this month yet.',
+    },
+    'expDist_mais': {
+      'pt': 'a mais',
+      'en': 'more',
+    },
+    'expDist_menos': {
+      'pt': 'a menos',
+      'en': 'less',
+    },
+    'expDist_que_mes_passado': {
+      'pt': 'que o mês passado',
+      'en': 'than last month',
+    },
+    'expDist_pct_total': {
+      'pt': '% do total',
+      'en': '% of total',
+    },
+
+    // ═══════ CATEGORY COMPARISON ═══════
+    'catComp_este_mes': {
+      'pt': 'Este mês',
+      'en': 'This month',
+    },
+    'catComp_mes_anterior': {
+      'pt': 'Mês anterior',
+      'en': 'Last month',
+    },
+
+    // ═══════ BUDGET CARD ═══════
+    'budgetCard_acima_limite': {
+      'pt': '%s de %s — %s acima do limite',
+      'en': '%s of %s — %s over limit',
+    },
+    'budgetCard_gasto': {
+      'pt': '%s de %s',
+      'en': '%s of %s',
+    },
+
+    // ═══════ ADD BUDGET SCREEN ═══════
+    'addBudget_editar': {
+      'pt': 'Editar Orçamento',
+      'en': 'Edit Budget',
+    },
+    'addBudget_novo': {
+      'pt': 'Novo Orçamento',
+      'en': 'New Budget',
+    },
+    'addBudget_categoria_label': {
+      'pt': 'CATEGORIA',
+      'en': 'CATEGORY',
+    },
+    'addBudget_todas_categorias': {
+      'pt': 'Todas as categorias de despesa já têm um orçamento definido.',
+      'en': 'All expense categories already have a budget set.',
+    },
+    'addBudget_limite_label': {
+      'pt': 'LIMITE MENSAL',
+      'en': 'MONTHLY LIMIT',
+    },
+    'addBudget_excluir': {
+      'pt': 'Excluir Orçamento',
+      'en': 'Delete Budget',
+    },
+    'addBudget_salvar': {
+      'pt': 'Salvar Alterações',
+      'en': 'Save Changes',
+    },
+    'addBudget_criar': {
+      'pt': 'Criar Orçamento',
+      'en': 'Create Budget',
+    },
+    'addBudget_erro_salvar': {
+      'pt': 'Erro ao salvar: ',
+      'en': 'Error saving: ',
+    },
+    'addBudget_erro_excluir': {
+      'pt': 'Erro ao excluir: ',
+      'en': 'Error deleting: ',
+    },
+    'addBudget_erro_valor': {
+      'pt': 'Informe um valor válido.',
+      'en': 'Enter a valid amount.',
+    },
+    'addBudget_excluir_titulo': {
+      'pt': 'Excluir Orçamento',
+      'en': 'Delete Budget',
+    },
+    'addBudget_excluir_msg': {
+      'pt': 'Tem certeza? Essa ação não pode ser desfeita.',
+      'en': 'Are you sure? This action cannot be undone.',
+    },
+    'addBudget_excluir_confirmar': {
+      'pt': 'Excluir',
+      'en': 'Delete',
+    },
+    'addBudget_cancelar': {
+      'pt': 'Cancelar',
+      'en': 'Cancel',
+    },
+
+    // ═══════ RECURRING TRANSACTION CARD ═══════
+    'recurring_todo_dia': {
+      'pt': 'Todo dia %s',
+      'en': 'Every day %s',
     },
 
     // ═══════ GOALS ═══════
@@ -527,6 +872,20 @@ class AppLocales {
     'addTask_meta_vincular': {
       'pt': 'Vincular a uma meta',
       'en': 'Link to a goal',
+    },
+
+    // ═══════ TASK DATE LABELS ═══════
+    'task_completed_label': {
+      'pt': 'Concluído em {date}',
+      'en': 'Completed on {date}',
+    },
+    'task_created_label': {
+      'pt': 'Criada em {date}',
+      'en': 'Created on {date}',
+    },
+    'due_date_long_label': {
+      'pt': '{date}',
+      'en': '{date}',
     },
 
     // ═══════ TASK DETAIL ═══════
@@ -1370,6 +1729,47 @@ class AppLocales {
   String translateRelationshipTag(String tag) {
     final key = 'rel_${tag.toLowerCase()}';
     return translate(key);
+  }
+
+  /// Traduz o nome de uma categoria de transação armazenada em português
+  /// (ex: "Alimentação", "Salário") para o idioma atualmente selecionado.
+  /// Retorna a categoria original se não encontrar tradução.
+  String translateCategory(String category) {
+    final key = 'txn_cat_${category.toLowerCase()}';
+    final translation = translate(key);
+    // Se a chave não foi encontrada, translate() retorna a própria chave.
+    // Nesse caso devolvemos a categoria original (em pt) como fallback.
+    return translation == key ? category : translation;
+  }
+
+  /// Traduz a prioridade de uma tarefa (TaskPriority) para o idioma
+  /// atualmente selecionado, usando a forma curta (ex: "Alta", "Média", "Baixa").
+  String translatePriorityShort(TaskPriority priority) {
+    return switch (priority) {
+      TaskPriority.alta => translate('prio_alta_short'),
+      TaskPriority.media => translate('prio_media_short'),
+      TaskPriority.baixa => translate('prio_baixa_short'),
+    };
+  }
+
+  /// Traduz a prioridade de uma tarefa (TaskPriority) para o idioma
+  /// atualmente selecionado, usando a forma longa (ex: "Alta Prioridade").
+  String translatePriorityLong(TaskPriority priority) {
+    return switch (priority) {
+      TaskPriority.alta => translate('prio_alta'),
+      TaskPriority.media => translate('prio_media'),
+      TaskPriority.baixa => translate('prio_baixa'),
+    };
+  }
+
+  /// Traduz o status de uma tarefa (TaskStatus) para o idioma
+  /// atualmente selecionado.
+  String translateStatus(TaskStatus status) {
+    return switch (status) {
+      TaskStatus.pendente => translate('status_nao_iniciada'),
+      TaskStatus.emProgresso => translate('status_em_progresso'),
+      TaskStatus.concluida => translate('status_concluida'),
+    };
   }
 
   // ── Getters nomeados (conveniência) ────────────────────────────

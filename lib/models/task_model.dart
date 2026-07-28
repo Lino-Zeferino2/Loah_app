@@ -1,35 +1,11 @@
 enum TaskPriority { alta, media, baixa }
 
-extension TaskPriorityLabel on TaskPriority {
-  String get label => switch (this) {
-        TaskPriority.alta => 'Alta Prioridade',
-        TaskPriority.media => 'Média Prioridade',
-        TaskPriority.baixa => 'Baixa Prioridade',
-      };
-
-  /// Short form used in compact UI, e.g. the priority selector on the
-  /// Add Task screen ("Baixa" / "Média" / "Alta").
-  String get shortLabel => switch (this) {
-        TaskPriority.alta => 'Alta',
-        TaskPriority.media => 'Média',
-        TaskPriority.baixa => 'Baixa',
-      };
-}
-
 /// Where a task stands. [TaskModel.isDone] still drives "concluída"
 /// everywhere else in the app (it's the field every checkbox toggles),
 /// so [status] is mainly there to distinguish "not started yet" from
 /// "already being worked on" for an *incomplete* task — see
 /// [TaskModel.effectiveStatus].
 enum TaskStatus { pendente, emProgresso, concluida }
-
-extension TaskStatusLabel on TaskStatus {
-  String get label => switch (this) {
-        TaskStatus.pendente => 'Não Iniciada',
-        TaskStatus.emProgresso => 'Em Progresso',
-        TaskStatus.concluida => 'Concluída',
-      };
-}
 
 /// A to-do item shown on the Dashboard and Tarefas screens.
 class TaskModel {

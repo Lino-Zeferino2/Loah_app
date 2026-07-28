@@ -279,7 +279,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       ),
                     ],
                   ),
-                  if (task.createdAtLongLabel != null) ...[
+                  if (task.createdAt != null) ...[
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -287,7 +287,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             size: 14, color: colors.accentBlue),
                         const SizedBox(width: 6),
                         Text(
-                          task.createdAtLongLabel!,
+                          AppLocales.of(context)
+                              .translate('task_created_label')
+                              .replaceAll('{date}', TaskModel.longDate(task.createdAt!)),
                           style: TextStyle(color: colors.accentBlue, fontSize: 12.5),
                         ),
                       ],
@@ -323,11 +325,16 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               const SizedBox(height: 20),
             ],
 
-            if (task.dueDateLongLabel != null)
+            if (task.dueDate != null)
               _InfoRow(
                 icon: Icons.calendar_today_outlined,
                 label: AppLocales.of(context).translate('taskDetail_data_entrega'),
-                trailing: Text(task.dueDateLongLabel!, style: Theme.of(context).textTheme.bodyMedium),
+                trailing: Text(
+                  AppLocales.of(context)
+                      .translate('due_date_long_label')
+                      .replaceAll('{date}', TaskModel.longDate(task.dueDate!)),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ),
             if (task.priority != null)
               _InfoRow(

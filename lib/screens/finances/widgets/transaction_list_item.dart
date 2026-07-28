@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/utils/transaction_categories.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -17,6 +18,7 @@ class TransactionListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    final loc = AppLocales.of(context);
     final amountColor = transaction.isIncome ? colors.positive : colors.negative;
     final sign = transaction.isIncome ? '+ ' : '- ';
     final icon = TransactionCategories.iconFor(transaction.category);
@@ -39,7 +41,7 @@ class TransactionListItem extends StatelessWidget {
                 Text(transaction.title,
                     style: const TextStyle(fontWeight: FontWeight.w600)),
                 Text(
-                  '${transaction.relativeDateLabel} • ${transaction.category}',
+                  '${transaction.relativeDateLabel} • ${loc.translateCategory(transaction.category)}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../widgets/loah_card.dart';
@@ -20,11 +21,12 @@ class TotalBalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    final loc = AppLocales.of(context);
     return LoahCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('SALDO TOTAL',
+          Text(loc.translate('finances_total_balance'),
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
@@ -42,14 +44,14 @@ class TotalBalanceCard extends StatelessWidget {
             children: [
               _Pill(
                 icon: Icons.arrow_upward_rounded,
-                label: 'RECEITAS',
+                label: loc.translate('finances_income'),
                 value: CurrencyFormatter.format(income),
                 color: colors.positive,
               ),
               const SizedBox(width: 10),
               _Pill(
                 icon: Icons.arrow_downward_rounded,
-                label: 'DESPESAS',
+                label: loc.translate('finances_expense'),
                 value: CurrencyFormatter.format(expense),
                 color: colors.negative,
               ),
