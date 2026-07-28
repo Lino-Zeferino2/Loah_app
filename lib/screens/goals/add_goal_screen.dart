@@ -27,14 +27,23 @@ class AddGoalScreen extends StatefulWidget {
 class _AddGoalScreenState extends State<AddGoalScreen> {
   final GoalService _goalService = GoalService();
 
-  static const _categories = [
-    ChipOption('Financeiro', 'Financeiro'),
-    ChipOption('Saúde', 'Saúde'),
-    ChipOption('Carreira', 'Carreira'),
-    ChipOption('Viagem', 'Viagem'),
-    ChipOption('Investimento', 'Investimento'),
-    ChipOption('Pessoal', 'Pessoal'),
+  static const _categoryKeys = [
+    'Financeiro',
+    'Saúde',
+    'Carreira',
+    'Viagem',
+    'Investimento',
+    'Pessoal',
   ];
+
+  List<ChipOption<String>> _categories(BuildContext context) {
+    final loc = AppLocales.of(context);
+    return _categoryKeys.map((key) {
+      // Use a translated category label; fallback to key itself
+      final translated = loc.translate('category_${key.toLowerCase()}');
+      return ChipOption(translated == 'category_${key.toLowerCase()}' ? key : translated, key);
+    }).toList();
+  }
 
   static const _categoryColors = {
     'Financeiro': Colors.lightBlueAccent,
@@ -96,31 +105,34 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     if (picked != null) setState(() => _targetDate = picked);
   }
 
-  Future<void> _pickImage() async {
+Future<void> _pickImage() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: context.loahColors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Escolher da Galeria'),
-              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Tirar Foto'),
-              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+      builder: (sheetContext) {
+        final sheetLoc = AppLocales.of(sheetContext);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: Text(sheetLoc.translate('addGoal_galeria')),
+                onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: Text(sheetLoc.translate('addGoal_camera')),
+                onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
     if (source == null) return;
 
@@ -256,10 +268,10 @@ Future<void> _submit() async {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel(loc.translate('addGoal_categoria_label')),
+_SectionLabel(loc.translate('addGoal_categoria_label')),
             const SizedBox(height: 8),
             ChipSelector<String>(
-              options: _categories,
+              options: _categories(context),
               selected: _category,
               onChanged: (v) => setState(() => _category = v),
             ),
@@ -452,8 +464,8 @@ class _ImagePickerField extends StatelessWidget {
             children: [
               Icon(Icons.add_photo_alternate_outlined, size: 26, color: context.textSecondary),
               const SizedBox(height: 6),
-              Text(
-                'Toque para adicionar uma foto',
+Text(
+                AppLocales.of(context).translate('addGoal_foto_tap'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],

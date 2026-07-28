@@ -699,6 +699,30 @@ class AppLocales {
     },
 
     // ═══════ ADD GOAL SCREEN ═══════
+    'category_financeiro': {
+      'pt': 'Financeiro',
+      'en': 'Financial',
+    },
+    'category_saúde': {
+      'pt': 'Saúde',
+      'en': 'Health',
+    },
+    'category_carreira': {
+      'pt': 'Carreira',
+      'en': 'Career',
+    },
+    'category_viagem': {
+      'pt': 'Viagem',
+      'en': 'Travel',
+    },
+    'category_investimento': {
+      'pt': 'Investimento',
+      'en': 'Investment',
+    },
+    'category_pessoal': {
+      'pt': 'Pessoal',
+      'en': 'Personal',
+    },
     'addGoal_editar': {
       'pt': 'Editar Meta',
       'en': 'Edit Goal',
