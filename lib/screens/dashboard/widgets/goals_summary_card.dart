@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/utils/goal_progress.dart';
 import '../../../models/goal_model.dart';
 import '../../../models/task_model.dart';
@@ -21,18 +22,19 @@ class GoalsSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
     return LoahCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionHeader(
-            title: 'Metas Atuais',
+            title: loc.translate('goals_summary_atuais'),
             icon: Icons.track_changes_outlined,
             iconColor: Colors.orange.shade700,
             trailing: GestureDetector(
               onTap: onSeeAll,
               child: Text(
-                'Ver todas',
+                loc.translate('goals_summary_ver_todas'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),

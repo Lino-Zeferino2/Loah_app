@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../models/goal_model.dart';
 import '../../../models/task_model.dart';
 import '../../../widgets/section_header.dart';
@@ -18,14 +19,28 @@ extension GoalTermVisuals on GoalTerm {
         GoalTerm.medioPrazo => Colors.deepOrange,
         GoalTerm.longoPrazo => Colors.indigo,
       };
+
+  /// Returns the translated full label using the given AppLocales.
+  String localizedLabel(AppLocales loc) => switch (this) {
+        GoalTerm.curtoPrazo => loc.translate('goalTerm_curto_prazo'),
+        GoalTerm.medioPrazo => loc.translate('goalTerm_medio_prazo'),
+        GoalTerm.longoPrazo => loc.translate('goalTerm_longo_prazo'),
+      };
+
+  /// Returns the translated horizon hint using the given AppLocales.
+  String localizedHorizon(AppLocales loc) => switch (this) {
+        GoalTerm.curtoPrazo => loc.translate('goalTerm_horizon_curto_prazo'),
+        GoalTerm.medioPrazo => loc.translate('goalTerm_horizon_medio_prazo'),
+        GoalTerm.longoPrazo => loc.translate('goalTerm_horizon_longo_prazo'),
+      };
+
   /// Compact form for chip selectors, e.g. the Add Goal form's "Prazo"
   /// section, where the full "Curto Prazo" label wouldn't fit as well.
   String get shortLabel => switch (this) {
         GoalTerm.curtoPrazo => 'Curto',
         GoalTerm.medioPrazo => 'Médio',
         GoalTerm.longoPrazo => 'Longo',
-      };    
-
+      };
 }
 
 /// Groups goals under a time-horizon heading, e.g.
@@ -50,15 +65,16 @@ class GoalTermSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: term.label,
+          title: term.localizedLabel(loc),
           icon: term.icon,
           iconColor: term.color,
           trailing: Text(
-            term.horizon,
+            term.localizedHorizon(loc),
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ),

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/goal_model.dart';
 import '../../widgets/goal_image.dart';
 import '../../widgets/chip_selector.dart';
-import 'widgets/goal_term_section.dart';
 
 /// "Loah - Criar/Editar Meta": form for both creating a new [GoalModel]
 /// and editing an existing one.
@@ -45,11 +45,14 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     'Pessoal': Colors.pinkAccent,
   };
 
-  static final _terms = [
-    ChipOption(GoalTerm.curtoPrazo.shortLabel, GoalTerm.curtoPrazo),
-    ChipOption(GoalTerm.medioPrazo.shortLabel, GoalTerm.medioPrazo),
-    ChipOption(GoalTerm.longoPrazo.shortLabel, GoalTerm.longoPrazo),
-  ];
+  List<ChipOption<GoalTerm>> _terms(BuildContext context) {
+    final loc = AppLocales.of(context);
+    return [
+      ChipOption(loc.translate('goalTerm_curto_short'), GoalTerm.curtoPrazo),
+      ChipOption(loc.translate('goalTerm_medio_short'), GoalTerm.medioPrazo),
+      ChipOption(loc.translate('goalTerm_longo_short'), GoalTerm.longoPrazo),
+    ];
+  }
 
   late final TextEditingController _titleController =
       TextEditingController(text: widget.existingGoal?.title ?? '');
@@ -131,10 +134,10 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     return double.tryParse(raw);
   }
 
-  Future<void> _submit() async {
+Future<void> _submit() async {
     final title = _titleController.text.trim();
     if (title.isEmpty) {
-      setState(() => _titleError = 'Dê um nome para a meta.');
+      setState(() => _titleError = AppLocales.of(context).translate('addGoal_nome_erro'));
       return;
     }
 
@@ -176,7 +179,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar meta: $e')),
+          SnackBar(content: Text('${AppLocales.of(context).translate('addGoal_erro_salvar')}$e')),
         );
       }
     } finally {
@@ -188,10 +191,11 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
   Widget build(BuildContext context) {
     final colors = context.loahColors;
     final isEditing = widget.isEditing;
+    final loc = AppLocales.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Editar Meta' : 'Nova Meta'),
+        title: Text(isEditing ? loc.translate('addGoal_editar') : loc.translate('addGoal_novo')),
         actions: [
           IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
         ],
@@ -211,8 +215,8 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                   const SizedBox(height: 12),
                   Text(
                     isEditing
-                        ? 'Ajuste os detalhes da sua meta.'
-                        : 'Defina seus objetivos e acompanhe sua evolução passo a passo.',
+                        ? loc.translate('addGoal_subtitle_editar')
+                        : loc.translate('addGoal_subtitle_novo'),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: colors.accentBlue,
@@ -223,7 +227,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 26),
 
-            const _SectionLabel('Nome da Meta'),
+            _SectionLabel(loc.translate('addGoal_nome_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
@@ -231,7 +235,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                 if (_titleError != null) setState(() => _titleError = null);
               },
               decoration: InputDecoration(
-                hintText: 'Ex: Comprar um Carro',
+                hintText: loc.translate('addGoal_nome_hint'),
                 errorText: _titleError,
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
@@ -243,7 +247,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('Foto da Meta (Opcional)'),
+            _SectionLabel(loc.translate('addGoal_foto_label')),
             const SizedBox(height: 8),
             _ImagePickerField(
               imagePath: _imagePath,
@@ -252,7 +256,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('Categoria'),
+            _SectionLabel(loc.translate('addGoal_categoria_label')),
             const SizedBox(height: 8),
             ChipSelector<String>(
               options: _categories,
@@ -261,22 +265,22 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('Prazo'),
+            _SectionLabel(loc.translate('addGoal_prazo_label')),
             const SizedBox(height: 8),
             ChipSelector<GoalTerm>(
-              options: _terms,
+              options: _terms(context),
               selected: _term,
               onChanged: (v) => setState(() => _term = v),
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('Descrição'),
+            _SectionLabel(loc.translate('addGoal_descricao_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _descriptionController,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: 'Detalhes sobre sua meta...',
+                hintText: loc.translate('addGoal_descricao_hint'),
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
                 border: OutlineInputBorder(
@@ -287,7 +291,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('Data Alvo'),
+            _SectionLabel(loc.translate('addGoal_data_label')),
             const SizedBox(height: 8),
             InkWell(
               onTap: _pickDate,
@@ -304,7 +308,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                     const SizedBox(width: 10),
                     Text(
                       _targetDate == null
-                          ? 'dd/mm/aaaa'
+                          ? loc.translate('addGoal_data_hint')
                           : '${_targetDate!.day.toString().padLeft(2, '0')}/'
                               '${_targetDate!.month.toString().padLeft(2, '0')}/'
                               '${_targetDate!.year}',
@@ -318,13 +322,13 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('Valor Alvo (Opcional)'),
+            _SectionLabel(loc.translate('addGoal_valor_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _targetValueController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                hintText: '0,00',
+                hintText: loc.translate('addGoal_valor_hint'),
                 prefixText: 'R\$ ',
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
@@ -350,7 +354,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                       Icon(Icons.auto_awesome, size: 16, color: colors.accentBlue),
                       const SizedBox(width: 8),
                       Text(
-                        'Dica de Especialista',
+                        loc.translate('addGoal_dica_titulo'),
                         style: TextStyle(
                           color: colors.accentBlue,
                           fontWeight: FontWeight.w700,
@@ -361,8 +365,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Metas claras e com prazos definidos têm 3x mais chances de '
-                    'serem concluídas. Você está no caminho certo!',
+                    loc.translate('addGoal_dica_body'),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4),
                   ),
                 ],
@@ -382,7 +385,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                       )
                     : const Icon(Icons.check_circle_outline, size: 18),
                 label: Text(
-                  isEditing ? 'Salvar Alterações' : 'Criar Meta',
+                  isEditing ? loc.translate('addGoal_salvar') : loc.translate('addGoal_criar'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 style: ElevatedButton.styleFrom(

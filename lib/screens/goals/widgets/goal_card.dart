@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/utils/goal_progress.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -28,6 +29,7 @@ class GoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
     final colors = context.loahColors;
     final progress = GoalProgress.of(goal, allTasks);
     final progressPercent = (progress * 100).round();
@@ -37,7 +39,9 @@ class GoalCard extends StatelessWidget {
         : () {
             final linked = GoalProgress.linkedTasks(goal, allTasks);
             final done = linked.where((t) => t.isDone).length;
-            return '$done de ${linked.length} tarefas concluídas';
+            return loc.translate('goalCard_tarefas_concluidas')
+                .replaceAll('%s', '$done')
+                .replaceAll('%s', '${linked.length}');
           }();
 
     return LoahCard(

@@ -654,6 +654,19 @@ class AppLocales {
       'pt': 'Longo Prazo',
       'en': 'Long Term',
     },
+    // Short forms (for chip selectors)
+    'goalTerm_curto_short': {
+      'pt': 'Curto',
+      'en': 'Short',
+    },
+    'goalTerm_medio_short': {
+      'pt': 'Médio',
+      'en': 'Medium',
+    },
+    'goalTerm_longo_short': {
+      'pt': 'Longo',
+      'en': 'Long',
+    },
     'goalTerm_horizon_curto_prazo': {
       'pt': 'Este Mês',
       'en': 'This Month',
@@ -669,6 +682,200 @@ class AppLocales {
     'goalTerm_meta_de': {
       'pt': 'Meta de ',
       'en': 'Goal of ',
+    },
+
+    // ═══════ GOALS SCREEN ═══════
+    'goals_minhas_metas': {
+      'pt': 'Minhas Metas',
+      'en': 'My Goals',
+    },
+    'goals_summary_title': {
+      'pt': 'Metas',
+      'en': 'Goals',
+    },
+    'goals_summary_completion': {
+      'pt': 'Você completou %s% do seu planejamento trimestral.',
+      'en': 'You have completed %s% of your quarterly planning.',
+    },
+
+    // ═══════ ADD GOAL SCREEN ═══════
+    'addGoal_editar': {
+      'pt': 'Editar Meta',
+      'en': 'Edit Goal',
+    },
+    'addGoal_novo': {
+      'pt': 'Nova Meta',
+      'en': 'New Goal',
+    },
+    'addGoal_subtitle_editar': {
+      'pt': 'Ajuste os detalhes da sua meta.',
+      'en': 'Adjust the details of your goal.',
+    },
+    'addGoal_subtitle_novo': {
+      'pt': 'Defina seus objetivos e acompanhe sua evolução passo a passo.',
+      'en': 'Set your goals and track your progress step by step.',
+    },
+    'addGoal_nome_label': {
+      'pt': 'Nome da Meta',
+      'en': 'Goal Name',
+    },
+    'addGoal_nome_hint': {
+      'pt': 'Ex: Comprar um Carro',
+      'en': 'E.g.: Buy a Car',
+    },
+    'addGoal_nome_erro': {
+      'pt': 'Dê um nome para a meta.',
+      'en': 'Give a name to the goal.',
+    },
+    'addGoal_foto_label': {
+      'pt': 'Foto da Meta (Opcional)',
+      'en': 'Goal Photo (Optional)',
+    },
+    'addGoal_foto_tap': {
+      'pt': 'Toque para adicionar uma foto',
+      'en': 'Tap to add a photo',
+    },
+    'addGoal_galeria': {
+      'pt': 'Escolher da Galeria',
+      'en': 'Choose from Gallery',
+    },
+    'addGoal_camera': {
+      'pt': 'Tirar Foto',
+      'en': 'Take Photo',
+    },
+    'addGoal_categoria_label': {
+      'pt': 'Categoria',
+      'en': 'Category',
+    },
+    'addGoal_prazo_label': {
+      'pt': 'Prazo',
+      'en': 'Term',
+    },
+    'addGoal_descricao_label': {
+      'pt': 'Descrição',
+      'en': 'Description',
+    },
+    'addGoal_descricao_hint': {
+      'pt': 'Detalhes sobre sua meta...',
+      'en': 'Details about your goal...',
+    },
+    'addGoal_data_label': {
+      'pt': 'Data Alvo',
+      'en': 'Target Date',
+    },
+    'addGoal_data_hint': {
+      'pt': 'dd/mm/aaaa',
+      'en': 'dd/mm/yyyy',
+    },
+    'addGoal_valor_label': {
+      'pt': 'Valor Alvo (Opcional)',
+      'en': 'Target Value (Optional)',
+    },
+    'addGoal_valor_hint': {
+      'pt': '0,00',
+      'en': '0.00',
+    },
+    'addGoal_dica_titulo': {
+      'pt': 'Dica de Especialista',
+      'en': 'Expert Tip',
+    },
+    'addGoal_dica_body': {
+      'pt': 'Metas claras e com prazos definidos têm 3x mais chances de serem concluídas. Você está no caminho certo!',
+      'en': 'Clear goals with defined deadlines are 3x more likely to be completed. You are on the right track!',
+    },
+    'addGoal_salvar': {
+      'pt': 'Salvar Alterações',
+      'en': 'Save Changes',
+    },
+    'addGoal_criar': {
+      'pt': 'Criar Meta',
+      'en': 'Create Goal',
+    },
+    'addGoal_erro_salvar': {
+      'pt': 'Erro ao salvar meta: ',
+      'en': 'Error saving goal: ',
+    },
+
+    // ═══════ GOAL DETAIL ═══════
+    'goalDetail_concluido': {
+      'pt': 'CONCLUÍDO',
+      'en': 'COMPLETED',
+    },
+    'goalDetail_editar': {
+      'pt': 'Editar Meta',
+      'en': 'Edit Goal',
+    },
+    'goalDetail_adicionar_tarefa': {
+      'pt': 'Adicionar Tarefa',
+      'en': 'Add Task',
+    },
+    'goalDetail_marcos_titulo': {
+      'pt': 'Marcos & Tarefas',
+      'en': 'Milestones & Tasks',
+    },
+    'goalDetail_marcos_subtitulo': {
+      'pt': '%s de %s completas',
+      'en': '%s of %s complete',
+    },
+    'goalDetail_nenhuma_tarefa': {
+      'pt': 'Nenhuma tarefa vinculada a esta meta ainda.',
+      'en': 'No tasks linked to this goal yet.',
+    },
+    'goalDetail_atualizar_valor': {
+      'pt': 'Atualizar Valor',
+      'en': 'Update Value',
+    },
+    'goalDetail_valor_atual': {
+      'pt': '%s de %s',
+      'en': '%s of %s',
+    },
+    'goalDetail_ajustar_titulo': {
+      'pt': 'Atualizar Valor',
+      'en': 'Update Value',
+    },
+    'goalDetail_ajustar_hint': {
+      'pt': '0,00',
+      'en': '0.00',
+    },
+    'goalDetail_remover': {
+      'pt': 'Remover',
+      'en': 'Remove',
+    },
+    'goalDetail_adicionar': {
+      'pt': 'Adicionar',
+      'en': 'Add',
+    },
+    'goalDetail_cancelar': {
+      'pt': 'Cancelar',
+      'en': 'Cancel',
+    },
+    'goalDetail_erro_tarefa': {
+      'pt': 'Erro ao atualizar tarefa: ',
+      'en': 'Error updating task: ',
+    },
+    'goalDetail_erro_progresso': {
+      'pt': 'Erro ao atualizar progresso: ',
+      'en': 'Error updating progress: ',
+    },
+    'goalDetail_erro_salvar': {
+      'pt': 'Erro ao salvar meta: ',
+      'en': 'Error saving goal: ',
+    },
+
+    // ═══════ GOAL CARD ═══════
+    'goalCard_tarefas_concluidas': {
+      'pt': '%s de %s tarefas concluídas',
+      'en': '%s of %s tasks completed',
+    },
+
+    // ═══════ DASHBOARD GOALS SUMMARY ═══════
+    'goals_summary_atuais': {
+      'pt': 'Metas Atuais',
+      'en': 'Current Goals',
+    },
+    'goals_summary_ver_todas': {
+      'pt': 'Ver todas',
+      'en': 'See all',
     },
 
     // ═══════ GOAL PICKER ═══════

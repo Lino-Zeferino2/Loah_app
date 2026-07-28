@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/services/task_service.dart';
 import '../../core/theme/app_theme.dart';
@@ -45,7 +46,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     if (mounted) setState(() => _milestones = tasks);
   }
 
-  void _toggleTask(TaskModel task) async {
+void _toggleTask(TaskModel task) async {
     final updated = task.copyWith(isDone: !task.isDone);
     try {
       await _taskService.updateTask(updated);
@@ -53,7 +54,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar tarefa: $e')),
+          SnackBar(content: Text('${AppLocales.of(context).translate('goalDetail_erro_tarefa')}$e')),
         );
       }
     }
@@ -93,78 +94,81 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          left: 20, right: 20, top: 20,
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Atualizar Valor',
-                  style: Theme.of(sheetContext)
-                      .textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  prefixText: 'R\$ ',
-                  hintText: '0,00',
-                  filled: true,
-                  fillColor: context.loahColors.cardBackgroundAlt,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        final v = double.tryParse(controller.text.trim().replaceAll(',', '.'));
-                        if (v != null) Navigator.of(sheetContext).pop(-v);
-                      },
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Remover'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () {
-                        final v = double.tryParse(controller.text.trim().replaceAll(',', '.'));
-                        if (v != null) Navigator.of(sheetContext).pop(v);
-                      },
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Adicionar'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Center(
-                child: TextButton(
-                  onPressed: () => Navigator.of(sheetContext).pop(),
-                  child: const Text('Cancelar'),
-                ),
-              ),
-            ],
+builder: (sheetContext) {
+        final sheetLoc = AppLocales.of(sheetContext);
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20, right: 20, top: 20,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
           ),
-        ),
-      ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(sheetLoc.translate('goalDetail_atualizar_valor'),
+                    style: Theme.of(sheetContext)
+                        .textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    prefixText: 'R\$ ',
+                    hintText: '0,00',
+                    filled: true,
+                    fillColor: context.loahColors.cardBackgroundAlt,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          final v = double.tryParse(controller.text.trim().replaceAll(',', '.'));
+                          if (v != null) Navigator.of(sheetContext).pop(-v);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text(sheetLoc.translate('goalDetail_remover')),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          final v = double.tryParse(controller.text.trim().replaceAll(',', '.'));
+                          if (v != null) Navigator.of(sheetContext).pop(v);
+                        },
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text(sheetLoc.translate('goalDetail_adicionar')),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    child: Text(sheetLoc.translate('goalDetail_cancelar')),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
     if (delta == null || delta == 0) return;
 
@@ -182,8 +186,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     }
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
     final goal = _goal;
     final milestones = _milestones;
     final progress = _computeProgress(goal, milestones);
@@ -193,13 +198,18 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          SliverAppBar(
+SliverAppBar(
             pinned: true,
             expandedHeight: 260,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             iconTheme: const IconThemeData(color: Colors.white),
             flexibleSpace: FlexibleSpaceBar(
-              background: _GoalHeader(goal: goal, progress: progress, percent: progressPercent),
+              background: _GoalHeader(
+                goal: goal,
+                progress: progress,
+                percent: progressPercent,
+                completedLabel: loc.translate('goalDetail_concluido'),
+              ),
             ),
             actions: [
               IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
@@ -235,14 +245,14 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '${CurrencyFormatter.format(goal.current ?? 0)} de ${CurrencyFormatter.format(goal.target ?? 0)}',
+                        loc.translate('goalDetail_valor_atual').replaceAll('%s', CurrencyFormatter.format(goal.current ?? 0)).replaceAll('%s', CurrencyFormatter.format(goal.target ?? 0)),
                         style: Theme.of(context)
                             .textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: goal.progressColor),
                       ),
                       TextButton.icon(
                         onPressed: _adjustProgress,
                         icon: Icon(Icons.tune, size: 16, color: goal.progressColor),
-                        label: Text('Atualizar Valor',
+                        label: Text(loc.translate('goalDetail_atualizar_valor'),
                             style: TextStyle(color: goal.progressColor, fontWeight: FontWeight.w600)),
                         style: TextButton.styleFrom(padding: EdgeInsets.zero),
                       ),
@@ -256,7 +266,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                       child: ElevatedButton.icon(
                         onPressed: _editGoal,
                         icon: const Icon(Icons.edit_outlined, size: 18),
-                        label: const Text('Editar Meta'),
+                        label: Text(loc.translate('goalDetail_editar')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: goal.progressColor, foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 13),
@@ -269,7 +279,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                       child: OutlinedButton.icon(
                         onPressed: _addTask,
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Adicionar Tarefa'),
+                        label: Text(loc.translate('goalDetail_adicionar_tarefa')),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -282,16 +292,20 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Marcos & Tarefas',
+                    Text(loc.translate('goalDetail_marcos_titulo'),
                         style: Theme.of(context)
                             .textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-                    Text('$doneCount de ${milestones.length} completas',
-                        style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      loc.translate('goalDetail_marcos_subtitulo')
+                          .replaceAll('%s', '$doneCount')
+                          .replaceAll('%s', '${milestones.length}'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 if (milestones.isEmpty)
-                  Text('Nenhuma tarefa vinculada a esta meta ainda.',
+                  Text(loc.translate('goalDetail_nenhuma_tarefa'),
                       style: Theme.of(context).textTheme.bodySmall)
                 else
                   for (final task in milestones)
@@ -332,7 +346,13 @@ class _GoalHeader extends StatelessWidget {
   final GoalModel goal;
   final double progress;
   final int percent;
-  const _GoalHeader({required this.goal, required this.progress, required this.percent});
+  final String completedLabel;
+  const _GoalHeader({
+    required this.goal,
+    required this.progress,
+    required this.percent,
+    required this.completedLabel,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -367,8 +387,8 @@ class _GoalHeader extends StatelessWidget {
               children: [
                 Text('$percent%',
                     style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w800)),
-                const Text('CONCLUÍDO',
-                    style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 0.6)),
+                Text(completedLabel,
+                    style: const TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 0.6)),
               ],
             ),
           ),

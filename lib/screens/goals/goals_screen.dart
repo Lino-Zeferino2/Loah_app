@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/utils/goal_progress.dart';
@@ -64,14 +65,15 @@ class _GoalsScreenState extends State<GoalsScreen> {
 
   List<GoalModel> _byTerm(GoalTerm term) => _goals.where((g) => g.term == term).toList();
 
-  String _buildCompletionSummary() {
+  String _buildCompletionSummary(BuildContext context) {
     if (_goals.isEmpty) return '';
     final totalProgress = _goals.fold<double>(
       0,
       (sum, g) => sum + GoalProgress.of(g, []),
     );
     final avgPercent = ((totalProgress / _goals.length) * 100).round();
-    return 'Você completou $avgPercent% do seu planejamento trimestral.';
+    final loc = AppLocales.of(context);
+    return loc.translate('goals_summary_completion').replaceAll('%s', '$avgPercent');
   }
 
   Future<void> _openGoal(GoalModel goal) async {
@@ -91,9 +93,10 @@ class _GoalsScreenState extends State<GoalsScreen> {
   @override
   Widget build(BuildContext context) {
     final nav = LoahNavigationController.of(context);
+    final loc = AppLocales.of(context);
     return Scaffold(
       drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
-      appBar: const LoahAppBar(title: "Minhas Metas"),
+      appBar: LoahAppBar(title: loc.translate('goals_minhas_metas')),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadGoals,
@@ -105,12 +108,12 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Metas',
+                      Text(loc.translate('goals_summary_title'),
                           style: Theme.of(context)
                               .textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
                       const SizedBox(height: 4),
                       Text(
-                        _buildCompletionSummary(),
+                        _buildCompletionSummary(context),
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
