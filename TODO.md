@@ -1,13 +1,30 @@
-# Cleanup Plan - AppLocales Migration
+# Notification System Fixes
 
-## Steps
-- [x] 1. Analyze current state of all files
-- [x] 2. app_localizations.dart: Add 3 new translation keys (task_completed_label, task_created_label, due_date_long_label)
-- [x] 3. task_model.dart: Remove unused TaskPriorityLabel and TaskStatusLabel extensions
-- [x] 4. goal_milestone_tile.dart: Replace task.completedLabel with AppLocales translate
-- [x] 5. task_detail_screen.dart: Replace task.createdAtLongLabel and task.dueDateLongLabel with AppLocales
-- [x] 6. Run flutter analyze to verify
+## Progress
 
-## Result
-All changes implemented successfully. Flutter analyze running - no compilation errors.
+- [x] Analyze code and identify issues
+- [x] Plan fixes
+- [x] **Fix 1: Navigate to correct screens on notification tap**
+  - [x] Tasks → TaskDetailScreen
+  - [x] Goals → GoalDetailScreen
+  - [x] Contacts → ContactDetailScreen
+  - [x] Finance (non-recurring) → BudgetsScreen
+  - [x] System → mark as read only
+  - [x] All taps mark notification as read
+- [x] **Fix 2: Add filter to notifications screen**
+  - [x] Filter by category (Todas, Contactos, Tarefas, Metas, Finanças, Sistema)
+  - [x] Filter by read/unread status ("Não lidas" chip with count)
+- [x] **Fix 3: Visual read/unread state in NotificationCard**
+  - [x] Blue dot indicator on unread notifications
+  - [x] Dimmed colors for read notifications
+  - [x] Border accent changes for read/unread
+- [ ] **Fix 4: Push notifications not arriving on device**
+  - Deploy Cloud Functions to Firebase:
+    ```bash
+    cd functions && npm install && firebase deploy --only functions
+    ```
+  - Check Firebase Console > Functions for error logs
+  - Verify FCM tokens are being saved in Firestore at `/users/{userId}/fcmTokens/`
+  - Ensure the Cloud Function `sendNotificationOnWrite` is properly deployed and triggered
+  - For real device testing, build a release APK/IPA with proper Firebase config
 

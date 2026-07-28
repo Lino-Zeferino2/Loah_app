@@ -53,11 +53,15 @@ class NotificationCard extends StatelessWidget {
     final colors = context.loahColors;
     final color = _categoryColor(context);
 
+    final isUnread = !notification.isRead;
+
     return Container(
       decoration: BoxDecoration(
         color: colors.cardBackground,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.border),
+        border: Border.all(
+          color: isUnread ? color.withValues(alpha: 0.3) : colors.border,
+        ),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -66,7 +70,7 @@ class NotificationCard extends StatelessWidget {
             Container(
               width: 4,
               decoration: BoxDecoration(
-                color: color,
+                color: isUnread ? color : color.withValues(alpha: 0.3),
                 borderRadius: const BorderRadius.horizontal(left: Radius.circular(14)),
               ),
             ),
@@ -82,23 +86,53 @@ class NotificationCard extends StatelessWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: color.withValues(alpha: 0.15),
-                            child: Icon(_categoryIcon(), size: 16, color: color),
+                          Stack(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: color.withValues(alpha: 0.15),
+                                child: Icon(_categoryIcon(), size: 16, color: color),
+                              ),
+                              if (isUnread)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.blueAccent,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               notification.title,
-                              style: TextStyle(color: color, fontWeight: FontWeight.w700),
+                              style: TextStyle(
+                                color: color,
+                                fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
+                              ),
                             ),
                           ),
-                          Text(_relativeLabel(), style: Theme.of(context).textTheme.bodySmall),
+                          Text(
+                            _relativeLabel(),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: isUnread ? context.textSecondary : context.textSecondary?.withValues(alpha: 0.6),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(notification.message, style: Theme.of(context).textTheme.bodyMedium),
+                      Text(
+                        notification.message,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: isUnread ? null : context.textSecondary?.withValues(alpha: 0.7),
+                        ),
+                      ),
                       if (notification.progress != null) ...[
                         const SizedBox(height: 10),
                         LabeledProgressBar(progress: notification.progress!, color: color),

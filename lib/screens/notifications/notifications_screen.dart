@@ -1,12 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/screens/notifications/widgets/notification_card.dart';
+import '../../core/services/contact_service.dart';
+import '../../core/services/goal_service.dart';
 import '../../core/services/notification_repository.dart';
+import '../../core/services/task_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/app_notification.dart';
 import '../../widgets/loah_app_bar_simple.dart';
+import '../contacts/contact_detail_screen.dart';
 import '../finances/add_transaction_screen.dart';
 import '../finances/budgets_screen.dart';
+import '../goals/goal_detail_screen.dart';
+import '../tasks/task_detail_screen.dart';
 
 /// "Loah - Notificações": unified feed of real push notifications
 /// stored in Firestore under /users/{userId}/notifications/.
@@ -26,13 +32,16 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final NotificationRepository _repository = NotificationRepository();
+  final TaskService _taskService = TaskService();
+  final GoalService _goalService = GoalService();
+  final ContactService _contactService = ContactService();
 
+  /// Filter state
+  NotificationCategory? _selectedCategory;
+  bool _showUnreadOnly = false;
 
-
-
-
-
-
+  /// Available filter categories
+  static const _allCategories = NotificationCategory.values;
 
   Future<void> _openBudgets() async {
     await Navigator.of(context).push(
@@ -57,8 +66,73 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   /// Clear all notifications (delete them from Firestore).
   Future<void> _clearAll() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Limpar notificações'),
+        content: const Text('Tem certeza que deseja limpar todas as notificações?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Limpar'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
     await _repository.clearAll();
     if (mounted) setState(() {});
+  }
+
+  /// Navigates to the task detail screen.
+  Future<void> _openTaskDetail(String taskId) async {
+    final task = await _taskService.getTask(taskId);
+    if (task == null || !mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task)),
+    );
+  }
+
+  /// Navigates to the goal detail screen.
+  Future<void> _openGoalDetail(String goalId) async {
+    final goal = await _goalService.getGoal(goalId);
+    if (goal == null || !mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => GoalDetailScreen(goal: goal)),
+    );
+  }
+
+  /// Navigates to the contact detail screen.
+  Future<void> _openContactDetail(String contactId) async {
+    final contact = await _contactService.getContact(contactId);
+    if (contact == null || !mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ContactDetailScreen(contact: contact)),
+    );
+  }
+
+  /// Marks a notification as read, then optionally executes a callback.
+  Future<void> _markAsReadAndThen(AppNotification n, [Future<void> Function()? then]) async {
+    await _repository.markAsRead(n.id);
+    if (then != null) {
+      await then();
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// Returns a human-readable label for each category.
+  String _categoryLabel(NotificationCategory cat) {
+    return switch (cat) {
+      NotificationCategory.contacts => 'Contactos',
+      NotificationCategory.tasks => 'Tarefas',
+      NotificationCategory.goals => 'Metas',
+      NotificationCategory.finance => 'Finanças',
+      NotificationCategory.system => 'Sistema',
+    };
   }
 
   /// Builds the row of action buttons/tap behavior for one
@@ -69,7 +143,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     switch (n.category) {
       case NotificationCategory.contacts:
         return (
-          onTap: null,
+          onTap: () => _markAsReadAndThen(
+            n,
+            n.relatedId != null
+                ? () => _openContactDetail(n.relatedId!)
+                : null,
+          ),
           actions: [
             ElevatedButton(
               onPressed: () => _dismiss(n),
@@ -86,16 +165,32 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         );
 
       case NotificationCategory.tasks:
-        return (onTap: () {}, actions: const []);
+        return (
+          onTap: () => _markAsReadAndThen(
+            n,
+            n.relatedId != null
+                ? () => _openTaskDetail(n.relatedId!)
+                : null,
+          ),
+          actions: [],
+        );
 
       case NotificationCategory.goals:
-        return (onTap: () {}, actions: const []);
+        return (
+          onTap: () => _markAsReadAndThen(
+            n,
+            n.relatedId != null
+                ? () => _openGoalDetail(n.relatedId!)
+                : null,
+          ),
+          actions: [],
+        );
 
       case NotificationCategory.finance:
         final isRecurringBill = n.id.startsWith('notif_recurring_');
         if (isRecurringBill) {
           return (
-            onTap: null,
+            onTap: () => _markAsReadAndThen(n),
             actions: [
               ElevatedButton(
                 onPressed: () => _payRecurring(n),
@@ -111,10 +206,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ],
           );
         }
-        return (onTap: _openBudgets, actions: const []);
+        return (
+          onTap: () => _markAsReadAndThen(n, _openBudgets),
+          actions: [],
+        );
 
       case NotificationCategory.system:
-        return (onTap: null, actions: const []);
+        return (
+          onTap: () => _markAsReadAndThen(n),
+          actions: [],
+        );
     }
   }
 
@@ -157,59 +258,132 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 .where((n) => n.timestamp.isBefore(DateTime.now().add(const Duration(days: 1))))
                 .toList();
 
+            // Apply filters
+            var filtered = all;
+            if (_showUnreadOnly) {
+              filtered = filtered.where((n) => !n.isRead).toList();
+            }
+            if (_selectedCategory != null) {
+              filtered = filtered.where((n) => n.category == _selectedCategory).toList();
+            }
+
             final now = DateTime.now();
-            final recent = all
+            final recent = filtered
                 .where((n) => now.difference(n.timestamp).inHours < 24)
                 .toList();
-            final older = all
+            final older = filtered
                 .where((n) => now.difference(n.timestamp).inHours >= 24)
                 .toList();
 
-            return ListView(
-              padding: const EdgeInsets.all(16),
+            final hasUnread = all.any((n) => !n.isRead);
+
+            return Column(
               children: [
-                if (recent.isNotEmpty) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'RECENTES',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              letterSpacing: 0.6,
-                              color: context.textSecondary,
+                // ── Filter chips ──────────────────────────────────
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _FilterChip(
+                          label: 'Todas',
+                          selected: !_showUnreadOnly && _selectedCategory == null,
+                          onTap: () => setState(() {
+                            _showUnreadOnly = false;
+                            _selectedCategory = null;
+                          }),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: 'Não lidas',
+                          selected: _showUnreadOnly && _selectedCategory == null,
+                          count: all.where((n) => !n.isRead).length,
+                          onTap: () => setState(() {
+                            _showUnreadOnly = true;
+                            _selectedCategory = null;
+                          }),
+                        ),
+                        const SizedBox(width: 8),
+                        for (final cat in _allCategories) ...[
+                          _FilterChip(
+                            label: _categoryLabel(cat),
+                            selected: _selectedCategory == cat && !_showUnreadOnly,
+                            onTap: () => setState(() {
+                              _selectedCategory = cat;
+                              _showUnreadOnly = false;
+                            }),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                // ── Notifications list ────────────────────────────
+                Expanded(
+                  child: filtered.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Text(
+                              _showUnreadOnly
+                                  ? 'Nenhuma notificação não lida.'
+                                  : 'Nenhuma notificação por aqui — tudo em dia!',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
-                      ),
-                      TextButton.icon(
-                        onPressed: _clearAll,
-                        icon: Icon(Icons.clear_all, size: 16, color: colors.accentBlue),
-                        label: Text(
-                          'Limpar tudo',
-                          style: TextStyle(color: colors.accentBlue, fontSize: 12.5),
+                          ),
+                        )
+                      : ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            if (recent.isNotEmpty) ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'RECENTES',
+                                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                          letterSpacing: 0.6,
+                                          color: context.textSecondary,
+                                        ),
+                                  ),
+                                  if (hasUnread)
+                                    TextButton.icon(
+                                      onPressed: _clearAll,
+                                      icon: Icon(Icons.clear_all, size: 16, color: colors.accentBlue),
+                                      label: Text(
+                                        'Limpar tudo',
+                                        style: TextStyle(color: colors.accentBlue, fontSize: 12.5),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              for (final n in recent) ...[
+                                _buildCard(n),
+                                const SizedBox(height: 10),
+                              ],
+                              const SizedBox(height: 12),
+                            ],
+                            if (older.isNotEmpty) ...[
+                              Text(
+                                'ANTERIORES',
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      letterSpacing: 0.6,
+                                      color: context.textSecondary,
+                                    ),
+                              ),
+                              const SizedBox(height: 8),
+                              for (final n in older) ...[
+                                _buildCard(n),
+                                const SizedBox(height: 10),
+                              ],
+                            ],
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  for (final n in recent) ...[
-                    _buildCard(n),
-                    const SizedBox(height: 10),
-                  ],
-                  const SizedBox(height: 12),
-                ],
-                if (older.isNotEmpty) ...[
-                  Text(
-                    'ANTERIORES',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          letterSpacing: 0.6,
-                          color: context.textSecondary,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  for (final n in older) ...[
-                    _buildCard(n),
-                    const SizedBox(height: 10),
-                  ],
-                ],
+                ),
               ],
             );
           },
@@ -221,6 +395,70 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildCard(AppNotification n) {
     final behavior = _behaviorFor(n);
     return NotificationCard(notification: n, onTap: behavior.onTap, actions: behavior.actions);
+  }
+}
+
+/// A small clickable chip used for filtering notifications.
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final int? count;
+  final VoidCallback onTap;
+
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.loahColors;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? colors.accentBlue : colors.cardBackground,
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(
+            color: selected ? colors.accentBlue : colors.border,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : context.textSecondary,
+                fontWeight: FontWeight.w600,
+                fontSize: 12.5,
+              ),
+            ),
+            if (count != null && count! > 0) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: selected ? Colors.white.withValues(alpha: 0.25) : colors.accentBlue.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    color: selected ? Colors.white : colors.accentBlue,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 
