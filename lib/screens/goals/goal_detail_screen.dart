@@ -116,7 +116,7 @@ builder: (sheetContext) {
                   autofocus: true,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    prefixText: 'R\$ ',
+                    prefixText: '${CurrencyFormatter.symbol(context: context)} ',
                     hintText: '0,00',
                     filled: true,
                     fillColor: context.loahColors.cardBackgroundAlt,

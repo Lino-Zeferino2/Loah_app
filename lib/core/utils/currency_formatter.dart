@@ -109,7 +109,7 @@ class CurrencyFormatter {
   ];
 
   /// Returns currencies in priority order (major first, then rest).
-  static late final List<CurrencyInfo> _sortedCurrencies = () {
+  static final List<CurrencyInfo> _sortedCurrencies = () {
     final priority = <CurrencyInfo>[];
     final rest = <CurrencyInfo>[];
     for (final info in _currencyInfo.values) {

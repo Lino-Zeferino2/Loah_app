@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../../widgets/labeled_progress_bar.dart';
 
 /// Highlighted "META: RESERVA DE EMERGÊNCIA" card with a tinted
@@ -39,7 +40,7 @@ class EmergencyGoalCard extends StatelessWidget {
           LabeledProgressBar(progress: progress, color: colors.accentBlue),
           const SizedBox(height: 6),
           Text(
-            '${(progress * 100).round()}% concluído • Falta R\$ ${(target * (1 - progress)).toStringAsFixed(2)}',
+            '${(progress * 100).round()}% concluído • Falta ${CurrencyFormatter.symbol(context: context)} ${(target * (1 - progress)).toStringAsFixed(2)}',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

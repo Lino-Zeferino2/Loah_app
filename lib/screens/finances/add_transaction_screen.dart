@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/utils/transaction_categories.dart';
+import '../../core/utils/currency_formatter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/finance_service.dart';
 import '../../models/account_model.dart';
@@ -258,7 +259,7 @@ Future<void> _delete() async {
                 if (_amountError != null) setState(() => _amountError = null);
               },
               decoration: InputDecoration(
-                prefixText: 'R\$ ',
+                prefixText: '${CurrencyFormatter.symbol(context: context)} ',
                 hintText: loc.translate('addTxn_valor_hint'),
                 errorText: _amountError,
                 filled: true,

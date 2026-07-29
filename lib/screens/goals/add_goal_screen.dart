@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/currency_formatter.dart';
 import '../../models/goal_model.dart';
 import '../../widgets/goal_image.dart';
 import '../../widgets/chip_selector.dart';
@@ -341,7 +342,7 @@ _SectionLabel(loc.translate('addGoal_categoria_label')),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 hintText: loc.translate('addGoal_valor_hint'),
-                prefixText: 'R\$ ',
+                prefixText: '${CurrencyFormatter.symbol(context: context)} ',
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
                 border: OutlineInputBorder(

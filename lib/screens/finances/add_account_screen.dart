@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/account_visuals.dart';
+import '../../core/utils/currency_formatter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/finance_service.dart';
 import '../../models/account_model.dart';
@@ -192,7 +193,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               controller: _initialBalanceController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
               decoration: InputDecoration(
-                prefixText: 'R\$ ',
+                prefixText: '${CurrencyFormatter.symbol(context: context)} ',
                 hintText: '0,00',
                 helperText: 'O saldo antes de qualquer transação lançada no app.',
                 filled: true,

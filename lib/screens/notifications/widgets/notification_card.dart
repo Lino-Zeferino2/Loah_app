@@ -121,7 +121,7 @@ class NotificationCard extends StatelessWidget {
                           Text(
                             _relativeLabel(),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: isUnread ? context.textSecondary : context.textSecondary?.withValues(alpha: 0.6),
+                              color: isUnread ? context.textSecondary : context.textSecondary.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -130,7 +130,7 @@ class NotificationCard extends StatelessWidget {
                       Text(
                         notification.message,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: isUnread ? null : context.textSecondary?.withValues(alpha: 0.7),
+                          color: isUnread ? null : context.textSecondary.withValues(alpha: 0.7),
                         ),
                       ),
                       if (notification.progress != null) ...[

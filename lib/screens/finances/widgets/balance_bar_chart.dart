@@ -56,7 +56,7 @@ class BalanceBarChart extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        _compactValue(points[i].balance),
+                        _compactValue(points[i].balance, context),
                         style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 4),
@@ -79,10 +79,10 @@ class BalanceBarChart extends StatelessWidget {
     );
   }
 
-  /// Compact form for the tiny label above each bar, e.g. "R$ 4,2k".
-  String _compactValue(double value) {
+  /// Compact form for the tiny label above each bar, e.g. "€ 4,2k".
+  String _compactValue(double value, BuildContext context) {
     if (value.abs() >= 1000) {
-      return 'R\$ ${(value / 1000).toStringAsFixed(1)}k';
+      return '${CurrencyFormatter.symbol(context: context)} ${(value / 1000).toStringAsFixed(1)}k';
     }
     return CurrencyFormatter.format(value);
   }

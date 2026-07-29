@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/asset_visuals.dart';
+import '../../core/utils/currency_formatter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/finance_service.dart';
 import '../../models/asset_model.dart';
@@ -212,7 +213,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                 if (_valueError != null) setState(() => _valueError = null);
               },
               decoration: InputDecoration(
-                prefixText: 'R\$ ',
+                prefixText: '${CurrencyFormatter.symbol(context: context)} ',
                 hintText: '0,00',
                 errorText: _valueError,
                 filled: true,
