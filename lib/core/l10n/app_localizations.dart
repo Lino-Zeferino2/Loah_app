@@ -110,6 +110,20 @@ class AppLocales {
       'en': 'Log out',
     },
 
+    // ═══════ CURRENCY SELECTOR ═══════
+    'drawer_moeda': {
+      'pt': 'Moeda',
+      'en': 'Currency',
+    },
+    'currency_selecionar': {
+      'pt': 'Selecionar Moeda',
+      'en': 'Select Currency',
+    },
+    'currency_pesquisar': {
+      'pt': 'Pesquisar moeda...',
+      'en': 'Search currency...',
+    },
+
     // ═══════ LANGUAGE SELECTOR ═══════
     'lang_portugues': {
       'pt': 'Português',

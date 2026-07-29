@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/currency/currency_controller.dart';
 import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/l10n/locale_controller.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
+import 'package:loah_app/core/utils/currency_formatter.dart';
 import 'package:loah_app/screens/admin/manage_about_loah_screen.dart';
 import 'package:loah_app/screens/admin/manage_help_center_screen.dart';
 import 'package:loah_app/screens/admin/manage_reflections_screen.dart';
@@ -101,6 +103,109 @@ class _LoahDrawerState extends State<LoahDrawer> {
     (icon: Icons.account_balance_wallet_outlined, key: 'drawer_financas'),
     (icon: Icons.contacts_outlined, key: 'drawer_contatos'),
   ];
+
+  /// Abre um bottom sheet para o utilizador selecionar a moeda.
+  void _showCurrencyPicker(BuildContext context) {
+    final currencyController = CurrencyController.of(context);
+    final currencies = CurrencyFormatter.supportedCurrencies;
+    final currentCode = currencyController.currencyCode;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.loahColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final searchController = TextEditingController();
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final query = searchController.text.trim().toLowerCase();
+            final filtered = query.isEmpty
+                ? currencies
+                : currencies.where((c) =>
+                    c.code.toLowerCase().contains(query) ||
+                    c.name.toLowerCase().contains(query) ||
+                    c.nameEn.toLowerCase().contains(query)).toList();
+
+            return DraggableScrollableSheet(
+              initialChildSize: 0.7,
+              maxChildSize: 0.9,
+              minChildSize: 0.4,
+              expand: false,
+              builder: (context, scrollController) => SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text(
+                        AppLocales.of(context).translate('currency_selecionar'),
+                        style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: searchController,
+                        decoration: InputDecoration(
+                          hintText: AppLocales.of(context).translate('currency_pesquisar'),
+                          prefixIcon: const Icon(Icons.search, size: 20),
+                          filled: true,
+                          fillColor: context.loahColors.cardBackgroundAlt,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onChanged: (_) => setSheetState(() {}),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: ListView.separated(
+                          controller: scrollController,
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final currency = filtered[index];
+                            final isSelected = currency.code == currentCode;
+                            return ListTile(
+                              leading: Text(
+                                currency.symbol,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: context.loahColors.accentBlue,
+                                ),
+                              ),
+                              title: Text(
+                                '${currency.code} - ${currency.name}',
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              subtitle: Text(currency.nameEn),
+                              trailing: isSelected
+                                  ? Icon(Icons.check, color: context.loahColors.accentBlue)
+                                  : null,
+                              onTap: () {
+                                Navigator.of(ctx).pop();
+                                if (currency.code != currentCode) {
+                                  currencyController.onCurrencyChanged(currency.code);
+                                }
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   /// Abre um bottom sheet para o utilizador selecionar o idioma.
   void _showLanguagePicker(BuildContext context) {
@@ -350,6 +455,42 @@ class _LoahDrawerState extends State<LoahDrawer> {
                               LocaleController.of(context).locale.languageCode == 'en'
                                   ? 'English'
                                   : 'Português',
+                              style: TextStyle(
+                                color: colors.accentBlue,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right,
+                              size: 18,
+                              color: colors.accentBlue,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => _showCurrencyPicker(context),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.attach_money,
+                              size: 18,
+                              color: context.textSecondary,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                AppLocales.of(context).translate('drawer_moeda'),
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            Text(
+                              CurrencyController.of(context).currencyCode,
                               style: TextStyle(
                                 color: colors.accentBlue,
                                 fontWeight: FontWeight.w600,

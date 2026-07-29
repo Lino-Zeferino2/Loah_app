@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart';
+import 'core/currency/currency_controller.dart';
 import 'core/l10n/locale_controller.dart';
 import 'core/navigation/navigation_controller.dart';
 import 'core/services/analytics_service.dart';
@@ -109,6 +110,7 @@ class LoahApp extends StatefulWidget {
 class _LoahAppState extends State<LoahApp> {
   ThemeMode _themeMode = ThemeMode.dark;
   Locale _locale = const Locale('pt');
+  String _currencyCode = 'BRL';
 
   void _toggleTheme() {
     setState(() {
@@ -118,7 +120,6 @@ class _LoahAppState extends State<LoahApp> {
 
   void _onLocaleChanged(Locale locale) {
     setState(() => _locale = locale);
-    // Persiste a preferência no Firestore (se o user estiver autenticado)
     _persistLocalePreference(locale);
   }
 
@@ -136,8 +137,26 @@ class _LoahAppState extends State<LoahApp> {
     }
   }
 
-  /// Tenta carregar a preferência de idioma do Firestore.
-  Future<void> _loadLocalePreference() async {
+  void _onCurrencyChanged(String code) {
+    setState(() => _currencyCode = code);
+    _persistCurrencyPreference(code);
+  }
+
+  Future<void> _persistCurrencyPreference(String code) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await UserService().updateUserProfile(
+          uid: user.uid,
+          data: {'currency': code},
+        );
+      }
+    } catch (e) {
+      debugPrint('[Currency] Erro ao persistir preferência: $e');
+    }
+  }
+
+  Future<void> _loadPreferences() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
@@ -148,17 +167,21 @@ class _LoahAppState extends State<LoahApp> {
           if (savedLocale != null && savedLocale.isNotEmpty) {
             setState(() => _locale = Locale(savedLocale));
           }
+          final savedCurrency = data['currency'] as String?;
+          if (savedCurrency != null && savedCurrency.isNotEmpty) {
+            setState(() => _currencyCode = savedCurrency);
+          }
         }
       }
     } catch (e) {
-      debugPrint('[Locale] Erro ao carregar preferência: $e');
+      debugPrint('[main] Erro ao carregar preferências: $e');
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _loadLocalePreference();
+    _loadPreferences();
   }
 
   @override
@@ -169,32 +192,36 @@ class _LoahAppState extends State<LoahApp> {
       child: LoahThemeController(
         themeMode: _themeMode,
         toggleTheme: _toggleTheme,
-        child: MaterialApp(
-          title: 'Loah',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: _themeMode,
-          locale: _locale,
-          supportedLocales: const [
-            Locale('pt'),
-            Locale('en'),
-          ],
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          localeResolutionCallback: (locale, supportedLocales) {
-            if (locale == null) return const Locale('pt');
-            for (final supported in supportedLocales) {
-              if (supported.languageCode == locale.languageCode) {
-                return supported;
+        child: CurrencyController(
+          currencyCode: _currencyCode,
+          onCurrencyChanged: _onCurrencyChanged,
+          child: MaterialApp(
+            title: 'Loah',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: _themeMode,
+            locale: _locale,
+            supportedLocales: const [
+              Locale('pt'),
+              Locale('en'),
+            ],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            localeResolutionCallback: (locale, supportedLocales) {
+              if (locale == null) return const Locale('pt');
+              for (final supported in supportedLocales) {
+                if (supported.languageCode == locale.languageCode) {
+                  return supported;
+                }
               }
-            }
-            return const Locale('pt');
-          },
-          home: const SplashScreenVistoso(),   // pra testar a versão vistosa
+              return const Locale('pt');
+            },
+            home: const SplashScreenVistoso(),
+          ),
         ),
       ),
     );
