@@ -128,7 +128,7 @@ class _MiniBar extends StatelessWidget {
         SizedBox(
           width: 64,
           child: Text(
-            CurrencyFormatter.format(value),
+            CurrencyFormatter.format(value, context: context),
             textAlign: TextAlign.right,
             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
           ),

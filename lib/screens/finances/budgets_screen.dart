@@ -84,7 +84,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '${CurrencyFormatter.format(totalSpent)} de ${CurrencyFormatter.format(totalBudgeted)}',
+                    '${CurrencyFormatter.format(totalSpent, context: context)} de ${CurrencyFormatter.format(totalBudgeted, context: context)}',
                     style: Theme.of(context)
                         .textTheme
                         .headlineSmall

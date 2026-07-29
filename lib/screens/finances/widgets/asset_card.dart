@@ -40,7 +40,7 @@ class AssetCard extends StatelessWidget {
               children: [
                 Text(asset.name, style: const TextStyle(fontWeight: FontWeight.w700)),
                 Text(
-                  CurrencyFormatter.format(asset.currentValue),
+                  CurrencyFormatter.format(asset.currentValue, context: context),
                   style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 15),
                 ),
                 Text(

@@ -99,7 +99,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
               autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                prefixText: 'R\$ ',
+                prefixText: '${CurrencyFormatter.symbol(context: sheetContext)} ',
                 filled: true,
                 fillColor: context.loahColors.cardBackgroundAlt,
                 border: OutlineInputBorder(
@@ -166,7 +166,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    CurrencyFormatter.format(total),
+                    CurrencyFormatter.format(total, context: context),
                     style: Theme.of(context)
                         .textTheme
                         .headlineSmall

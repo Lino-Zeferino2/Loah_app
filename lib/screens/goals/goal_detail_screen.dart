@@ -245,7 +245,7 @@ SliverAppBar(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        loc.translate('goalDetail_valor_atual').replaceAll('%s', CurrencyFormatter.format(goal.current ?? 0)).replaceAll('%s', CurrencyFormatter.format(goal.target ?? 0)),
+                        loc.translate('goalDetail_valor_atual').replaceAll('%s', CurrencyFormatter.format(goal.current ?? 0, context: context)).replaceAll('%s', CurrencyFormatter.format(goal.target ?? 0, context: context)),
                         style: Theme.of(context)
                             .textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: goal.progressColor),
                       ),

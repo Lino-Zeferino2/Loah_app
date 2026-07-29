@@ -54,7 +54,7 @@ class RecurringTransactionCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${isIncome ? '+ ' : '- '}${CurrencyFormatter.format(recurring.amount)}',
+                '${isIncome ? '+ ' : '- '}${CurrencyFormatter.format(recurring.amount, context: context)}',
                 style: TextStyle(
                   color: recurring.active ? amountColor : context.textSecondary,
                   fontWeight: FontWeight.w700,

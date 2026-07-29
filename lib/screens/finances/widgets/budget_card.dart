@@ -57,9 +57,9 @@ class BudgetCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             progress.isOverBudget
-                ? '${CurrencyFormatter.format(progress.spent)} de ${CurrencyFormatter.format(budget.monthlyLimit)} — '
-                    '${CurrencyFormatter.format(progress.spent - budget.monthlyLimit)} acima do limite'
-                : '${CurrencyFormatter.format(progress.spent)} de ${CurrencyFormatter.format(budget.monthlyLimit)}',
+                ? '${CurrencyFormatter.format(progress.spent, context: context)} de ${CurrencyFormatter.format(budget.monthlyLimit, context: context)} — '
+                    '${CurrencyFormatter.format(progress.spent - budget.monthlyLimit, context: context)} acima do limite'
+                : '${CurrencyFormatter.format(progress.spent, context: context)} de ${CurrencyFormatter.format(budget.monthlyLimit, context: context)}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: progress.isOverBudget ? color : null,
                   fontWeight: progress.isOverBudget ? FontWeight.w600 : null,

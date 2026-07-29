@@ -209,6 +209,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             Text(
                               CurrencyFormatter.format(
                                 distribution.fold<double>(0, (s, c) => s + c.amount),
+                                context: context,
                               ),
                               style: Theme.of(context)
                                   .textTheme

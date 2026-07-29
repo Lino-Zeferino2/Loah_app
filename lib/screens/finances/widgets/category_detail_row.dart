@@ -46,7 +46,7 @@ class CategoryDetailRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  CurrencyFormatter.format(category.amount),
+                  CurrencyFormatter.format(category.amount, context: context),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ],

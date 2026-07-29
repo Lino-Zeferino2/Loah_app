@@ -35,7 +35,7 @@ class GoalCard extends StatelessWidget {
     final progressPercent = (progress * 100).round();
 
     final caption = goal.progressMode == GoalProgressMode.manualValue
-        ? '${CurrencyFormatter.format(goal.current ?? 0)} / ${CurrencyFormatter.format(goal.target ?? 0)}'
+        ? '${CurrencyFormatter.format(goal.current ?? 0, context: context)} / ${CurrencyFormatter.format(goal.target ?? 0, context: context)}'
         : () {
             final linked = GoalProgress.linkedTasks(goal, allTasks);
             final done = linked.where((t) => t.isDone).length;

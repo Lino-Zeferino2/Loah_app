@@ -88,7 +88,7 @@ class _RecurringTransactionsScreenState extends State<RecurringTransactionsScree
                       children: [
                         Text('RECEITAS/MÊS', style: Theme.of(context).textTheme.labelSmall),
                         Text(
-                          CurrencyFormatter.format(activeIncome),
+                          CurrencyFormatter.format(activeIncome, context: context),
                           style: TextStyle(
                             color: context.loahColors.positive,
                             fontWeight: FontWeight.w800,
@@ -104,7 +104,7 @@ class _RecurringTransactionsScreenState extends State<RecurringTransactionsScree
                       children: [
                         Text('DESPESAS/MÊS', style: Theme.of(context).textTheme.labelSmall),
                         Text(
-                          CurrencyFormatter.format(activeExpense),
+                          CurrencyFormatter.format(activeExpense, context: context),
                           style: TextStyle(
                             color: context.loahColors.negative,
                             fontWeight: FontWeight.w800,

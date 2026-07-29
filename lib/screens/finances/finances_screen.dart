@@ -310,7 +310,7 @@ if (_unreadCount > 0)
                             child: _FinanceEntryCard(
                               icon: Icons.account_balance_wallet_outlined,
                               label: 'Contas',
-                              value: CurrencyFormatter.format(total),
+                              value: CurrencyFormatter.format(total, context: context),
                               onTap: _openAccounts,
                             ),
                           ),
@@ -322,6 +322,7 @@ if (_unreadCount > 0)
                               label: 'Patrimônio',
                               value: CurrencyFormatter.format(
                                 _assets.fold<double>(0, (sum, a) => sum + a.currentValue),
+                                context: context,
                               ),
                               onTap: _openAssets,
                             ),
@@ -333,8 +334,8 @@ if (_unreadCount > 0)
                               icon: Icons.pie_chart_outline,
                               label: 'Orçamento',
                               value:
-                                  '${CurrencyFormatter.format(BudgetSummary.totalSpent(_budgets, transactions))} '
-                                  'de ${CurrencyFormatter.format(BudgetSummary.totalBudgeted(_budgets))}',
+                                  '${CurrencyFormatter.format(BudgetSummary.totalSpent(_budgets, transactions), context: context)} '
+                                  'de ${CurrencyFormatter.format(BudgetSummary.totalBudgeted(_budgets), context: context)}',
                               onTap: _openBudgets,
                             ),
                           ),

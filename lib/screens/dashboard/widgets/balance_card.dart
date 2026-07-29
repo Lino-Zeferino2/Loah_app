@@ -75,7 +75,7 @@ class BalanceCard extends StatelessWidget {
                   letterSpacing: 0.5)),
           const SizedBox(height: 4),
           Text(
-            CurrencyFormatter.format(available),
+            CurrencyFormatter.format(available, context: context),
             style:  TextStyle(
               color:  isDark ? Colors.white70: Colors.black87,
               fontSize: 26,

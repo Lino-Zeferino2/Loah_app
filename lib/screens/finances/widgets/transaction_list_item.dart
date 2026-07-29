@@ -48,7 +48,7 @@ class TransactionListItem extends StatelessWidget {
             ),
           ),
           Text(
-            '$sign${CurrencyFormatter.format(transaction.amount)}',
+            '$sign${CurrencyFormatter.format(transaction.amount, context: context)}',
             style: TextStyle(color: amountColor, fontWeight: FontWeight.w700),
           ),
         ],

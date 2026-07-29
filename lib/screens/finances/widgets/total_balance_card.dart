@@ -33,7 +33,7 @@ class TotalBalanceCard extends StatelessWidget {
                   ?.copyWith(letterSpacing: 0.5)),
           const SizedBox(height: 6),
           Text(
-            CurrencyFormatter.format(total),
+            CurrencyFormatter.format(total, context: context),
             style: Theme.of(context)
                 .textTheme
                 .headlineSmall
@@ -45,14 +45,14 @@ class TotalBalanceCard extends StatelessWidget {
               _Pill(
                 icon: Icons.arrow_upward_rounded,
                 label: loc.translate('finances_income'),
-                value: CurrencyFormatter.format(income),
+                value: CurrencyFormatter.format(income, context: context),
                 color: colors.positive,
               ),
               const SizedBox(width: 10),
               _Pill(
                 icon: Icons.arrow_downward_rounded,
                 label: loc.translate('finances_expense'),
-                value: CurrencyFormatter.format(expense),
+                value: CurrencyFormatter.format(expense, context: context),
                 color: colors.negative,
               ),
             ],

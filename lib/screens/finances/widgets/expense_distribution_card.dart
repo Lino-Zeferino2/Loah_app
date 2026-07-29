@@ -57,7 +57,7 @@ class ExpenseDistributionCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    CurrencyFormatter.format(total),
+                    CurrencyFormatter.format(total, context: context),
                     style: Theme.of(context)
                         .textTheme
                         .titleMedium
@@ -111,7 +111,7 @@ class _LegendRow extends StatelessWidget {
               ],
             ),
             Text(
-              CurrencyFormatter.format(category.amount),
+              CurrencyFormatter.format(category.amount, context: context),
               style: Theme.of(context)
                   .textTheme
                   .bodySmall

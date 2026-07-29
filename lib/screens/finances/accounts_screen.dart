@@ -90,7 +90,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            CurrencyFormatter.format(total),
+                            CurrencyFormatter.format(total, context: context),
                             style: Theme.of(context)
                                 .textTheme
                                 .headlineSmall

@@ -46,7 +46,7 @@ class AccountCard extends StatelessWidget {
             ),
           ),
           Text(
-            CurrencyFormatter.format(balance),
+            CurrencyFormatter.format(balance, context: context),
             style: TextStyle(
               color: balance < 0 ? context.loahColors.negative : color,
               fontWeight: FontWeight.w700,

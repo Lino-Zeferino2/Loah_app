@@ -247,7 +247,7 @@ class _MonthHeader extends StatelessWidget {
           style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         Text(
-          '${net >= 0 ? '+ ' : '- '}${CurrencyFormatter.format(net.abs())}',
+          '${net >= 0 ? '+ ' : '- '}${CurrencyFormatter.format(net.abs(), context: context)}',
           style: TextStyle(
             color: net >= 0 ? colors.positive : colors.negative,
             fontWeight: FontWeight.w700,
