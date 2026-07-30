@@ -295,7 +295,7 @@ Future<void> _delete() async {
             _SectionLabel(loc.translate('addTxn_categoria_label')),
             const SizedBox(height: 8),
             ChipSelector<String>(
-              options: [for (final c in categories) ChipOption(c, c)],
+              options: [for (final c in categories) ChipOption(loc.translateCategory(c), c)],
               selected: _category,
               onChanged: (v) => setState(() => _category = v),
             ),

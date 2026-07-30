@@ -266,8 +266,8 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
 
             _SectionLabel(loc.translate('addRec_categoria_label')),
             const SizedBox(height: 8),
-            ChipSelector<String>(
-              options: [for (final c in categories) ChipOption(c, c)],
+ChipSelector<String>(
+              options: [for (final c in categories) ChipOption(loc.translateCategory(c), c)],
               selected: _category,
               onChanged: (v) => setState(() => _category = v),
             ),
@@ -344,7 +344,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
                   icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
                   label: Text(
                     loc.translate('addRec_excluir'),
-                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

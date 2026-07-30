@@ -6,8 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
-import '../../core/l10n/app_localizations.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/notification_repository.dart';
@@ -15,27 +15,48 @@ import '../../core/services/task_service.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/services/finance_service.dart';
 import '../../core/utils/account_balance.dart';
+import '../../core/utils/budget_summary.dart';
 import '../../core/utils/finance_summary.dart';
 import '../../core/theme/app_theme.dart';
 import '../notifications/notifications_screen.dart';
 import '../../widgets/loah_app_bar.dart';
 import '../../widgets/loah_drawer.dart';
-import 'widgets/new_item_modal_sheet.dart';
+import '../../widgets/section_header.dart';
+// import 'widgets/new_item_modal_sheet.dart';
 import '../../models/task_model.dart';
 import '../../models/goal_model.dart';
 import '../../models/reflection_model.dart';
+import '../../models/account_model.dart';
+import '../../models/asset_model.dart';
+import '../../models/budget_model.dart';
+import '../../models/recurring_transaction_model.dart';
+import '../../models/transaction_model.dart';
 import '../../core/services/reflection_service.dart';
+import '../../core/utils/recurring_engine.dart';
+import '../finances/accounts_screen.dart';
+import '../finances/assets_screen.dart';
+import '../finances/budgets_screen.dart';
+import '../finances/recurring_transactions_screen.dart';
+import '../finances/reports_screen.dart';
+import '../finances/add_transaction_screen.dart';
+import '../finances/transaction_history_screen.dart';
+import '../finances/expense_distribution_detail_screen.dart';
+import '../finances/widgets/expense_distribution_card.dart';
+import '../finances/widgets/transaction_list_item.dart';
+import '../finances/widgets/account_card.dart';
+import '../finances/widgets/asset_card.dart';
+import '../finances/widgets/budget_card.dart';
+import '../finances/widgets/recurring_transaction_card.dart';
 import 'widgets/balance_card.dart';
 import 'widgets/daily_reflection_card.dart';
 import 'widgets/goals_summary_card.dart';
-import 'widgets/new_item_card.dart';
 import 'widgets/pending_tasks_card.dart';
 
-/// "Loah - Dashboard": the home screen with a greeting, balance summary,
-/// pending tasks, a quick-add card, goal progress and a daily reflection.
-///
-/// Lê tarefas, metas e finanças do Firestore via services.
-/// O saldo e progresso financeiro são calculados em tempo real.
+/// "Loah - Dashboard Financeiro": the home screen with a complete financial
+/// overview: greeting, balance card, quick links, expense distribution,
+/// accounts summary, assets summary, budgets overview, recurring list,
+/// recent transactions, goals summary, pending tasks, daily reflection,
+/// and a FAB to add new transactions.
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -52,6 +73,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<TaskModel> _standaloneTasks = [];
   List<GoalModel> _goals = [];
+  List<TransactionModel> _transactions = [];
+  List<AccountModel> _accounts = [];
+  List<AssetModel> _assets = [];
+  List<BudgetModel> _budgets = [];
+  List<RecurringTransactionModel> _recurring = [];
   double _totalWealth = 0;
   double _progressToGoal = 0;
   int _unreadCount = 0;
@@ -73,74 +99,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.dispose();
   }
 
-  /// Tenta carregar os dados financeiros (contas + ativos).
-  /// Retorna true se conseguiu carregar.
-Future<bool> _loadFinanceData() async {
-    // Guarda de segurança: se o widget foi desmontado ou o user já
-    // deslogou, aborta para evitar queries Firestore com token inválido.
+  Future<bool> _loadFinanceData() async {
     if (!mounted || FirebaseAuth.instance.currentUser == null) return false;
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        debugPrint('Dashboard - Sem usuário autenticado');
-        return false;
-      }
+      // Process due recurring transactions
+      await RecurringEngine.processDue(financeService: _financeService);
 
-      debugPrint('Dashboard - Carregando transações...');
       final txns = await _financeService.getAllTransactions();
-      debugPrint('Dashboard - Transações carregadas: ${txns.length}');
-
-      debugPrint('Dashboard - Carregando contas...');
       final accts = await _financeService.getAllAccounts();
-      debugPrint('Dashboard - Contas carregadas: ${accts.length}');
+      final assets = await _financeService.getAllAssets();
+      final budgets = await _financeService.getAllBudgets();
+      final recurring = await _financeService.getAllRecurring();
 
-      double assetsValue = 0;
-      try {
-        debugPrint('Dashboard - Carregando ativos...');
-        final assets = await _financeService.getAllAssets();
-        assetsValue = assets.fold<double>(0.0, (sum, a) => sum + a.currentValue);
-        debugPrint('Dashboard - Ativos carregados: ${assets.length}, valor: $assetsValue');
-      } catch (e) {
-        debugPrint('Dashboard - Erro ao carregar ativos: $e');
-      }
-
-      debugPrint('Dashboard - Calculando AccountBalance.totalOf...');
       final accountsBalance = AccountBalance.totalOf(accts, txns);
+      final assetsValue = assets.fold<double>(0.0, (sum, a) => sum + a.currentValue);
       final totalWealth = accountsBalance + assetsValue;
-      debugPrint('Dashboard - accountsBalance: $accountsBalance, totalWealth: $totalWealth');
 
-      debugPrint('Dashboard - Calculando FinanceSummary...');
       final monthlyIncome = FinanceSummary.monthlyIncome(txns);
       final monthlyExpense = FinanceSummary.monthlyExpense(txns);
-      debugPrint('Dashboard - monthlyIncome: $monthlyIncome, monthlyExpense: $monthlyExpense');
-
       final progress = monthlyIncome > 0
           ? (monthlyExpense / monthlyIncome).clamp(0.0, 1.0)
           : 0.0;
 
       if (mounted) {
         setState(() {
+          _transactions = txns;
+          _accounts = accts;
+          _assets = assets;
+          _budgets = budgets;
+          _recurring = recurring;
           _totalWealth = totalWealth;
           _progressToGoal = progress;
         });
-        debugPrint('Dashboard - setState concluído! totalWealth=$totalWealth');
       }
       return true;
-    } catch (e, s) {
+    } catch (e) {
       debugPrint('Dashboard - Erro ao carregar finanças: $e');
-      debugPrint('Dashboard - Stack: $s');
       return false;
     }
   }
 
   Future<void> _loadData() async {
-    // Guarda de segurança: aborta se widget foi desmontado ou user deslogou
     if (!mounted || FirebaseAuth.instance.currentUser == null) return;
-    // Carrega finanças primeiro — o saldo aparece mesmo que o resto falhe
     await _loadFinanceData();
 
     try {
-      // Carrega tarefas
       final tasksSnapshot = await _taskService.getTasksStream().first;
       final standalone = tasksSnapshot.docs
           .map((doc) {
@@ -180,7 +183,6 @@ Future<bool> _loadFinanceData() async {
           .where((t) => t.goalId == null)
           .toList();
 
-      // Carrega metas
       final goalsSnapshot = await _goalService.getGoalsStream().first;
       final goals = goalsSnapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
@@ -224,7 +226,6 @@ Future<bool> _loadFinanceData() async {
       debugPrint('Dashboard - Erro ao carregar tasks/goals: $e');
     }
 
-    // Carrega todas as reflexões ativas e escolhe uma aleatoriamente
     try {
       final reflections = await _reflectionService.getAllActiveReflections();
       if (mounted) {
@@ -256,11 +257,78 @@ Future<bool> _loadFinanceData() async {
     );
   }
 
-@override
+  Future<void> _addTransaction() async {
+    if (_accounts.isEmpty) {
+      if (mounted) {
+        final loc = AppLocales.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(loc.translate('finances_criar_conta_primeiro')),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
+    );
+    if (result == true) _loadData();
+  }
+
+  Future<void> _openAccounts() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AccountsScreen()),
+    );
+    _loadData();
+  }
+
+  Future<void> _openAssets() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AssetsScreen()),
+    );
+    _loadData();
+  }
+
+  Future<void> _openBudgets() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const BudgetsScreen()),
+    );
+    _loadData();
+  }
+
+  Future<void> _openRecurring() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const RecurringTransactionsScreen()),
+    );
+    _loadData();
+  }
+
+  Future<void> _openReports() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ReportsScreen()),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final nav = LoahNavigationController.of(context);
     final loc = AppLocales.of(context);
+    final colors = context.loahColors;
     final notificationCount = _unreadCount;
+
+    final transactions = _transactions;
+    final accounts = _accounts;
+    final assets = _assets;
+    final budgets = _budgets;
+    final recurring = _recurring;
+
+    final total = _totalWealth;
+    final distribution = FinanceSummary.expenseDistribution(transactions);
+    final recentCapped = transactions.take(10).toList();
+
+    final budgetProgressList = BudgetSummary.all(budgets, transactions);
+    final activeRecurring = recurring.where((r) => r.active).toList();
 
     return Scaffold(
       drawer: LoahDrawer(
@@ -272,7 +340,7 @@ Future<bool> _loadFinanceData() async {
           Stack(
             clipBehavior: Clip.none,
             children: [
-IconButton(
+              IconButton(
                 tooltip: loc.translate('common_notificacoes'),
                 onPressed: _openNotifications,
                 icon: const Icon(Icons.notifications_none_rounded),
@@ -309,75 +377,353 @@ IconButton(
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-Text(
-                loc.translate('dashboard_ola').replaceAll('%s', AuthService().currentUser?.displayName?.split(' ').first ?? 'Utilizador'),
+              // ── Greeting ──
+              Text(
+                loc.translate('dashboard_ola').replaceAll(
+                  '%s',
+                  AuthService().currentUser?.displayName?.split(' ').first ?? 'Utilizador',
+                ),
                 style: Theme.of(context)
                     .textTheme
                     .headlineSmall
                     ?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 4),
-Text(
+              Text(
                 loc.translate('dashboard_subtitulo'),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.xl),
-              // Card de Finanças com dados reais do Firebase
+
+              // ── Balance Card ──
               BalanceCard(
-                available: _totalWealth,
+                available: total,
                 progressToGoal: _progressToGoal,
               ),
               const SizedBox(height: AppSpacing.lg),
-              PendingTasksCard(
-                tasks: _standaloneTasks,
-                onToggle: (i) => _toggleTask(i),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              NewItemCard(
-                onCreate: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: false,
-                    backgroundColor: context.loahColors.cardBackground,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+
+              // ── Quick Links Row ──
+              SizedBox(
+                height: 100,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _QuickLinkCard(
+                      icon: Icons.account_balance_wallet_outlined,
+                      label: loc.translate('dashboard_contas'),
+                      color: colors.accentBlue,
+                      onTap: _openAccounts,
                     ),
-                    builder: (_) => const NewItemModalSheet(),
-                  );
-                },
+                    const SizedBox(width: 10),
+                    _QuickLinkCard(
+                      icon: Icons.account_balance_outlined,
+                      label: loc.translate('dashboard_patrimonio'),
+                      color: colors.accentBlue,
+                      onTap: _openAssets,
+                    ),
+                    const SizedBox(width: 10),
+                    _QuickLinkCard(
+                      icon: Icons.pie_chart_outline,
+                      label: loc.translate('dashboard_orcamento'),
+                      color: colors.accentBlue,
+                      onTap: _openBudgets,
+                    ),
+                    const SizedBox(width: 10),
+                    _QuickLinkCard(
+                      icon: Icons.autorenew,
+                      label: loc.translate('dashboard_recorrentes'),
+                      color: colors.accentBlue,
+                      onTap: _openRecurring,
+                    ),
+                    const SizedBox(width: 10),
+                    _QuickLinkCard(
+                      icon: Icons.bar_chart_outlined,
+                      label: loc.translate('dashboard_relatorios'),
+                      color: colors.accentBlue,
+                      onTap: _openReports,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
+
+              // ── Expense Distribution ──
+              if (distribution.isNotEmpty)
+                ExpenseDistributionCard(
+                  categories: distribution,
+                  onDetails: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ExpenseDistributionDetailScreen()),
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colors.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: colors.border),
+                  ),
+                  child: Text(
+                    loc.translate('finances_sem_despesas'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // ── Accounts Summary ──
+              SectionHeader(
+                title: loc.translate('dashboard_contas_titulo'),
+                trailing: TextButton(
+                  onPressed: _openAccounts,
+                  child: Text(loc.translate('dashboard_ver_tudo')),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (accounts.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    loc.translate('dashboard_sem_contas_resumo'),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                )
+              else
+                for (final a in accounts.take(3)) ...[
+                  AccountCard(
+                    account: a,
+                    allTransactions: transactions,
+                    onTap: _openAccounts,
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              const SizedBox(height: AppSpacing.md),
+
+              // ── Assets Summary ──
+              SectionHeader(
+                title: loc.translate('dashboard_ativos_titulo'),
+                trailing: TextButton(
+                  onPressed: _openAssets,
+                  child: Text(loc.translate('dashboard_ver_tudo')),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (assets.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    loc.translate('dashboard_sem_ativos_resumo'),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                )
+              else
+                for (final a in assets.take(3)) ...[
+                  AssetCard(
+                    asset: a,
+                    onTap: _openAssets,
+                    onQuickUpdate: () {},
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              const SizedBox(height: AppSpacing.md),
+
+              // ── Budgets Overview ──
+              SectionHeader(
+                title: loc.translate('dashboard_orcamentos_titulo'),
+                trailing: TextButton(
+                  onPressed: _openBudgets,
+                  child: Text(loc.translate('dashboard_ver_tudo')),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (budgetProgressList.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    loc.translate('dashboard_sem_orcamentos_resumo'),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                )
+              else
+                for (final progress in budgetProgressList.take(3)) ...[
+                  BudgetCard(
+                    progress: progress,
+                    onTap: () => _openBudgets(),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              const SizedBox(height: AppSpacing.md),
+
+              // ── Recurring Transactions ──
+              SectionHeader(
+                title: loc.translate('dashboard_recorrentes_titulo'),
+                trailing: TextButton(
+                  onPressed: _openRecurring,
+                  child: Text(loc.translate('dashboard_ver_tudo')),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (activeRecurring.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    loc.translate('dashboard_sem_recorrentes_resumo'),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                )
+              else
+                for (final r in activeRecurring.take(3)) ...[
+                  RecurringTransactionCard(
+                    recurring: r,
+                    onTap: _openRecurring,
+                    onActiveChanged: (_) {},
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              const SizedBox(height: AppSpacing.lg),
+
+              // ── Recent Transactions ──
+              SectionHeader(
+                title: loc.translate('dashboard_transacoes_recentes'),
+                trailing: TextButton(
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const TransactionHistoryScreen()),
+                    );
+                    _loadData();
+                  },
+                  child: Text(loc.translate('dashboard_ver_tudo')),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (recentCapped.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Text(
+                      loc.translate('dashboard_sem_transacoes'),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                )
+              else
+                for (final t in recentCapped) ...[
+                  TransactionListItem(
+                    transaction: t,
+                    onTap: () async {
+                      final result = await Navigator.of(context).push<bool>(
+                        MaterialPageRoute(
+                          builder: (_) => AddTransactionScreen(existingTransaction: t),
+                        ),
+                      );
+                      if (result == true) _loadData();
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              const SizedBox(height: 4),
+              OutlinedButton(
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const TransactionHistoryScreen()),
+                  );
+                  _loadData();
+                },
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(44),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(loc.translate('dashboard_ver_historico')),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // ── Goals Summary ──
               GoalsSummaryCard(
                 goals: _goals.take(3).toList(),
                 allTasks: _standaloneTasks,
                 onSeeAll: () => nav.navigateTo(1),
               ),
               const SizedBox(height: AppSpacing.lg),
+
+              // ── Pending Tasks ──
+              PendingTasksCard(
+                tasks: _standaloneTasks,
+                onToggle: (i) => _toggleTask(i),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // ── Daily Reflection ──
               DailyReflectionCard(
                 quote: _activeReflection?.text ?? 'O que é medido, é gerenciado.',
                 imageUrl: _activeReflection?.imageUrl.isNotEmpty == true
                     ? _activeReflection!.imageUrl
                     : 'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800',
-              
               ),
-               const SizedBox(height: AppSpacing.xxxl*2),
+              const SizedBox(height: AppSpacing.xxxl * 2),
             ],
           ),
         ),
       ),
-       floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primary,
         heroTag: 'dashboard_fab',
-        onPressed: (){showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: false,
-                    backgroundColor: context.loahColors.cardBackground,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
-                    builder: (_) => const NewItemModalSheet(),
-                  );},
+        onPressed: _addTransaction,
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+/// Compact tappable card used for quick links.
+class _QuickLinkCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickLinkCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.loahColors;
+
+    return Material(
+      color: colors.cardBackground,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: 90,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colors.border),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 24, color: color),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

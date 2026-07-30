@@ -197,7 +197,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
               )
             else
               ChipSelector<String>(
-                options: [for (final c in available) ChipOption(c, c)],
+                options: [for (final c in available) ChipOption(loc.translateCategory(c), c)],
                 selected: _category ?? available.firstOrNull ?? TransactionCategories.expense.first,
                 onChanged: (v) => setState(() => _category = v),
               ),
@@ -232,7 +232,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                   icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
                   label: Text(
                     loc.translate('addBudget_excluir'),
-                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

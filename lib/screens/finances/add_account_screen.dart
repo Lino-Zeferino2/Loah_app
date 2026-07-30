@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/l10n/app_localizations.dart';
-import '../../core/utils/account_visuals.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/finance_service.dart';
@@ -185,7 +184,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
             _SectionLabel(loc.translate('addAcc_tipo_label')),
             const SizedBox(height: 8),
             ChipSelector<AccountType>(
-              options: [for (final t in AccountType.values) ChipOption(t.label, t)],
+              options: [for (final t in AccountType.values) ChipOption(loc.translateAccountType(t), t)],
               selected: _type,
               onChanged: (v) => setState(() => _type = v),
             ),
@@ -217,7 +216,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                   icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
                   label: Text(
                     loc.translate('addAcc_excluir'),
-                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'locale_controller.dart';
 import '../../models/task_model.dart';
+import '../../models/account_model.dart';
+import '../../models/asset_model.dart';
 
 /// Classe de tradução centralizada para a app Loah.
 /// Suporta português (pt) e inglês (en) com fallback para português.
@@ -247,7 +249,7 @@ class AppLocales {
       'pt': 'Pesquisar',
       'en': 'Search',
     },
-    'common_sem_resultados': {
+'common_sem_resultados': {
       'pt': 'Sem resultados',
       'en': 'No results',
     },
@@ -602,6 +604,20 @@ class AppLocales {
     'catComp_mes_anterior': {
       'pt': 'Mês anterior',
       'en': 'Last month',
+    },
+
+    // ═══════ BUDGETS SCREEN ═══════
+    'budgets_titulo': {
+      'pt': 'Orçamento',
+      'en': 'Budget',
+    },
+    'budgets_gasto_mes': {
+      'pt': 'GASTO DO MÊS (CATEGORIAS ORÇADAS)',
+      'en': 'MONTHLY SPENDING (BUDGETED CATEGORIES)',
+    },
+    'budgets_sem_orcamentos': {
+      'pt': 'Nenhum orçamento definido ainda. Toque no + para criar o primeiro.',
+      'en': 'No budgets defined yet. Tap + to create the first one.',
     },
 
     // ═══════ BUDGET CARD ═══════
@@ -1733,6 +1749,54 @@ class AppLocales {
     'mes_nov': {'pt': 'Nov', 'en': 'Nov'},
     'mes_dez': {'pt': 'Dez', 'en': 'Dec'},
 
+    // ═══════ ACCOUNT TYPE LABELS ═══════
+    'accType_corrente': {
+      'pt': 'Conta Corrente',
+      'en': 'Checking Account',
+    },
+    'accType_poupanca': {
+      'pt': 'Poupança',
+      'en': 'Savings',
+    },
+    'accType_cartao_credito': {
+      'pt': 'Cartão de Crédito',
+      'en': 'Credit Card',
+    },
+    'accType_carteira': {
+      'pt': 'Carteira',
+      'en': 'Wallet',
+    },
+    'accType_investimento': {
+      'pt': 'Investimento',
+      'en': 'Investment',
+    },
+    'accType_outro': {
+      'pt': 'Outro',
+      'en': 'Other',
+    },
+
+    // ═══════ ASSET TYPE LABELS ═══════
+    'assetType_emergency_fund': {
+      'pt': 'Reserva de Emergência',
+      'en': 'Emergency Fund',
+    },
+    'assetType_stocks': {
+      'pt': 'Ações',
+      'en': 'Stocks',
+    },
+    'assetType_real_estate': {
+      'pt': 'Imóveis',
+      'en': 'Real Estate',
+    },
+    'assetType_cash': {
+      'pt': 'Dinheiro em Conta',
+      'en': 'Cash in Account',
+    },
+    'assetType_other': {
+      'pt': 'Outro',
+      'en': 'Other',
+    },
+
     // ═══════ ADD ACCOUNT SCREEN ═══════
     'addAcc_novo': {
       'pt': 'Nova Conta',
@@ -2227,20 +2291,7 @@ class AppLocales {
       'en': 'View All',
     },
 
-    // ═══════ BUDGETS SCREEN (additional keys) ═══════
-    'budgets_titulo': {
-      'pt': 'Orçamento',
-      'en': 'Budget',
-    },
-    'budgets_gasto_mes': {
-      'pt': 'GASTO DO MÊS (CATEGORIAS ORÇADAS)',
-      'en': 'MONTHLY SPENDING (BUDGETED CATEGORIES)',
-    },
-    'budgets_sem_orcamentos': {
-      'pt': 'Nenhum orçamento definido ainda. Toque no + para criar o primeiro.',
-      'en': 'No budgets defined yet. Tap + to create your first one.',
-    },
-  };
+};
 
   /// Retorna a string traduzida para a chave fornecida.
   /// Se a chave não existir, retorna a própria chave como fallback.
@@ -2295,6 +2346,31 @@ class AppLocales {
       TaskStatus.pendente => translate('status_nao_iniciada'),
       TaskStatus.emProgresso => translate('status_em_progresso'),
       TaskStatus.concluida => translate('status_concluida'),
+    };
+  }
+
+  /// Traduz o nome de um tipo de conta (AccountType) para o idioma
+  /// atualmente selecionado.
+  String translateAccountType(AccountType type) {
+    return switch (type) {
+      AccountType.corrente => translate('accType_corrente'),
+      AccountType.poupanca => translate('accType_poupanca'),
+      AccountType.cartaoCredito => translate('accType_cartao_credito'),
+      AccountType.carteira => translate('accType_carteira'),
+      AccountType.investimento => translate('accType_investimento'),
+      AccountType.outro => translate('accType_outro'),
+    };
+  }
+
+  /// Traduz o nome de um tipo de ativo (AssetType) para o idioma
+  /// atualmente selecionado.
+  String translateAssetType(AssetType type) {
+    return switch (type) {
+      AssetType.emergencyFund => translate('assetType_emergency_fund'),
+      AssetType.stocks => translate('assetType_stocks'),
+      AssetType.realEstate => translate('assetType_real_estate'),
+      AssetType.cash => translate('assetType_cash'),
+      AssetType.other => translate('assetType_other'),
     };
   }
 

@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/utils/account_balance.dart';
 import '../../core/utils/budget_summary.dart';
@@ -174,9 +175,9 @@ class _FinancesScreenState extends State<FinancesScreen> {
   Future<void> _addTransaction() async {
     if (_accounts.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Crie uma conta primeiro antes de adicionar transações.'),
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocales.of(context).translate('finances_criar_conta_primeiro')),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -236,6 +237,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
   Widget build(BuildContext context) {
     final colors = context.loahColors;
     final nav = LoahNavigationController.of(context);
+    final loc = AppLocales.of(context);
 
     final transactions = _transactions;
     final accounts = _accounts;
@@ -254,7 +256,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
     return Scaffold(
       drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
       appBar: LoahAppBar(
-        title: 'Minhas Finanças',
+        title: loc.translate('finances_title'),
         actions: [
           Stack(
             children: [
@@ -309,7 +311,7 @@ if (_unreadCount > 0)
                             width: 150,
                             child: _FinanceEntryCard(
                               icon: Icons.account_balance_wallet_outlined,
-                              label: 'Contas',
+                              label: loc.translate('finances_contas'),
                               value: CurrencyFormatter.format(total, context: context),
                               onTap: _openAccounts,
                             ),
@@ -319,7 +321,7 @@ if (_unreadCount > 0)
                             width: 150,
                             child: _FinanceEntryCard(
                               icon: Icons.account_balance_outlined,
-                              label: 'Patrimônio',
+                              label: loc.translate('finances_patrimonio'),
                               value: CurrencyFormatter.format(
                                 _assets.fold<double>(0, (sum, a) => sum + a.currentValue),
                                 context: context,
@@ -332,7 +334,7 @@ if (_unreadCount > 0)
                             width: 150,
                             child: _FinanceEntryCard(
                               icon: Icons.pie_chart_outline,
-                              label: 'Orçamento',
+                              label: loc.translate('finances_orcamento'),
                               value:
                                   '${CurrencyFormatter.format(BudgetSummary.totalSpent(_budgets, transactions), context: context)} '
                                   'de ${CurrencyFormatter.format(BudgetSummary.totalBudgeted(_budgets), context: context)}',
@@ -344,8 +346,8 @@ if (_unreadCount > 0)
                             width: 150,
                             child: _FinanceEntryCard(
                               icon: Icons.autorenew,
-                              label: 'Recorrentes',
-                              value: '${_recurring.where((r) => r.active).length} ativas',
+                              label: loc.translate('finances_recorrentes'),
+                              value: '${_recurring.where((r) => r.active).length} ${loc.translate('finances_ativas')}',
                               onTap: _openRecurring,
                             ),
                           ),
@@ -354,8 +356,8 @@ if (_unreadCount > 0)
                             width: 150,
                             child: _FinanceEntryCard(
                               icon: Icons.bar_chart_outlined,
-                              label: 'Relatórios',
-                              value: 'Ver evolução',
+                              label: loc.translate('finances_relatorios'),
+                              value: loc.translate('finances_ver_evolucao'),
                               onTap: _openReports,
                             ),
                           ),
@@ -381,7 +383,7 @@ if (_unreadCount > 0)
                       ),
                     const SizedBox(height: AppSpacing.lg),
                     SectionHeader(
-                      title: 'Transações Recentes',
+                      title: loc.translate('finances_transacoes_recentes'),
                       trailing: IconButton(
                         icon: Icon(Icons.filter_list, color: colors.accentBlue, size: 18),
                         onPressed: () async {
@@ -400,7 +402,7 @@ if (_unreadCount > 0)
                         padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Center(
                           child: Text(
-                            'Nenhuma transação ainda. Toque no + para adicionar a primeira.',
+                            loc.translate('finances_sem_transacoes'),
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
@@ -425,7 +427,7 @@ if (_unreadCount > 0)
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text('VER TODO O HISTÓRICO'),
+                      child: Text(loc.translate('finances_ver_historico')),
                     ),
                   ],
                 ),
@@ -455,8 +457,7 @@ class _EmptyDistributionHint extends StatelessWidget {
         border: Border.all(color: colors.border),
       ),
       child: Text(
-        'Nenhuma despesa registrada este mês ainda — a distribuição de '
-        'gastos aparece aqui assim que você adicionar transações.',
+        AppLocales.of(context).translate('finances_sem_despesas'),
         style: Theme.of(context).textTheme.bodySmall,
       ),
     );
