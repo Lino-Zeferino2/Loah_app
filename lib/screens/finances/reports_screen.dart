@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/finance_summary.dart';
 import '../../core/utils/report_summary.dart';
@@ -75,8 +76,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
       );
     } catch (e) {
       if (mounted) {
+        final loc = AppLocales.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao exportar CSV: $e')),
+          SnackBar(content: Text('${loc.translate('reports_erro_csv')}$e')),
         );
       }
     } finally {
@@ -111,8 +113,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
       );
     } catch (e) {
       if (mounted) {
+        final loc = AppLocales.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao exportar PDF: $e')),
+          SnackBar(content: Text('${loc.translate('reports_erro_pdf')}$e')),
         );
       }
     } finally {
@@ -123,6 +126,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    final loc = AppLocales.of(context);
     final accounts = _accounts;
     final transactions = _transactions;
     final history = ReportSummary.balanceHistory(accounts, transactions, months: 6);
@@ -132,7 +136,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     return Scaffold(
       appBar: LoahAppBarSimple(
-        title: 'Relatórios',
+        title: loc.translate('reports_titulo'),
         actions: [
           if (_exporting)
             const Padding(
@@ -146,12 +150,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
           else ...[
             IconButton(
               onPressed: _exportCsv,
-              tooltip: 'Exportar CSV',
+              tooltip: loc.translate('reports_export_csv'),
               icon: Icon(Icons.table_chart_outlined, color: colors.accentBlue),
             ),
             IconButton(
               onPressed: _exportPdf,
-              tooltip: 'Exportar PDF',
+              tooltip: loc.translate('reports_export_pdf'),
               icon: Icon(Icons.picture_as_pdf, color: colors.accentBlue),
             ),
           ],
@@ -166,17 +170,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SectionHeader(title: 'Evolução do Saldo (6 meses)'),
+                  SectionHeader(title: loc.translate('reports_evolucao_saldo')),
                   const SizedBox(height: 4),
                   Text(
-                    'Soma do saldo de todas as contas, reconstruído a partir das '
-                    'transações lançadas.',
+                    loc.translate('reports_evolucao_desc'),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   if (trend != null) ...[
                     const SizedBox(height: 2),
                     Text(
-                      'Linha tracejada = tendência linear',
+                      loc.translate('reports_tendencia'),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: context.textSecondary,
                             fontStyle: FontStyle.italic,
@@ -196,7 +199,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SectionHeader(title: 'Distribuição de Gastos (este mês)'),
+                    SectionHeader(title: loc.translate('reports_distribuicao')),
                     const SizedBox(height: 16),
                     Center(
                       child: DonutChart(
@@ -205,7 +208,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         centerChild: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('Total', style: Theme.of(context).textTheme.bodySmall),
+                            Text(loc.translate('reports_total'), style: Theme.of(context).textTheme.bodySmall),
                             Text(
                               CurrencyFormatter.format(
                                 distribution.fold<double>(0, (s, c) => s + c.amount),
@@ -255,10 +258,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SectionHeader(title: 'Gasto por Categoria'),
+                  SectionHeader(title: loc.translate('reports_gasto_categoria')),
                   const SizedBox(height: 4),
                   Text(
-                    'Este mês comparado ao mês anterior.',
+                    loc.translate('reports_gasto_categoria_desc'),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 8),
@@ -266,7 +269,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Text(
-                        'Sem despesas suficientes ainda para comparar períodos.',
+                        loc.translate('reports_sem_despesas'),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     )
@@ -280,10 +283,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(
-                'Nota: o Patrimônio (ações, imóveis) ainda não tem histórico ao '
-                'longo do tempo — hoje só guardamos o valor atual de cada ativo. '
-                'Esse gráfico usa apenas o saldo das Contas, que já tem histórico '
-                'real via as transações.',
+                loc.translate('reports_nota'),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: context.textSecondary,
                       fontStyle: FontStyle.italic,
@@ -296,3 +296,4 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 }
+

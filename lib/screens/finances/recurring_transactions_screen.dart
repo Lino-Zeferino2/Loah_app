@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_spacing.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/services/finance_service.dart';
 import '../../models/recurring_transaction_model.dart';
-import '../../models/transaction_model.dart';
-import '../../widgets/loah_app_bar_simple.dart';
-import '../../widgets/loah_card.dart';
+import '../../models/transaction_model.dart'; // TransactionType
 import 'add_recurring_transaction_screen.dart';
 import 'widgets/recurring_transaction_card.dart';
 
-/// "Loah - Recorrentes": recurring transactions from Firebase.
 class RecurringTransactionsScreen extends StatefulWidget {
   const RecurringTransactionsScreen({super.key});
 
@@ -19,7 +18,8 @@ class RecurringTransactionsScreen extends StatefulWidget {
 
 class _RecurringTransactionsScreenState extends State<RecurringTransactionsScreen> {
   final FinanceService _financeService = FinanceService();
-  List<RecurringTransactionModel> _items = [];
+  List<RecurringTransactionModel> _recurring = [];
+  bool _loading = true;
 
   @override
   void initState() {
@@ -30,122 +30,153 @@ class _RecurringTransactionsScreenState extends State<RecurringTransactionsScree
   Future<void> _loadData() async {
     try {
       final items = await _financeService.getAllRecurring();
-      if (mounted) setState(() { _items = items; });
+      if (mounted) setState(() { _recurring = items; _loading = false; });
     } catch (_) {
-      if (mounted) {}
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _toggleActive(RecurringTransactionModel item, bool value) async {
+  Future<void> _toggleActive(RecurringTransactionModel item) async {
     try {
-      await _financeService.updateRecurring(item.copyWith(active: value));
+      final updated = item.copyWith(active: !item.active);
+      await _financeService.updateRecurring(updated);
       _loadData();
     } catch (e) {
       if (mounted) {
+        final loc = AppLocales.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar: $e')),
+          SnackBar(content: Text('${loc.translate('recurring_erro_atualizar')}$e')),
         );
       }
     }
   }
 
-  Future<void> _add() async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const AddRecurringTransactionScreen()),
-    );
-    if (result == true) _loadData();
-  }
-
-  Future<void> _edit(RecurringTransactionModel item) async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => AddRecurringTransactionScreen(existingRecurring: item)),
-    );
-    if (result == true) _loadData();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final items = _items;
-    final activeIncome = items
+    final colors = context.loahColors;
+    final loc = AppLocales.of(context);
+
+    final totalIncome = _recurring
         .where((r) => r.active && r.type == TransactionType.income)
-        .fold<double>(0, (sum, r) => sum + r.amount);
-    final activeExpense = items
+        .fold<double>(0, (s, r) => s + r.amount);
+    final totalExpense = _recurring
         .where((r) => r.active && r.type == TransactionType.expense)
-        .fold<double>(0, (sum, r) => sum + r.amount);
+        .fold<double>(0, (s, r) => s + r.amount);
 
     return Scaffold(
-      appBar: const LoahAppBarSimple(title: 'Recorrentes'),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            LoahCard(
-              child: Row(
+      appBar: AppBar(title: Text(loc.translate('recurring_titulo'))),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              child: ListView(
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('RECEITAS/MÊS', style: Theme.of(context).textTheme.labelSmall),
-                        Text(
-                          CurrencyFormatter.format(activeIncome, context: context),
-                          style: TextStyle(
-                            color: context.loahColors.positive,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                          ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SummaryTile(
+                          label: loc.translate('recurring_receitas_mes'),
+                          value: CurrencyFormatter.format(totalIncome, context: context),
+                          color: Colors.greenAccent,
+                          colors: colors,
                         ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('DESPESAS/MÊS', style: Theme.of(context).textTheme.labelSmall),
-                        Text(
-                          CurrencyFormatter.format(activeExpense, context: context),
-                          style: TextStyle(
-                            color: context.loahColors.negative,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                          ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _SummaryTile(
+                          label: loc.translate('recurring_despesas_mes'),
+                          value: CurrencyFormatter.format(totalExpense, context: context),
+                          color: Colors.redAccent,
+                          colors: colors,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: AppSpacing.md),
+                  if (_recurring.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      child: Center(
+                        child: Text(
+                          loc.translate('recurring_sem_itens'),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    )
+                  else
+                    for (final r in _recurring) ...[
+                      RecurringTransactionCard(
+                        recurring: r,
+                        onActiveChanged: (_) => _toggleActive(r),
+                        onTap: () async {
+                          final result = await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                              builder: (_) => AddRecurringTransactionScreen(existingRecurring: r),
+                            ),
+                          );
+                          if (result == true) _loadData();
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                    ],
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            if (items.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: Text(
-                    'Nenhuma recorrência cadastrada ainda. Toque no + para adicionar a primeira.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              )
-            else
-              for (final item in items) ...[
-                RecurringTransactionCard(
-                  recurring: item,
-                  onTap: () => _edit(item),
-                  onActiveChanged: (v) => _toggleActive(item, v),
-                ),
-                const SizedBox(height: 10),
-              ],
-          ],
-        ),
-      ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: colors.accentBlue,
         heroTag: 'recurring_fab',
-        onPressed: _add,
+        onPressed: () async {
+          final result = await Navigator.of(context).push<bool>(
+            MaterialPageRoute(builder: (_) => const AddRecurringTransactionScreen()),
+          );
+          if (result == true) _loadData();
+        },
         child: const Icon(Icons.add),
       ),
     );
   }
 }
+
+class _SummaryTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final LoahColors colors;
+
+  const _SummaryTile({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colors.cardBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

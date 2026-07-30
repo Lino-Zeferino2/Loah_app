@@ -251,6 +251,10 @@ class AppLocales {
       'pt': 'Sem resultados',
       'en': 'No results',
     },
+    'common_notificacoes': {
+      'pt': 'Notificações',
+      'en': 'Notifications',
+    },
 
     // ═══════ LOGIN / AUTH ═══════
     'auth_entrar': {
@@ -1728,6 +1732,514 @@ class AppLocales {
     'mes_out': {'pt': 'Out', 'en': 'Oct'},
     'mes_nov': {'pt': 'Nov', 'en': 'Nov'},
     'mes_dez': {'pt': 'Dez', 'en': 'Dec'},
+
+    // ═══════ ADD ACCOUNT SCREEN ═══════
+    'addAcc_novo': {
+      'pt': 'Nova Conta',
+      'en': 'New Account',
+    },
+    'addAcc_editar': {
+      'pt': 'Editar Conta',
+      'en': 'Edit Account',
+    },
+    'addAcc_nome_label': {
+      'pt': 'NOME',
+      'en': 'NAME',
+    },
+    'addAcc_nome_hint': {
+      'pt': 'Ex: Cartão Nubank',
+      'en': 'E.g.: Nubank Card',
+    },
+    'addAcc_nome_erro': {
+      'pt': 'Dê um nome para a conta.',
+      'en': 'Give a name to the account.',
+    },
+    'addAcc_tipo_label': {
+      'pt': 'TIPO',
+      'en': 'TYPE',
+    },
+    'addAcc_saldo_label': {
+      'pt': 'SALDO INICIAL',
+      'en': 'INITIAL BALANCE',
+    },
+    'addAcc_saldo_helper': {
+      'pt': 'O saldo antes de qualquer transação lançada no app.',
+      'en': 'The balance before any transactions logged in the app.',
+    },
+    'addAcc_excluir': {
+      'pt': 'Excluir Conta',
+      'en': 'Delete Account',
+    },
+    'addAcc_excluir_titulo': {
+      'pt': 'Excluir Conta',
+      'en': 'Delete Account',
+    },
+    'addAcc_excluir_msg': {
+      'pt': 'As transações já lançadas nessa conta não serão apagadas, mas ficarão sem conta vinculada. Tem certeza?',
+      'en': 'Transactions already posted to this account will not be deleted, but will become unlinked. Are you sure?',
+    },
+    'addAcc_excluir_confirmar': {
+      'pt': 'Excluir',
+      'en': 'Delete',
+    },
+    'addAcc_cancelar': {
+      'pt': 'Cancelar',
+      'en': 'Cancel',
+    },
+    'addAcc_salvar': {
+      'pt': 'Salvar Alterações',
+      'en': 'Save Changes',
+    },
+    'addAcc_adicionar': {
+      'pt': 'Adicionar Conta',
+      'en': 'Add Account',
+    },
+    'addAcc_erro_salvar': {
+      'pt': 'Erro ao salvar: ',
+      'en': 'Error saving: ',
+    },
+    'addAcc_erro_excluir': {
+      'pt': 'Erro ao excluir: ',
+      'en': 'Error deleting: ',
+    },
+
+    // ═══════ ACCOUNTS SCREEN ═══════
+    'accounts_titulo': {
+      'pt': 'Contas',
+      'en': 'Accounts',
+    },
+    'accounts_saldo_total': {
+      'pt': 'SALDO TOTAL (TODAS AS CONTAS)',
+      'en': 'TOTAL BALANCE (ALL ACCOUNTS)',
+    },
+    'accounts_sem_contas': {
+      'pt': 'Nenhuma conta cadastrada ainda. Toque no + para adicionar a primeira.',
+      'en': 'No accounts yet. Tap + to add your first one.',
+    },
+
+    // ═══════ ADD ASSET SCREEN ═══════
+    'addAsset_novo': {
+      'pt': 'Novo Ativo',
+      'en': 'New Asset',
+    },
+    'addAsset_editar': {
+      'pt': 'Editar Ativo',
+      'en': 'Edit Asset',
+    },
+    'addAsset_nome_label': {
+      'pt': 'NOME',
+      'en': 'NAME',
+    },
+    'addAsset_nome_hint': {
+      'pt': 'Ex: Carteira B3',
+      'en': 'E.g.: B3 Portfolio',
+    },
+    'addAsset_nome_erro': {
+      'pt': 'Dê um nome para o ativo.',
+      'en': 'Give a name to the asset.',
+    },
+    'addAsset_tipo_label': {
+      'pt': 'TIPO',
+      'en': 'TYPE',
+    },
+    'addAsset_valor_label': {
+      'pt': 'VALOR ATUAL',
+      'en': 'CURRENT VALUE',
+    },
+    'addAsset_valor_erro': {
+      'pt': 'Informe um valor válido.',
+      'en': 'Enter a valid amount.',
+    },
+    'addAsset_notas_label': {
+      'pt': 'NOTAS (OPCIONAL)',
+      'en': 'NOTES (OPTIONAL)',
+    },
+    'addAsset_notas_hint': {
+      'pt': 'Ex: PETR4, VALE3 — ou detalhes do imóvel...',
+      'en': 'E.g.: PETR4, VALE3 — or property details...',
+    },
+    'addAsset_excluir': {
+      'pt': 'Excluir Ativo',
+      'en': 'Delete Asset',
+    },
+    'addAsset_excluir_titulo': {
+      'pt': 'Excluir Ativo',
+      'en': 'Delete Asset',
+    },
+    'addAsset_excluir_msg': {
+      'pt': 'Tem certeza? Essa ação não pode ser desfeita.',
+      'en': 'Are you sure? This action cannot be undone.',
+    },
+    'addAsset_excluir_confirmar': {
+      'pt': 'Excluir',
+      'en': 'Delete',
+    },
+    'addAsset_cancelar': {
+      'pt': 'Cancelar',
+      'en': 'Cancel',
+    },
+    'addAsset_salvar': {
+      'pt': 'Salvar Alterações',
+      'en': 'Save Changes',
+    },
+    'addAsset_adicionar': {
+      'pt': 'Adicionar Ativo',
+      'en': 'Add Asset',
+    },
+    'addAsset_erro_salvar': {
+      'pt': 'Erro ao salvar: ',
+      'en': 'Error saving: ',
+    },
+    'addAsset_erro_excluir': {
+      'pt': 'Erro ao excluir: ',
+      'en': 'Error deleting: ',
+    },
+    'addAsset_quick_titulo': {
+      'pt': 'Atualizar Valor',
+      'en': 'Update Value',
+    },
+    'addAsset_quick_salvar': {
+      'pt': 'Salvar',
+      'en': 'Save',
+    },
+    'addAsset_quick_erro': {
+      'pt': 'Erro ao atualizar: ',
+      'en': 'Error updating: ',
+    },
+
+    // ═══════ ASSETS SCREEN ═══════
+    'assets_titulo': {
+      'pt': 'Patrimônio',
+      'en': 'Assets',
+    },
+    'assets_total': {
+      'pt': 'PATRIMÔNIO TOTAL',
+      'en': 'TOTAL NET WORTH',
+    },
+    'assets_sem_ativos': {
+      'pt': 'Nenhum ativo cadastrado ainda. Toque no + para adicionar o primeiro.',
+      'en': 'No assets yet. Tap + to add your first one.',
+    },
+
+    // ═══════ ADD RECURRING SCREEN ═══════
+    'addRec_novo': {
+      'pt': 'Nova Recorrência',
+      'en': 'New Recurring',
+    },
+    'addRec_editar': {
+      'pt': 'Editar Recorrência',
+      'en': 'Edit Recurring',
+    },
+    'addRec_tipo_label': {
+      'pt': 'TIPO',
+      'en': 'TYPE',
+    },
+    'addRec_tipo_despesa': {
+      'pt': 'Despesa',
+      'en': 'Expense',
+    },
+    'addRec_tipo_receita': {
+      'pt': 'Receita',
+      'en': 'Income',
+    },
+    'addRec_nome_label': {
+      'pt': 'NOME',
+      'en': 'NAME',
+    },
+    'addRec_nome_hint': {
+      'pt': 'Ex: Netflix',
+      'en': 'E.g.: Netflix',
+    },
+    'addRec_nome_erro': {
+      'pt': 'Dê um nome para a recorrência.',
+      'en': 'Give a name to the recurring transaction.',
+    },
+    'addRec_valor_label': {
+      'pt': 'VALOR',
+      'en': 'AMOUNT',
+    },
+    'addRec_valor_erro': {
+      'pt': 'Informe um valor válido.',
+      'en': 'Enter a valid amount.',
+    },
+    'addRec_categoria_label': {
+      'pt': 'CATEGORIA',
+      'en': 'CATEGORY',
+    },
+    'addRec_conta_label': {
+      'pt': 'CONTA',
+      'en': 'ACCOUNT',
+    },
+    'addRec_conta_vazia': {
+      'pt': 'Nenhuma conta cadastrada — crie uma na tela de Contas primeiro.',
+      'en': 'No accounts yet — create one on the Accounts screen first.',
+    },
+    'addRec_dia_label': {
+      'pt': 'DIA DO MÊS',
+      'en': 'DAY OF MONTH',
+    },
+    'addRec_dia_valor': {
+      'pt': 'Dia %s',
+      'en': 'Day %s',
+    },
+    'addRec_ativa_label': {
+      'pt': 'Ativa',
+      'en': 'Active',
+    },
+    'addRec_ativa_sub_on': {
+      'pt': 'Gera a transação automaticamente todo mês.',
+      'en': 'Automatically generates the transaction every month.',
+    },
+    'addRec_ativa_sub_off': {
+      'pt': 'Pausada — não gera transações até ser reativada.',
+      'en': 'Paused — no transactions until reactivated.',
+    },
+    'addRec_excluir': {
+      'pt': 'Excluir Recorrência',
+      'en': 'Delete Recurring',
+    },
+    'addRec_excluir_titulo': {
+      'pt': 'Excluir Recorrência',
+      'en': 'Delete Recurring',
+    },
+    'addRec_excluir_msg': {
+      'pt': 'As transações já geradas por ela não serão apagadas. Tem certeza?',
+      'en': 'Transactions already generated will not be deleted. Are you sure?',
+    },
+    'addRec_excluir_confirmar': {
+      'pt': 'Excluir',
+      'en': 'Delete',
+    },
+    'addRec_cancelar': {
+      'pt': 'Cancelar',
+      'en': 'Cancel',
+    },
+    'addRec_salvar': {
+      'pt': 'Salvar Alterações',
+      'en': 'Save Changes',
+    },
+    'addRec_criar': {
+      'pt': 'Criar Recorrência',
+      'en': 'Create Recurring',
+    },
+    'addRec_erro_salvar': {
+      'pt': 'Erro ao salvar: ',
+      'en': 'Error saving: ',
+    },
+    'addRec_erro_excluir': {
+      'pt': 'Erro ao excluir: ',
+      'en': 'Error deleting: ',
+    },
+
+    // ═══════ RECURRING SCREEN ═══════
+    'recurring_titulo': {
+      'pt': 'Recorrentes',
+      'en': 'Recurring',
+    },
+    'recurring_receitas_mes': {
+      'pt': 'RECEITAS/MÊS',
+      'en': 'INCOME/MONTH',
+    },
+    'recurring_despesas_mes': {
+      'pt': 'DESPESAS/MÊS',
+      'en': 'EXPENSES/MONTH',
+    },
+    'recurring_sem_itens': {
+      'pt': 'Nenhuma recorrência cadastrada ainda. Toque no + para adicionar a primeira.',
+      'en': 'No recurring transactions yet. Tap + to add your first one.',
+    },
+    'recurring_erro_atualizar': {
+      'pt': 'Erro ao atualizar: ',
+      'en': 'Error updating: ',
+    },
+
+    // ═══════ REPORTS SCREEN ═══════
+    'reports_titulo': {
+      'pt': 'Relatórios',
+      'en': 'Reports',
+    },
+    'reports_evolucao_saldo': {
+      'pt': 'Evolução do Saldo (6 meses)',
+      'en': 'Balance Evolution (6 months)',
+    },
+    'reports_evolucao_desc': {
+      'pt': 'Soma do saldo de todas as contas, reconstruído a partir das transações lançadas.',
+      'en': 'Sum of all account balances, rebuilt from logged transactions.',
+    },
+    'reports_tendencia': {
+      'pt': 'Linha tracejada = tendência linear',
+      'en': 'Dashed line = linear trend',
+    },
+    'reports_distribuicao': {
+      'pt': 'Distribuição de Gastos (este mês)',
+      'en': 'Expense Distribution (this month)',
+    },
+    'reports_total': {
+      'pt': 'Total',
+      'en': 'Total',
+    },
+    'reports_gasto_categoria': {
+      'pt': 'Gasto por Categoria',
+      'en': 'Spending by Category',
+    },
+    'reports_gasto_categoria_desc': {
+      'pt': 'Este mês comparado ao mês anterior.',
+      'en': 'This month compared to last month.',
+    },
+    'reports_sem_despesas': {
+      'pt': 'Sem despesas suficientes ainda para comparar períodos.',
+      'en': 'Not enough expenses yet to compare periods.',
+    },
+    'reports_nota': {
+      'pt': 'Nota: o Patrimônio (ações, imóveis) ainda não tem histórico ao longo do tempo — hoje só guardamos o valor atual de cada ativo. Esse gráfico usa apenas o saldo das Contas, que já tem histórico real via as transações.',
+      'en': 'Note: Assets (stocks, real estate) do not have historical tracking yet — we only store the current value. This chart uses only Account balances, which have real history via transactions.',
+    },
+    'reports_export_csv': {
+      'pt': 'Exportar CSV',
+      'en': 'Export CSV',
+    },
+    'reports_export_pdf': {
+      'pt': 'Exportar PDF',
+      'en': 'Export PDF',
+    },
+    'reports_erro_csv': {
+      'pt': 'Erro ao exportar CSV: ',
+      'en': 'Error exporting CSV: ',
+    },
+    'reports_erro_pdf': {
+      'pt': 'Erro ao exportar PDF: ',
+      'en': 'Error exporting PDF: ',
+    },
+
+    // ═══════ TRANSACTION HISTORY ═══════
+    'txnHistory_titulo': {
+      'pt': 'Histórico',
+      'en': 'History',
+    },
+    'txnHistory_buscar': {
+      'pt': 'Buscar transações...',
+      'en': 'Search transactions...',
+    },
+    'txnHistory_sem_resultados': {
+      'pt': 'Nenhuma transação encontrada.',
+      'en': 'No transactions found.',
+    },
+    'txnHistory_exportar': {
+      'pt': 'Exportar CSV',
+      'en': 'Export CSV',
+    },
+    'txnHistory_erro_exportar': {
+      'pt': 'Erro ao exportar: ',
+      'en': 'Error exporting: ',
+    },
+
+    // ═══════ DASHBOARD ═══════
+    'dashboard_ola': {
+      'pt': 'Olá, %s',
+      'en': 'Hello, %s',
+    },
+    'dashboard_subtitulo': {
+      'pt': 'Seu cérebro auxiliar está pronto. Aqui está o resumo financeiro.',
+      'en': 'Your second brain is ready. Here is your financial overview.',
+    },
+    'dashboard_contas': {
+      'pt': 'Contas',
+      'en': 'Accounts',
+    },
+    'dashboard_patrimonio': {
+      'pt': 'Patrimônio',
+      'en': 'Net Worth',
+    },
+    'dashboard_orcamento': {
+      'pt': 'Orçamento',
+      'en': 'Budget',
+    },
+    'dashboard_recorrentes': {
+      'pt': 'Recorrentes',
+      'en': 'Recurring',
+    },
+    'dashboard_relatorios': {
+      'pt': 'Relatórios',
+      'en': 'Reports',
+    },
+    'dashboard_ver_historico': {
+      'pt': 'VER TODO O HISTÓRICO',
+      'en': 'VIEW FULL HISTORY',
+    },
+    'dashboard_sem_transacoes': {
+      'pt': 'Nenhuma transação ainda. Toque no + para adicionar a primeira.',
+      'en': 'No transactions yet. Tap + to add your first one.',
+    },
+    'dashboard_total_patrimonio': {
+      'pt': 'PATRIMÔNIO TOTAL',
+      'en': 'TOTAL NET WORTH',
+    },
+    'dashboard_meta_mensal': {
+      'pt': '%s%% da meta mensal',
+      'en': '%s%% of monthly goal',
+    },
+    'dashboard_sem_contas_resumo': {
+      'pt': 'Nenhuma conta cadastrada.',
+      'en': 'No accounts registered.',
+    },
+    'dashboard_sem_ativos_resumo': {
+      'pt': 'Nenhum ativo cadastrado.',
+      'en': 'No assets registered.',
+    },
+    'dashboard_sem_orcamentos_resumo': {
+      'pt': 'Nenhum orçamento definido.',
+      'en': 'No budgets defined.',
+    },
+    'dashboard_sem_recorrentes_resumo': {
+      'pt': 'Nenhuma recorrência ativa.',
+      'en': 'No active recurring transactions.',
+    },
+    'dashboard_contas_titulo': {
+      'pt': 'Contas',
+      'en': 'Accounts',
+    },
+    'dashboard_ativos_titulo': {
+      'pt': 'Ativos',
+      'en': 'Assets',
+    },
+    'dashboard_orcamentos_titulo': {
+      'pt': 'Orçamentos',
+      'en': 'Budgets',
+    },
+    'dashboard_recorrentes_titulo': {
+      'pt': 'Recorrentes Ativos',
+      'en': 'Active Recurring',
+    },
+    'dashboard_transacoes_recentes': {
+      'pt': 'Transações Recentes',
+      'en': 'Recent Transactions',
+    },
+    'dashboard_financas': {
+      'pt': 'Finanças',
+      'en': 'Finances',
+    },
+    'dashboard_adicionar': {
+      'pt': 'Adicionar',
+      'en': 'Add',
+    },
+    'dashboard_ver_tudo': {
+      'pt': 'Ver Tudo',
+      'en': 'View All',
+    },
+
+    // ═══════ BUDGETS SCREEN (additional keys) ═══════
+    'budgets_titulo': {
+      'pt': 'Orçamento',
+      'en': 'Budget',
+    },
+    'budgets_gasto_mes': {
+      'pt': 'GASTO DO MÊS (CATEGORIAS ORÇADAS)',
+      'en': 'MONTHLY SPENDING (BUDGETED CATEGORIES)',
+    },
+    'budgets_sem_orcamentos': {
+      'pt': 'Nenhum orçamento definido ainda. Toque no + para criar o primeiro.',
+      'en': 'No budgets defined yet. Tap + to create your first one.',
+    },
   };
 
   /// Retorna a string traduzida para a chave fornecida.

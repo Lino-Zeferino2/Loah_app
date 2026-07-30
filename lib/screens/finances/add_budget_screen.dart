@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/utils/transaction_categories.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/theme/app_theme.dart';
@@ -68,11 +69,12 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
   }
 
   Future<void> _submit() async {
+    final loc = AppLocales.of(context);
     final limit = double.tryParse(_limitController.text.trim().replaceAll(',', '.'));
     if (_category == null) return;
 
     if (limit == null || limit <= 0) {
-      setState(() => _limitError = 'Informe um valor válido.');
+      setState(() => _limitError = loc.translate('addBudget_erro_valor'));
       return;
     }
 
@@ -93,13 +95,14 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: $e')),
+          SnackBar(content: Text('${loc.translate('addBudget_erro_salvar')}$e')),
         );
       }
     }
   }
 
   Future<void> _delete() async {
+    final loc = AppLocales.of(context);
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: context.loahColors.cardBackground,
@@ -114,7 +117,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Excluir Orçamento',
+                loc.translate('addBudget_excluir_titulo'),
                 style: Theme.of(sheetContext)
                     .textTheme
                     .titleMedium
@@ -122,7 +125,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Tem certeza? Essa ação não pode ser desfeita.',
+                loc.translate('addBudget_excluir_msg'),
                 style: Theme.of(sheetContext).textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),
@@ -135,7 +138,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Cancelar'),
+                      child: Text(loc.translate('addBudget_cancelar')),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -147,7 +150,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () => Navigator.of(sheetContext).pop(true),
-                      child: const Text('Excluir'),
+                      child: Text(loc.translate('addBudget_excluir_confirmar')),
                     ),
                   ),
                 ],
@@ -164,8 +167,9 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
+        final loc = AppLocales.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao excluir: $e')),
+          SnackBar(content: Text('${loc.translate('addBudget_erro_excluir')}$e')),
         );
       }
     }
@@ -175,19 +179,20 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
   Widget build(BuildContext context) {
     final colors = context.loahColors;
     final isEditing = widget.isEditing;
+    final loc = AppLocales.of(context);
     final available = _availableCategories;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Editar Orçamento' : 'Novo Orçamento')),
+      appBar: AppBar(title: Text(isEditing ? loc.translate('addBudget_editar') : loc.translate('addBudget_novo'))),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const _SectionLabel('CATEGORIA'),
+            _SectionLabel(loc.translate('addBudget_categoria_label')),
             const SizedBox(height: 8),
             if (available.isEmpty && _category == null)
               Text(
-                'Todas as categorias de despesa já têm um orçamento definido.',
+                loc.translate('addBudget_todas_categorias'),
                 style: Theme.of(context).textTheme.bodySmall,
               )
             else
@@ -198,7 +203,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
               ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('LIMITE MENSAL'),
+            _SectionLabel(loc.translate('addBudget_limite_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _limitController,
@@ -225,8 +230,8 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                 child: TextButton.icon(
                   onPressed: _delete,
                   icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-                  label: const Text(
-                    'Excluir Orçamento',
+                  label: Text(
+                    loc.translate('addBudget_excluir'),
                     style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -245,7 +250,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(
-                  isEditing ? 'Salvar Alterações' : 'Criar Orçamento',
+                  isEditing ? loc.translate('addBudget_salvar') : loc.translate('addBudget_criar'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -272,3 +277,4 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
+

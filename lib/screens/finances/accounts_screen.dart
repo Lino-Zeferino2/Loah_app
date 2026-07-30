@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../core/utils/account_balance.dart';
+import '../../core/constants/app_spacing.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/account_balance.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/services/finance_service.dart';
 import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
-import '../../widgets/loah_app_bar_simple.dart';
-import '../../widgets/loah_card.dart';
 import 'add_account_screen.dart';
 import 'widgets/account_card.dart';
 
-/// "Loah - Contas": total balance across every account/wallet, plus the
-/// list of individual accounts, all data from Firebase via [FinanceService].
 class AccountsScreen extends StatefulWidget {
   const AccountsScreen({super.key});
 
@@ -35,100 +33,87 @@ class _AccountsScreenState extends State<AccountsScreen> {
     try {
       final accts = await _financeService.getAllAccounts();
       final txns = await _financeService.getAllTransactions();
-      if (mounted) {
-        setState(() {
-          _accounts = accts;
-          _transactions = txns;
-          _loading = false;
-        });
-      }
+      if (mounted) setState(() { _accounts = accts; _transactions = txns; _loading = false; });
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _addAccount() async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const AddAccountScreen()),
-    );
-    if (result == true) _loadData();
-  }
-
-  Future<void> _editAccount(AccountModel account) async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => AddAccountScreen(existingAccount: account)),
-    );
-    if (result == true) _loadData();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final accounts = _accounts;
-    final transactions = _transactions;
-    final total = AccountBalance.totalOf(accounts, transactions);
+    final colors = context.loahColors;
+    final loc = AppLocales.of(context);
+    final total = AccountBalance.totalOf(_accounts, _transactions);
 
     return Scaffold(
-      appBar: const LoahAppBarSimple(title: 'Contas'),
-      body: SafeArea(
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : RefreshIndicator(
-                onRefresh: _loadData,
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    LoahCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'SALDO TOTAL (TODAS AS CONTAS)',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  letterSpacing: 0.5,
-                                  color: context.textSecondary,
-                                ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            CurrencyFormatter.format(total, context: context),
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.w800),
-                          ),
-                        ],
-                      ),
+      appBar: AppBar(title: Text(loc.translate('accounts_titulo'))),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              child: ListView(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: colors.cardBackground,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: colors.border),
                     ),
-                    const SizedBox(height: 20),
-                    if (accounts.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Center(
-                          child: Text(
-                            'Nenhuma conta cadastrada ainda. Toque no + para adicionar a primeira.',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          loc.translate('accounts_saldo_total'),
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
-                      )
-                    else
-                      for (final account in accounts) ...[
-                        AccountCard(
-                          account: account,
-                          allTransactions: transactions,
-                          onTap: () => _editAccount(account),
+                        const SizedBox(height: 4),
+                        Text(
+                          CurrencyFormatter.format(total, context: context),
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
-                        const SizedBox(height: 10),
                       ],
-                  ],
-                ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  if (_accounts.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      child: Center(
+                        child: Text(
+                          loc.translate('accounts_sem_contas'),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    )
+                  else
+                    for (final a in _accounts) ...[
+                    AccountCard(
+                      account: a,
+                      allTransactions: _transactions,
+                      onTap: () {} // TODO: navigate to account detail
+                    ),
+                      const SizedBox(height: AppSpacing.sm),
+                    ],
+                ],
               ),
-      ),
+            ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: colors.accentBlue,
         heroTag: 'accounts_fab',
-        onPressed: _addAccount,
+        onPressed: () async {
+          final result = await Navigator.of(context).push<bool>(
+            MaterialPageRoute(builder: (_) => const AddAccountScreen()),
+          );
+          if (result == true) _loadData();
+        },
         child: const Icon(Icons.add),
       ),
     );
   }
 }
+

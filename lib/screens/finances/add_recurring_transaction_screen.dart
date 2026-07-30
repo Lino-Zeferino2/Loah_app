@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/utils/transaction_categories.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/theme/app_theme.dart';
@@ -78,16 +79,17 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
   }
 
   Future<void> _submit() async {
+    final loc = AppLocales.of(context);
     final title = _titleController.text.trim();
     final amount = double.tryParse(_amountController.text.trim().replaceAll(',', '.'));
 
     var hasError = false;
     if (title.isEmpty) {
-      setState(() => _titleError = 'Dê um nome para a recorrência.');
+      setState(() => _titleError = loc.translate('addRec_nome_erro'));
       hasError = true;
     }
     if (amount == null || amount <= 0) {
-      setState(() => _amountError = 'Informe um valor válido.');
+      setState(() => _amountError = loc.translate('addRec_valor_erro'));
       hasError = true;
     }
     if (hasError) return;
@@ -115,13 +117,14 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: $e')),
+          SnackBar(content: Text('${loc.translate('addRec_erro_salvar')}$e')),
         );
       }
     }
   }
 
   Future<void> _delete() async {
+    final loc = AppLocales.of(context);
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: context.loahColors.cardBackground,
@@ -136,7 +139,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Excluir Recorrência',
+                loc.translate('addRec_excluir_titulo'),
                 style: Theme.of(sheetContext)
                     .textTheme
                     .titleMedium
@@ -144,7 +147,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
               ),
               const SizedBox(height: 8),
               Text(
-                'As transações já geradas por ela não serão apagadas. Tem certeza?',
+                loc.translate('addRec_excluir_msg'),
                 style: Theme.of(sheetContext).textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),
@@ -157,7 +160,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Cancelar'),
+                      child: Text(loc.translate('addRec_cancelar')),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -169,7 +172,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () => Navigator.of(sheetContext).pop(true),
-                      child: const Text('Excluir'),
+                      child: Text(loc.translate('addRec_excluir_confirmar')),
                     ),
                   ),
                 ],
@@ -186,8 +189,9 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
+        final loc = AppLocales.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao excluir: $e')),
+          SnackBar(content: Text('${loc.translate('addRec_erro_excluir')}$e')),
         );
       }
     }
@@ -197,27 +201,28 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
   Widget build(BuildContext context) {
     final colors = context.loahColors;
     final isEditing = widget.isEditing;
+    final loc = AppLocales.of(context);
     final categories = TransactionCategories.forType(_type);
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Editar Recorrência' : 'Nova Recorrência')),
+      appBar: AppBar(title: Text(isEditing ? loc.translate('addRec_editar') : loc.translate('addRec_novo'))),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const _SectionLabel('TIPO'),
+            _SectionLabel(loc.translate('addRec_tipo_label')),
             const SizedBox(height: 8),
             ChipSelector<TransactionType>(
-              options: const [
-                ChipOption('Despesa', TransactionType.expense),
-                ChipOption('Receita', TransactionType.income),
+              options: [
+                ChipOption(loc.translate('addRec_tipo_despesa'), TransactionType.expense),
+                ChipOption(loc.translate('addRec_tipo_receita'), TransactionType.income),
               ],
               selected: _type,
               onChanged: _onTypeChanged,
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('NOME'),
+            _SectionLabel(loc.translate('addRec_nome_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
@@ -225,7 +230,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
                 if (_titleError != null) setState(() => _titleError = null);
               },
               decoration: InputDecoration(
-                hintText: 'Ex: Netflix',
+                hintText: loc.translate('addRec_nome_hint'),
                 errorText: _titleError,
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
@@ -237,7 +242,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('VALOR'),
+            _SectionLabel(loc.translate('addRec_valor_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _amountController,
@@ -259,7 +264,7 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('CATEGORIA'),
+            _SectionLabel(loc.translate('addRec_categoria_label')),
             const SizedBox(height: 8),
             ChipSelector<String>(
               options: [for (final c in categories) ChipOption(c, c)],
@@ -268,11 +273,11 @@ class _AddRecurringTransactionScreenState extends State<AddRecurringTransactionS
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('CONTA'),
+            _SectionLabel(loc.translate('addRec_conta_label')),
             const SizedBox(height: 8),
-if (_accounts.isEmpty)
+            if (_accounts.isEmpty)
               Text(
-                'Nenhuma conta cadastrada — crie uma na tela de Contas primeiro.',
+              loc.translate('addRec_conta_vazia'),
                 style: Theme.of(context).textTheme.bodySmall,
               )
             else
@@ -283,7 +288,7 @@ if (_accounts.isEmpty)
               ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('DIA DO MÊS'),
+            _SectionLabel(loc.translate('addRec_dia_label')),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -319,11 +324,11 @@ if (_accounts.isEmpty)
 
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Ativa'),
+              title: Text(loc.translate('addRec_ativa_label')),
               subtitle: Text(
                 _active
-                    ? 'Gera a transação automaticamente todo mês.'
-                    : 'Pausada — não gera transações até ser reativada.',
+                    ? loc.translate('addRec_ativa_sub_on')
+                    : loc.translate('addRec_ativa_sub_off'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               value: _active,
@@ -337,8 +342,8 @@ if (_accounts.isEmpty)
                 child: TextButton.icon(
                   onPressed: _delete,
                   icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-                  label: const Text(
-                    'Excluir Recorrência',
+                  label: Text(
+                    loc.translate('addRec_excluir'),
                     style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -357,7 +362,7 @@ if (_accounts.isEmpty)
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(
-                  isEditing ? 'Salvar Alterações' : 'Criar Recorrência',
+                  isEditing ? loc.translate('addRec_salvar') : loc.translate('addRec_criar'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -384,3 +389,4 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
+

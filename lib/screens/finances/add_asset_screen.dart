@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/utils/asset_visuals.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/theme/app_theme.dart';
@@ -52,16 +53,17 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
   }
 
   Future<void> _submit() async {
+    final loc = AppLocales.of(context);
     final name = _nameController.text.trim();
     final value = _parseValue();
 
     var hasError = false;
     if (name.isEmpty) {
-      setState(() => _nameError = 'Dê um nome para o ativo.');
+      setState(() => _nameError = loc.translate('addAsset_nome_erro'));
       hasError = true;
     }
     if (value == null || value < 0) {
-      setState(() => _valueError = 'Informe um valor válido.');
+      setState(() => _valueError = loc.translate('addAsset_valor_erro'));
       hasError = true;
     }
     if (hasError) return;
@@ -86,13 +88,14 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: $e')),
+          SnackBar(content: Text('${loc.translate('addAsset_erro_salvar')}$e')),
         );
       }
     }
   }
 
   Future<void> _delete() async {
+    final loc = AppLocales.of(context);
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: context.loahColors.cardBackground,
@@ -107,7 +110,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Excluir Ativo',
+                loc.translate('addAsset_excluir_titulo'),
                 style: Theme.of(sheetContext)
                     .textTheme
                     .titleMedium
@@ -115,7 +118,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Tem certeza? Essa ação não pode ser desfeita.',
+                loc.translate('addAsset_excluir_msg'),
                 style: Theme.of(sheetContext).textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),
@@ -128,7 +131,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Cancelar'),
+                      child: Text(loc.translate('addAsset_cancelar')),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -140,7 +143,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () => Navigator.of(sheetContext).pop(true),
-                      child: const Text('Excluir'),
+                      child: Text(loc.translate('addAsset_excluir_confirmar')),
                     ),
                   ),
                 ],
@@ -157,8 +160,9 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
+        final loc = AppLocales.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao excluir: $e')),
+          SnackBar(content: Text('${loc.translate('addAsset_erro_excluir')}$e')),
         );
       }
     }
@@ -168,14 +172,15 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
   Widget build(BuildContext context) {
     final colors = context.loahColors;
     final isEditing = widget.isEditing;
+    final loc = AppLocales.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Editar Ativo' : 'Novo Ativo')),
+      appBar: AppBar(title: Text(isEditing ? loc.translate('addAsset_editar') : loc.translate('addAsset_novo'))),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const _SectionLabel('NOME'),
+            _SectionLabel(loc.translate('addAsset_nome_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
@@ -183,7 +188,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                 if (_nameError != null) setState(() => _nameError = null);
               },
               decoration: InputDecoration(
-                hintText: 'Ex: Carteira B3',
+                hintText: loc.translate('addAsset_nome_hint'),
                 errorText: _nameError,
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
@@ -195,7 +200,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('TIPO'),
+            _SectionLabel(loc.translate('addAsset_tipo_label')),
             const SizedBox(height: 8),
             ChipSelector<AssetType>(
               options: [for (final t in AssetType.values) ChipOption(t.label, t)],
@@ -204,7 +209,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('VALOR ATUAL'),
+            _SectionLabel(loc.translate('addAsset_valor_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _valueController,
@@ -226,13 +231,13 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('NOTAS (OPCIONAL)'),
+            _SectionLabel(loc.translate('addAsset_notas_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _notesController,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: 'Ex: PETR4, VALE3 — ou detalhes do imóvel...',
+                hintText: loc.translate('addAsset_notas_hint'),
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
                 border: OutlineInputBorder(
@@ -248,8 +253,8 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                 child: TextButton.icon(
                   onPressed: _delete,
                   icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-                  label: const Text(
-                    'Excluir Ativo',
+                  label: Text(
+                    loc.translate('addAsset_excluir'),
                     style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -268,7 +273,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(
-                  isEditing ? 'Salvar Alterações' : 'Adicionar Ativo',
+                  isEditing ? loc.translate('addAsset_salvar') : loc.translate('addAsset_adicionar'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -295,3 +300,4 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
+

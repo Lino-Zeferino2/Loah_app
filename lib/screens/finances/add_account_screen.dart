@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/utils/account_visuals.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/theme/app_theme.dart';
@@ -42,9 +43,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   }
 
   Future<void> _submit() async {
+    final loc = AppLocales.of(context);
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _nameError = 'Dê um nome para a conta.');
+      setState(() => _nameError = loc.translate('addAcc_nome_erro'));
       return;
     }
     final initialBalance =
@@ -68,13 +70,14 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: $e')),
+          SnackBar(content: Text('${loc.translate('addAcc_erro_salvar')}$e')),
         );
       }
     }
   }
 
   Future<void> _delete() async {
+    final loc = AppLocales.of(context);
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: context.loahColors.cardBackground,
@@ -89,7 +92,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Excluir Conta',
+                loc.translate('addAcc_excluir_titulo'),
                 style: Theme.of(sheetContext)
                     .textTheme
                     .titleMedium
@@ -97,8 +100,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'As transações já lançadas nessa conta não serão apagadas, '
-                'mas ficarão sem conta vinculada. Tem certeza?',
+                loc.translate('addAcc_excluir_msg'),
                 style: Theme.of(sheetContext).textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),
@@ -111,7 +113,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Cancelar'),
+                      child: Text(loc.translate('addAcc_cancelar')),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -123,7 +125,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () => Navigator.of(sheetContext).pop(true),
-                      child: const Text('Excluir'),
+                      child: Text(loc.translate('addAcc_excluir_confirmar')),
                     ),
                   ),
                 ],
@@ -140,8 +142,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
+        final loc = AppLocales.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao excluir: $e')),
+          SnackBar(content: Text('${loc.translate('addAcc_erro_excluir')}$e')),
         );
       }
     }
@@ -151,14 +154,15 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   Widget build(BuildContext context) {
     final colors = context.loahColors;
     final isEditing = widget.isEditing;
+    final loc = AppLocales.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Editar Conta' : 'Nova Conta')),
+      appBar: AppBar(title: Text(isEditing ? loc.translate('addAcc_editar') : loc.translate('addAcc_novo'))),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const _SectionLabel('NOME'),
+            _SectionLabel(loc.translate('addAcc_nome_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
@@ -166,7 +170,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 if (_nameError != null) setState(() => _nameError = null);
               },
               decoration: InputDecoration(
-                hintText: 'Ex: Cartão Nubank',
+                hintText: loc.translate('addAcc_nome_hint'),
                 errorText: _nameError,
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
@@ -178,7 +182,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('TIPO'),
+            _SectionLabel(loc.translate('addAcc_tipo_label')),
             const SizedBox(height: 8),
             ChipSelector<AccountType>(
               options: [for (final t in AccountType.values) ChipOption(t.label, t)],
@@ -187,7 +191,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
             ),
             const SizedBox(height: 20),
 
-            const _SectionLabel('SALDO INICIAL'),
+            _SectionLabel(loc.translate('addAcc_saldo_label')),
             const SizedBox(height: 8),
             TextField(
               controller: _initialBalanceController,
@@ -195,7 +199,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               decoration: InputDecoration(
                 prefixText: '${CurrencyFormatter.symbol(context: context)} ',
                 hintText: '0,00',
-                helperText: 'O saldo antes de qualquer transação lançada no app.',
+                helperText: loc.translate('addAcc_saldo_helper'),
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
                 border: OutlineInputBorder(
@@ -211,8 +215,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 child: TextButton.icon(
                   onPressed: _delete,
                   icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-                  label: const Text(
-                    'Excluir Conta',
+                  label: Text(
+                    loc.translate('addAcc_excluir'),
                     style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -231,7 +235,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(
-                  isEditing ? 'Salvar Alterações' : 'Adicionar Conta',
+                  isEditing ? loc.translate('addAcc_salvar') : loc.translate('addAcc_adicionar'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),

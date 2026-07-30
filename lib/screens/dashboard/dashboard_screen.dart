@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/navigation/navigation_controller.dart';
 import '../../core/services/auth_service.dart';
@@ -255,9 +256,10 @@ Future<bool> _loadFinanceData() async {
     );
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     final nav = LoahNavigationController.of(context);
+    final loc = AppLocales.of(context);
     final notificationCount = _unreadCount;
 
     return Scaffold(
@@ -270,8 +272,8 @@ Future<bool> _loadFinanceData() async {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              IconButton(
-                tooltip: 'Notificações',
+IconButton(
+                tooltip: loc.translate('common_notificacoes'),
                 onPressed: _openNotifications,
                 icon: const Icon(Icons.notifications_none_rounded),
               ),
@@ -307,16 +309,16 @@ Future<bool> _loadFinanceData() async {
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              Text(
-                'Olá, ${AuthService().currentUser?.displayName?.split(' ').first ?? 'Utilizador'}',
+Text(
+                loc.translate('dashboard_ola').replaceAll('%s', AuthService().currentUser?.displayName?.split(' ').first ?? 'Utilizador'),
                 style: Theme.of(context)
                     .textTheme
                     .headlineSmall
                     ?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 4),
-              Text(
-                'Seu cérebro auxiliar está pronto. Aqui está o resumo de hoje.',
+Text(
+                loc.translate('dashboard_subtitulo'),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.xl),

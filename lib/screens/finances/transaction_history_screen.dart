@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/utils/transaction_filters.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
@@ -106,8 +107,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       );
     } catch (e) {
       if (mounted) {
+        final loc = AppLocales.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao exportar: $e')),
+          SnackBar(content: Text('${loc.translate('txnHistory_erro_exportar')}$e')),
         );
       }
     }
@@ -116,16 +118,17 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    final loc = AppLocales.of(context);
     final grouped = _grouped;
     final months = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return Scaffold(
       appBar: LoahAppBarSimple(
-        title: 'Histórico',
+        title: loc.translate('txnHistory_titulo'),
         actions: [
           IconButton(
             onPressed: _exportCsv,
-            tooltip: 'Exportar CSV',
+            tooltip: loc.translate('txnHistory_exportar'),
             icon: Icon(Icons.file_download_outlined, color: context.loahColors.accentBlue),
           ),
         ],
@@ -141,7 +144,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     child: TextField(
                       onChanged: (v) => setState(() => _query = v),
                       decoration: InputDecoration(
-                        hintText: 'Buscar transações...',
+                        hintText: loc.translate('txnHistory_buscar'),
                         prefixIcon: const Icon(Icons.search, size: 20),
                         filled: true,
                         fillColor: colors.cardBackgroundAlt,
@@ -194,7 +197,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
               child: months.isEmpty
                   ? Center(
                       child: Text(
-                        'Nenhuma transação encontrada.',
+                        loc.translate('txnHistory_sem_resultados'),
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     )
