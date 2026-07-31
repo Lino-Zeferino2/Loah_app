@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/utils/transaction_filters.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/account_model.dart';
@@ -30,6 +31,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    final loc = AppLocales.of(context);
     final maxHeight = MediaQuery.of(context).size.height * 0.85;
 
     return SafeArea(
@@ -45,7 +47,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Filtrar Transações',
+                    loc.translate('txnFilter_titulo'),
                     style: Theme.of(context)
                         .textTheme
                         .titleMedium
@@ -58,7 +60,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                         _categories = {};
                         _accountIds = {};
                       }),
-                      child: const Text('Limpar'),
+                      child: Text(loc.translate('txnFilter_limpar')),
                     ),
                 ],
               ),
@@ -71,7 +73,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                   children: [
                     const SizedBox(height: 8),
                     Text(
-                      'TIPO',
+                      loc.translate('txnFilter_tipo'),
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             letterSpacing: 0.5,
                             color: context.textSecondary,
@@ -82,17 +84,17 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                       spacing: 8,
                       children: [
                         ChoiceChip(
-                          label: const Text('Todas'),
+                          label: Text(loc.translate('txnFilter_todas')),
                           selected: _type == null,
                           onSelected: (_) => setState(() => _type = null),
                         ),
                         ChoiceChip(
-                          label: const Text('Receitas'),
+                          label: Text(loc.translate('txnFilter_receitas')),
                           selected: _type == TransactionType.income,
                           onSelected: (_) => setState(() => _type = TransactionType.income),
                         ),
                         ChoiceChip(
-                          label: const Text('Despesas'),
+                          label: Text(loc.translate('txnFilter_despesas')),
                           selected: _type == TransactionType.expense,
                           onSelected: (_) => setState(() => _type = TransactionType.expense),
                         ),
@@ -100,7 +102,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'CATEGORIA',
+                      loc.translate('txnFilter_categoria'),
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             letterSpacing: 0.5,
                             color: context.textSecondary,
@@ -113,7 +115,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                       children: [
                         for (final category in widget.availableCategories)
                           FilterChip(
-                            label: Text(category),
+                            label: Text(loc.translateCategory(category)),
                             selected: _categories.contains(category),
                             onSelected: (selected) => setState(() {
                               if (selected) {
@@ -130,7 +132,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'CONTA',
+                      loc.translate('txnFilter_conta'),
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             letterSpacing: 0.5,
                             color: context.textSecondary,
@@ -176,7 +178,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Aplicar Filtros', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
+                  child: Text(loc.translate('txnFilter_aplicar'), style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
                 ),
               ),
             ),

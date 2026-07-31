@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/utils/finance_summary.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
@@ -49,8 +50,9 @@ class _ExpenseDistributionDetailScreenState extends State<ExpenseDistributionDet
     final changePercent = FinanceSummary.monthlyExpenseChangePercent(transactions);
     final distribution = FinanceSummary.expenseDistribution(transactions);
 
+    final loc = AppLocales.of(context);
     return Scaffold(
-      appBar: const LoahAppBarSimple(title: 'Distribuição de Gastos'),
+      appBar: LoahAppBarSimple(title: loc.translate('expDist_titulo')),
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())
@@ -64,7 +66,7 @@ class _ExpenseDistributionDetailScreenState extends State<ExpenseDistributionDet
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'TOTAL GASTO (ESTE MÊS)',
+                    loc.translate('expDist_total_gasto_label'),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           letterSpacing: 0.5,
                           color: context.textSecondary,
@@ -90,7 +92,7 @@ class _ExpenseDistributionDetailScreenState extends State<ExpenseDistributionDet
                         const SizedBox(width: 4),
                         Text(
                           '${changePercent.abs().toStringAsFixed(0)}% '
-                          '${changePercent >= 0 ? 'a mais' : 'a menos'} que o mês passado',
+                          '${changePercent >= 0 ? loc.translate('expDist_mais') : loc.translate('expDist_menos')} ${loc.translate('expDist_que_mes_passado')}',
                           style: TextStyle(
                             color: changePercent >= 0 ? colors.negative : colors.positive,
                             fontWeight: FontWeight.w600,
@@ -108,7 +110,7 @@ class _ExpenseDistributionDetailScreenState extends State<ExpenseDistributionDet
             if (distribution.isEmpty)
               LoahCard(
                 child: Text(
-                  'Nenhuma despesa registrada este mês ainda.',
+                  loc.translate('expDist_sem_despesas'),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               )
@@ -123,7 +125,7 @@ class _ExpenseDistributionDetailScreenState extends State<ExpenseDistributionDet
                         centerChild: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('Categorias', style: Theme.of(context).textTheme.bodySmall),
+                            Text(loc.translate('expDist_categorias'), style: Theme.of(context).textTheme.bodySmall),
                             Text(
                               '${distribution.length}',
                               style: Theme.of(context)
@@ -164,7 +166,7 @@ class _ExpenseDistributionDetailScreenState extends State<ExpenseDistributionDet
               ),
               const SizedBox(height: 20),
               Text(
-                'Detalhamento por Categoria',
+                loc.translate('expDist_detalhamento'),
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium

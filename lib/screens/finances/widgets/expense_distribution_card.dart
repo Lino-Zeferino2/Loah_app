@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../models/transaction_model.dart';
@@ -22,25 +23,26 @@ class ExpenseDistributionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = categories.fold<double>(0, (sum, c) => sum + c.amount);
+    final loc = AppLocales.of(context);
     return LoahCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionHeader(
-            title: 'Distribuição de Gastos',
+            title: loc.translate('expDist_titulo'),
             trailing: GestureDetector(
               onTap: onDetails,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('DETALHES', style: Theme.of(context).textTheme.labelSmall),
+                  Text(loc.translate('expDist_detalhes'), style: Theme.of(context).textTheme.labelSmall),
                   const Icon(Icons.chevron_right, size: 16),
                 ],
               ),
             ),
           ),
           Text(
-            'Este mês vs. Anterior',
+            loc.translate('expDist_mes_vs_anterior'),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 18),
@@ -63,7 +65,7 @@ class ExpenseDistributionCard extends StatelessWidget {
                         .titleMedium
                         ?.copyWith(fontWeight: FontWeight.w700),
                   ),
-                  Text('gasto total', style: Theme.of(context).textTheme.bodySmall),
+                  Text(loc.translate('expDist_gasto_total'), style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
             ),

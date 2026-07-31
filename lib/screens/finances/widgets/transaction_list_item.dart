@@ -41,7 +41,7 @@ class TransactionListItem extends StatelessWidget {
                 Text(transaction.title,
                     style: const TextStyle(fontWeight: FontWeight.w600)),
                 Text(
-                  '${transaction.relativeDateLabel} • ${loc.translateCategory(transaction.category)}',
+                  '${loc.translateRelativeDate(transaction)} • ${loc.translateCategory(transaction.category)}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

@@ -3,6 +3,7 @@ import 'locale_controller.dart';
 import '../../models/task_model.dart';
 import '../../models/account_model.dart';
 import '../../models/asset_model.dart';
+import '../../models/transaction_model.dart';
 
 /// Classe de tradução centralizada para a app Loah.
 /// Suporta português (pt) e inglês (en) com fallback para português.
@@ -1726,9 +1727,13 @@ class AppLocales {
       'pt': 'min',
       'en': 'min',
     },
+    'relative_hoje': {
+      'pt': 'Hoje',
+      'en': 'Today',
+    },
     'relative_ontem': {
-      'pt': 'ontem',
-      'en': 'yesterday',
+      'pt': 'Ontem',
+      'en': 'Yesterday',
     },
     'relative_dias': {
       'pt': 'dias',
@@ -2175,6 +2180,44 @@ class AppLocales {
       'en': 'Error exporting PDF: ',
     },
 
+    // ═══════ TRANSACTION FILTER SHEET ═══════
+    'txnFilter_titulo': {
+      'pt': 'Filtrar Transações',
+      'en': 'Filter Transactions',
+    },
+    'txnFilter_limpar': {
+      'pt': 'Limpar',
+      'en': 'Clear',
+    },
+    'txnFilter_tipo': {
+      'pt': 'TIPO',
+      'en': 'TYPE',
+    },
+    'txnFilter_todas': {
+      'pt': 'Todas',
+      'en': 'All',
+    },
+    'txnFilter_receitas': {
+      'pt': 'Receitas',
+      'en': 'Income',
+    },
+    'txnFilter_despesas': {
+      'pt': 'Despesas',
+      'en': 'Expenses',
+    },
+    'txnFilter_categoria': {
+      'pt': 'CATEGORIA',
+      'en': 'CATEGORY',
+    },
+    'txnFilter_conta': {
+      'pt': 'CONTA',
+      'en': 'ACCOUNT',
+    },
+    'txnFilter_aplicar': {
+      'pt': 'Aplicar Filtros',
+      'en': 'Apply Filters',
+    },
+
     // ═══════ TRANSACTION HISTORY ═══════
     'txnHistory_titulo': {
       'pt': 'Histórico',
@@ -2317,6 +2360,32 @@ class AppLocales {
     // Se a chave não foi encontrada, translate() retorna a própria chave.
     // Nesse caso devolvemos a categoria original (em pt) como fallback.
     return translation == key ? category : translation;
+  }
+
+  /// Traduz o rótulo relativo de uma transação (ex: "Hoje, 14:20",
+  /// "Ontem, 09:00", ou "02 Mai" para datas mais antigas) para o idioma
+  /// atualmente selecionado.
+  String translateRelativeDate(TransactionModel transaction) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(
+      transaction.date.year,
+      transaction.date.month,
+      transaction.date.day,
+    );
+    final diff = today.difference(day).inDays;
+
+    final hm = '${transaction.date.hour.toString().padLeft(2, '0')}:'
+        '${transaction.date.minute.toString().padLeft(2, '0')}';
+
+    if (diff == 0) return '${translate('relative_hoje')}, $hm';
+    if (diff == 1) return '${translate('relative_ontem')}, $hm';
+    final monthAbbrev = [
+      'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
+    ];
+    return '${transaction.date.day.toString().padLeft(2, '0')} '
+        '${translate('mes_${monthAbbrev[transaction.date.month - 1].toLowerCase()}')}';
   }
 
   /// Traduz a prioridade de uma tarefa (TaskPriority) para o idioma

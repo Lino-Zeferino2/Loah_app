@@ -31,10 +31,23 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   String _query = '';
   TransactionFilters _filters = const TransactionFilters();
 
-  static const _monthFull = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-  ];
+  List<String> _monthFull(BuildContext context) {
+    final loc = AppLocales.of(context);
+    return [
+      loc.translate('mes_full_janeiro'),
+      loc.translate('mes_full_fevereiro'),
+      loc.translate('mes_full_marco'),
+      loc.translate('mes_full_abril'),
+      loc.translate('mes_full_maio'),
+      loc.translate('mes_full_junho'),
+      loc.translate('mes_full_julho'),
+      loc.translate('mes_full_agosto'),
+      loc.translate('mes_full_setembro'),
+      loc.translate('mes_full_outubro'),
+      loc.translate('mes_full_novembro'),
+      loc.translate('mes_full_dezembro'),
+    ];
+  }
 
   @override
   void initState() {
@@ -206,7 +219,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                       children: [
                         for (final month in months) ...[
                           _MonthHeader(
-                            label: '${_monthFull[month.month - 1]} ${month.year}',
+                            label: '${_monthFull(context)[month.month - 1]} ${month.year}',
                             transactions: grouped[month]!,
                           ),
                           const SizedBox(height: 10),
