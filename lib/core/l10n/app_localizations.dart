@@ -1886,6 +1886,32 @@ class AppLocales {
       'en': 'No accounts yet. Tap + to add your first one.',
     },
 
+    // ═══════ ACCOUNT DETAIL SCREEN ═══════
+    'accountDetail_saldo_atual': {
+      'pt': 'SALDO ATUAL',
+      'en': 'CURRENT BALANCE',
+    },
+    'accountDetail_saldo_inicial': {
+      'pt': 'Saldo Inicial',
+      'en': 'Initial Balance',
+    },
+    'accountDetail_receitas': {
+      'pt': 'Receitas',
+      'en': 'Income',
+    },
+    'accountDetail_despesas': {
+      'pt': 'Despesas',
+      'en': 'Expenses',
+    },
+    'accountDetail_transacoes': {
+      'pt': 'Transações',
+      'en': 'Transactions',
+    },
+    'accountDetail_sem_transacoes': {
+      'pt': 'Nenhuma transação nesta conta ainda. Toque em Adicionar Transação para lançar a primeira.',
+      'en': 'No transactions in this account yet. Tap Add Transaction to add your first one.',
+    },
+
     // ═══════ ADD ASSET SCREEN ═══════
     'addAsset_novo': {
       'pt': 'Novo Ativo',

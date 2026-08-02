@@ -13,7 +13,11 @@ import '../../widgets/chip_selector.dart';
 class AddTransactionScreen extends StatefulWidget {
   final TransactionModel? existingTransaction;
 
-  const AddTransactionScreen({super.key, this.existingTransaction});
+  /// When opening the form from an account detail screen, pre-select
+  /// that account so the new transaction is linked to it by default.
+  final String? preselectedAccountId;
+
+  const AddTransactionScreen({super.key, this.existingTransaction, this.preselectedAccountId});
 
   bool get isEditing => existingTransaction != null;
 
@@ -54,7 +58,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       setState(() {
         _accounts = accts;
         if (_account == null) {
-          final id = widget.existingTransaction?.accountId;
+          final id = widget.existingTransaction?.accountId ?? widget.preselectedAccountId;
           if (id != null) {
             _account = accts.where((a) => a.id == id).firstOrNull;
           }

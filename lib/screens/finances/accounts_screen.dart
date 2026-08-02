@@ -7,6 +7,7 @@ import '../../core/utils/currency_formatter.dart';
 import '../../core/services/finance_service.dart';
 import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
+import 'account_detail_screen.dart';
 import 'add_account_screen.dart';
 import 'widgets/account_card.dart';
 
@@ -95,7 +96,12 @@ class _AccountsScreenState extends State<AccountsScreen> {
                     AccountCard(
                       account: a,
                       allTransactions: _transactions,
-                      onTap: () {} // TODO: navigate to account detail
+                      onTap: () async {
+                        final result = await Navigator.of(context).push<bool>(
+                          MaterialPageRoute(builder: (_) => AccountDetailScreen(account: a)),
+                        );
+                        if (result == true) _loadData();
+                      },
                     ),
                       const SizedBox(height: AppSpacing.sm),
                     ],
