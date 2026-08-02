@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../models/task_model.dart';
 import '../../../widgets/loah_card.dart';
 import '../../../widgets/section_header.dart';
@@ -16,15 +17,16 @@ class PendingTasksCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
     final pendingCount = tasks.where((t) => !t.isDone).length;
     return LoahCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionHeader(
-            title: 'Tarefas Pendentes',
+            title: loc.translate('tasks_pendentes_titulo'),
             trailing: Text(
-              '$pendingCount pendentes',
+              loc.translate('tasks_pendentes_count').replaceAll('%s', '$pendingCount'),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),

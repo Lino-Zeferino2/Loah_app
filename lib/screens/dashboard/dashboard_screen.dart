@@ -290,7 +290,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text(
                 loc.translate('dashboard_ola').replaceAll(
                   '%s',
-                  AuthService().currentUser?.displayName?.split(' ').first ?? 'Utilizador',
+                  AuthService().currentUser?.displayName?.split(' ').first ??
+                      loc.translate('dashboard_utilizador'),
                 ),
                 style: Theme.of(context)
                     .textTheme
@@ -335,7 +336,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
               DailyReflectionCard(
-                quote: _activeReflection?.text ?? 'O que é medido, é gerenciado.',
+                quote: _activeReflection?.text ??
+                    loc.translate('reflection_fallback_quote'),
                 imageUrl: _activeReflection?.imageUrl.isNotEmpty == true
                     ? _activeReflection!.imageUrl
                     : 'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800',

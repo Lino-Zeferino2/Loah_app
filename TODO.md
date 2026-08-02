@@ -1,10 +1,12 @@
-# TODO: Localize remaining transaction labels (categories + relative dates)
+# TODO: Localize Dashboard screen completely (pt/en) ✅
 
 ## Steps
-- [x] 1. Plan approved by user
-- [x] 2. Add `relative_hoje` key and capitalize `relative_ontem` in `app_localizations.dart`
-- [x] 3. Add `translateRelativeDate(TransactionModel)` helper method to `app_localizations.dart`
-- [x] 4. Update `transaction_filter_sheet.dart` to translate category names in filter chips
-- [x] 5. Update `transaction_list_item.dart` to use translated relative date labels
-- [x] 6. Run `flutter analyze` to verify (no issues found)
+- [x] 1. Add/complete translation keys in `app_localizations.dart`
+- [x] 2. Update `balance_card.dart` to use translations
+- [x] 3. Update `pending_tasks_card.dart` to use translations
+- [x] 4. Update `new_item_card.dart` to use translations
+- [x] 5. Update `daily_reflection_card.dart` to use translations
+- [x] 6. Update `new_item_modal_sheet.dart` to use translations
+- [x] 7. Update `dashboard_screen.dart` to use translations
+- [x] 8. Run `flutter analyze` to verify ✅ No issues found!
 

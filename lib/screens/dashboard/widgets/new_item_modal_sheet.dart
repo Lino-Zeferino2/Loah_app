@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../contacts/add_contact_screen.dart';
 import '../../finances/add_asset_screen.dart';
@@ -17,6 +18,7 @@ class NewItemModalSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    final loc = AppLocales.of(context);
 
     return SafeArea(
       child: Padding(
@@ -26,21 +28,21 @@ class NewItemModalSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Criar novo',
+              loc.translate('newItemModal_criar_novo'),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
             ),
             const SizedBox(height: 6),
             Text(
-              'Escolha o tipo de item que você deseja adicionar.',
+              loc.translate('newItemModal_escolha_tipo'),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
 
             _GridItem(
               icon: Icons.track_changes_outlined,
-              title: 'Meta',
+              title: loc.translate('newItemModal_meta'),
               onTap: () async {
                 Navigator.of(context).pop();
                 await Navigator.of(context).push(
@@ -56,7 +58,7 @@ class NewItemModalSheet extends StatelessWidget {
                 Expanded(
                   child: _GridItem(
                     icon: Icons.check_circle_outline,
-                    title: 'Tarefa',
+                    title: loc.translate('newItemModal_tarefa'),
                     onTap: () async {
                       Navigator.of(context).pop();
                       await Navigator.of(context).push(
@@ -70,7 +72,7 @@ class NewItemModalSheet extends StatelessWidget {
                 Expanded(
                   child: _GridItem(
                     icon: Icons.attach_money_outlined,
-                    title: 'Transação',
+                    title: loc.translate('newItemModal_transacao'),
                     onTap: () async {
                       Navigator.of(context).pop();
                       await Navigator.of(context).push(
@@ -89,7 +91,7 @@ class NewItemModalSheet extends StatelessWidget {
                 Expanded(
                   child: _GridItem(
                     icon: Icons.account_balance_wallet_outlined,
-                    title: 'Conta',
+                    title: loc.translate('newItemModal_conta'),
                     onTap: () async {
                       Navigator.of(context).pop();
                       await Navigator.of(context).push(
@@ -103,7 +105,7 @@ class NewItemModalSheet extends StatelessWidget {
                 Expanded(
                   child: _GridItem(
                     icon: Icons.inventory_2_outlined,
-                    title: 'Ativo',
+                    title: loc.translate('newItemModal_ativo'),
                     onTap: () async {
                       Navigator.of(context).pop();
                       await Navigator.of(context).push(
@@ -122,7 +124,7 @@ class NewItemModalSheet extends StatelessWidget {
                 Expanded(
                   child: _GridItem(
                     icon: Icons.receipt_long_outlined,
-                    title: 'Orçamento',
+                    title: loc.translate('newItemModal_orcamento'),
                     onTap: () async {
                       Navigator.of(context).pop();
                       await Navigator.of(context).push(
@@ -136,7 +138,7 @@ class NewItemModalSheet extends StatelessWidget {
                 Expanded(
                   child: _GridItem(
                     icon: Icons.autorenew_outlined,
-                    title: 'Recorrente',
+                    title: loc.translate('newItemModal_recorrente'),
                     onTap: () async {
                       Navigator.of(context).pop();
                       await Navigator.of(context).push(
@@ -154,7 +156,7 @@ class NewItemModalSheet extends StatelessWidget {
 
             _GridItem(
               icon: Icons.contacts_outlined,
-              title: 'Contato',
+              title: loc.translate('newItemModal_contato'),
               onTap: () async {
                 Navigator.of(context).pop();
                 await Navigator.of(context).push(

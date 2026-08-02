@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 
@@ -27,6 +28,7 @@ class BalanceCard extends StatelessWidget {
     final colors = context.loahColors;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final loc = AppLocales.of(context);
     // Usa cor do tema conforme modo (dark/light).
     final backgroundColor =
         isDark ? colors.cardBackgroundAlt : colors.cardBackground;
@@ -60,7 +62,7 @@ class BalanceCard extends StatelessWidget {
                   Icon(Icons.account_balance_wallet_outlined,
                       color:  isDark ? Colors.white70: Colors.black87, size: 16,fontWeight: FontWeight.bold),
                 const  SizedBox(width: 6),
-                  Text('Finanças',
+                  Text(loc.translate('dashboard_financas'),
                       style: TextStyle(color:  isDark ? Colors.white70: Colors.black, fontSize: 14, fontWeight: FontWeight.bold)),
                 ],
               ),
@@ -68,7 +70,7 @@ class BalanceCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-           Text('PATRIMÔNIO TOTAL',
+           Text(loc.translate('dashboard_total_patrimonio'),
               style: TextStyle(
                   color:   isDark ? Colors.white70: Colors.black87,
                   fontSize: 11,
@@ -90,7 +92,10 @@ class BalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '${(progressToGoal * 100).round()}% da meta mensal',
+            loc.translate('dashboard_meta_mensal').replaceAll(
+              '%s',
+              '${(progressToGoal * 100).round()}%',
+            ),
             style:  TextStyle(color:  isDark ? Colors.white70: Colors.black87, fontSize: 11),
           ),
         ],

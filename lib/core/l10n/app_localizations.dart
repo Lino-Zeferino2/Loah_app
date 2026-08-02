@@ -2282,8 +2282,8 @@ class AppLocales {
       'en': 'TOTAL NET WORTH',
     },
     'dashboard_meta_mensal': {
-      'pt': '%s%% da meta mensal',
-      'en': '%s%% of monthly goal',
+      'pt': '%s% da meta mensal',
+      'en': '%s% of monthly goal',
     },
     'dashboard_sem_contas_resumo': {
       'pt': 'Nenhuma conta cadastrada.',
@@ -2332,6 +2332,80 @@ class AppLocales {
     'dashboard_ver_tudo': {
       'pt': 'Ver Tudo',
       'en': 'View All',
+    },
+
+    // ═══════ DASHBOARD WIDGETS (Balance, Tasks, New Item, Reflection, Modal) ═══════
+    'dashboard_utilizador': {
+      'pt': 'Utilizador',
+      'en': 'User',
+    },
+    'reflection_fallback_quote': {
+      'pt': 'O que é medido, é gerenciado.',
+      'en': 'What gets measured, gets managed.',
+    },
+    'tasks_pendentes_titulo': {
+      'pt': 'Tarefas Pendentes',
+      'en': 'Pending Tasks',
+    },
+    'tasks_pendentes_count': {
+      'pt': '%s pendentes',
+      'en': '%s pending',
+    },
+    'newItem_titulo': {
+      'pt': 'Novo Item',
+      'en': 'New Item',
+    },
+    'newItem_descricao': {
+      'pt': 'Adicione uma tarefa, meta ou transação rapidamente.',
+      'en': 'Quickly add a task, goal or transaction.',
+    },
+    'newItem_criar': {
+      'pt': 'Criar',
+      'en': 'Create',
+    },
+    'reflection_do_dia': {
+      'pt': 'REFLEXÃO DO DIA',
+      'en': 'DAILY REFLECTION',
+    },
+    'newItemModal_criar_novo': {
+      'pt': 'Criar novo',
+      'en': 'Create new',
+    },
+    'newItemModal_escolha_tipo': {
+      'pt': 'Escolha o tipo de item que você deseja adicionar.',
+      'en': 'Choose the type of item you want to add.',
+    },
+    'newItemModal_meta': {
+      'pt': 'Meta',
+      'en': 'Goal',
+    },
+    'newItemModal_tarefa': {
+      'pt': 'Tarefa',
+      'en': 'Task',
+    },
+    'newItemModal_transacao': {
+      'pt': 'Transação',
+      'en': 'Transaction',
+    },
+    'newItemModal_conta': {
+      'pt': 'Conta',
+      'en': 'Account',
+    },
+    'newItemModal_ativo': {
+      'pt': 'Ativo',
+      'en': 'Asset',
+    },
+    'newItemModal_orcamento': {
+      'pt': 'Orçamento',
+      'en': 'Budget',
+    },
+    'newItemModal_recorrente': {
+      'pt': 'Recorrente',
+      'en': 'Recurring',
+    },
+    'newItemModal_contato': {
+      'pt': 'Contato',
+      'en': 'Contact',
     },
 
 };

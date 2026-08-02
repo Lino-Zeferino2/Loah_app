@@ -67,6 +67,7 @@ class _ManageReflectionsScreenState extends State<ManageReflectionsScreen> {
     String? oldImageUrl,
   }) async {
     final text = result['text'] as String? ?? '';
+    final textEn = result['textEn'] as String?;
     final imageFile = result['imageFile'] as File?;
     final keepExistingImage = result['keepExistingImage'] as bool? ?? false;
 
@@ -106,6 +107,7 @@ class _ManageReflectionsScreenState extends State<ManageReflectionsScreen> {
         final reflection = ReflectionModel(
           id: existingId,
           text: text,
+          textEn: textEn,
           imageUrl: imageUrl ?? '',
           active: result['active'] as bool? ?? false,
         );
@@ -124,6 +126,7 @@ class _ManageReflectionsScreenState extends State<ManageReflectionsScreen> {
         final reflection = ReflectionModel(
           id: '',
           text: text,
+          textEn: textEn,
           imageUrl: imageUrl ?? '',
           active: false,
         );
@@ -471,6 +474,7 @@ class _AddReflectionSheet extends StatefulWidget {
 
 class _AddReflectionSheetState extends State<_AddReflectionSheet> {
   late final TextEditingController _textController;
+  late final TextEditingController _textEnController;
   File? _imageFile;
   bool _keepExistingImage = false;
   final ImagePicker _picker = ImagePicker();
@@ -483,6 +487,9 @@ class _AddReflectionSheetState extends State<_AddReflectionSheet> {
     _textController = TextEditingController(
       text: widget.existingReflection?.text ?? '',
     );
+    _textEnController = TextEditingController(
+      text: widget.existingReflection?.textEn ?? '',
+    );
     _keepExistingImage =
         widget.existingReflection?.imageUrl.isNotEmpty ?? false;
   }
@@ -490,6 +497,7 @@ class _AddReflectionSheetState extends State<_AddReflectionSheet> {
   @override
   void dispose() {
     _textController.dispose();
+    _textEnController.dispose();
     super.dispose();
   }
 
@@ -510,6 +518,7 @@ class _AddReflectionSheetState extends State<_AddReflectionSheet> {
   void _submit() {
     Navigator.of(context).pop(<String, dynamic>{
       'text': _textController.text.trim(),
+      'textEn': _textEnController.text.trim(),
       'imageFile': _imageFile,
       'keepExistingImage': _keepExistingImage,
       'active': widget.existingReflection?.active ?? false,
@@ -556,7 +565,25 @@ class _AddReflectionSheetState extends State<_AddReflectionSheet> {
               controller: _textController,
               maxLines: 4,
               decoration: InputDecoration(
-                hintText: 'Escreva o texto da reflexão...',
+                hintText: 'Escreva o texto da reflexão (Português)...',
+                labelText: 'Português',
+                filled: true,
+                fillColor: colors.cardBackgroundAlt,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.all(14),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            TextField(
+              controller: _textEnController,
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: 'Enter the reflection text (English)...',
+                labelText: 'English (optional)',
                 filled: true,
                 fillColor: colors.cardBackgroundAlt,
                 border: OutlineInputBorder(

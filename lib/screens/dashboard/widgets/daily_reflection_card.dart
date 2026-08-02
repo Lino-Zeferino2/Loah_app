@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 
 /// "Reflexão do Dia" card with a scenic background photo and a quote,
 /// plus an edit affordance (floating pencil button).
@@ -15,6 +16,7 @@ class DailyReflectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: Stack(
@@ -44,9 +46,9 @@ class DailyReflectionCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'REFLEXÃO DO DIA',
-                  style: TextStyle(
+                Text(
+                  loc.translate('reflection_do_dia'),
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 10,
                     letterSpacing: 0.6,
