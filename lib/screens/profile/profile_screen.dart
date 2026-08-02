@@ -1,10 +1,14 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:loah_app/core/l10n/app_localizations.dart';
+import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
+import 'package:loah_app/screens/auth/login_screen.dart';
 import 'package:loah_app/screens/contacts/widgets/country_code_picker_sheet.dart';
 import 'package:loah_app/widgets/loah_app_bar_simple.dart';
 
@@ -182,7 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _saveProfile() async {
+Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
     if (_uid == null) return;
 
@@ -219,6 +223,140 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  // ─── Exclusão de conta (GDPR/LGPD) ────────────────────────────────
+
+  /// Confirma e executa a exclusão permanente da conta do utilizador.
+  /// Inclui:
+  ///   1. Apagar fotos de perfil no Firebase Storage
+  ///   2. Apagar todos os documentos do Firestore (metas, tarefas, etc.)
+  ///   3. Apagar a conta do Firebase Auth
+  ///   4. Redirecionar para o ecrã de login
+  Future<void> _confirmDeleteAccount() async {
+    final loc = AppLocales.of(context);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    // ── 1. Diálogo de confirmação inicial ─────────────────────────
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 24),
+            const SizedBox(width: 8),
+            Text(loc.translate('deleteAccount_titulo')),
+          ],
+        ),
+        content: Text(loc.translate('deleteAccount_confirmacao_msg')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(loc.translate('common_cancelar')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: Text(loc.translate('deleteAccount_confirmar_btn')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    // ── 2. Se for conta email/senha, pedir reautenticação ────────
+    if (user.email != null && user.providerData.any((p) => p.providerId == 'password')) {
+      final passwordController = TextEditingController();
+      final reauthOk = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Confirme sua senha'),
+          content: TextField(
+            controller: passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Senha atual',
+              hintText: 'Digite sua senha para confirmar',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(loc.translate('common_cancelar')),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+              child: Text(loc.translate('deleteAccount_confirmar_btn')),
+            ),
+          ],
+        ),
+      );
+
+      if (reauthOk != true || !mounted) return;
+
+      try {
+        await AuthService().reauthenticateWithPassword(passwordController.text.trim());
+      } on FirebaseAuthException catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Senha incorreta: ${e.message}')),
+        );
+        return;
+      } finally {
+        passwordController.dispose();
+      }
+    }
+
+    if (!mounted) return;
+
+    // ── 3. Mostrar indicador de exclusão em progresso ────────────
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('A apagar todos os seus dados...')),
+    );
+
+    try {
+      // 3a. Desliga a rede do Firestore para interromper listeners
+      await FirebaseFirestore.instance.disableNetwork();
+
+      // 3b. Apaga fotos do Storage + todos os documentos do Firestore
+      await _userService.deleteUserContent();
+
+      // 3c. Apaga a conta do Firebase Auth
+      await AuthService().deleteAccount();
+
+      // 3d. Sign out do Google (para limpar sessão)
+      await AuthService().signOut();
+
+      if (!mounted) return;
+
+      // 3e. Navega para o login com stack limpo
+      await Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(loc.translate('deleteAccount_sucesso')),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${loc.translate('deleteAccount_erro')} $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      // Reativa a rede do Firestore em caso de erro
+      try {
+        await FirebaseFirestore.instance.enableNetwork();
+      } catch (_) {}
     }
   }
 
@@ -434,6 +572,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                       const SizedBox(height: 32),
+
+// ── Delete Account Button ──
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _confirmDeleteAccount,
+                          icon: const Icon(Icons.delete_forever_outlined, size: 18, color: Colors.redAccent),
+                          label: Text(
+                            AppLocales.of(context).translate('deleteAccount_btn'),
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.redAccent),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                      ),
 
                       // ── Save Button ──
                       SizedBox(

@@ -217,6 +217,32 @@ class AppLocales {
       'en': 'Enter your name',
     },
 
+// ═══════ DELETE ACCOUNT (GDPR/LGPD) ═══════
+    'deleteAccount_btn': {
+      'pt': 'Excluir minha conta',
+      'en': 'Delete my account',
+    },
+    'deleteAccount_titulo': {
+      'pt': 'Excluir Conta',
+      'en': 'Delete Account',
+    },
+    'deleteAccount_confirmacao_msg': {
+      'pt': 'Tem certeza? Esta ação é irreversível. Todos os seus dados (metas, tarefas, transações, contatos, etc.) serão permanentemente apagados.',
+      'en': 'Are you sure? This action is irreversible. All your data (goals, tasks, transactions, contacts, etc.) will be permanently deleted.',
+    },
+    'deleteAccount_confirmar_btn': {
+      'pt': 'Sim, excluir minha conta',
+      'en': 'Yes, delete my account',
+    },
+    'deleteAccount_sucesso': {
+      'pt': 'Conta excluída com sucesso.',
+      'en': 'Account deleted successfully.',
+    },
+    'deleteAccount_erro': {
+      'pt': 'Erro ao excluir conta: ',
+      'en': 'Error deleting account: ',
+    },
+
     // ═══════ COMMON ═══════
     'common_salvar': {
       'pt': 'Salvar',

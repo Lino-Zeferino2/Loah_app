@@ -117,6 +117,47 @@ class AuthService {
     await user.updatePassword(newPassword);
   }
 
+/// Reautentica o utilizador com a senha atual (para contas email/senha).
+  /// Útil antes de operações sensíveis como exclusão de conta.
+  ///
+  /// Lança [FirebaseAuthException] se a senha estiver errada ou se o
+  /// utilizador não tiver email associado.
+  Future<void> reauthenticateWithPassword(String password) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'not-authenticated',
+        message: 'Nenhum utilizador autenticado',
+      );
+    }
+    final email = user.email;
+    if (email == null) {
+      throw FirebaseAuthException(
+        code: 'no-email',
+        message: 'Conta sem email associado (login social)',
+      );
+    }
+    final credential = EmailAuthProvider.credential(
+      email: email,
+      password: password,
+    );
+    await user.reauthenticateWithCredential(credential);
+  }
+
+  /// Apaga a conta do Firebase Auth permanentemente.
+  /// Os dados do utilizador (Firestore, Storage) devem ser apagados
+  /// ANTES de chamar este método, via [UserService.deleteUserContent].
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'not-authenticated',
+        message: 'Nenhum utilizador autenticado',
+      );
+    }
+    await user.delete();
+  }
+
   /// Faz logout.
   Future<void> signOut() async {
     await _googleSignIn.signOut();

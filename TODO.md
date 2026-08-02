@@ -1,10 +1,19 @@
-# TODO — Implement AccountDetailScreen navigation
+# TODO — Implementar "Apagar Conta" (GDPR/LGPD)
 
 ## Steps
 
-- [x] Analyze the task and explore relevant files
-- [x] Confirm plan with user
-- [x] Edit `lib/screens/finances/accounts_screen.dart`:
-  - [x] Add import for `AccountDetailScreen`
-  - [x] Replace empty `onTap` TODO with navigation callback
-- [x] Run `flutter analyze` to validate — **No issues found!**
+- [x] Analisar estrutura de dados (Firestore subcollections, Storage, Auth)
+- [x] Criar plano e obter aprovação do utilizador
+
+### Backend / Serviços
+- [x] `lib/core/services/user_service.dart`: adicionar `deleteUserData()` e `deleteUserContent()`
+- [x] `lib/core/services/auth_service.dart`: adicionar `reauthenticate()` e `deleteAccount()`
+- [x] `functions/index.js`: adicionar trigger `onUserDeleted` para limpar mensagens de suporte
+
+### UI
+- [x] `lib/screens/profile/profile_screen.dart`: botão "Excluir Conta" + confirmação + reautenticação
+- [x] `lib/core/l10n/app_localizations.dart`: traduções pt/en da funcionalidade
+
+### Validação
+- [ ] Correr `flutter analyze` — sem issues
+

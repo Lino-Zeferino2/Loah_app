@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 
 /// Serviço para gerenciar dados do usuário no Firestore.
 class UserService {
@@ -54,5 +56,78 @@ class UserService {
       data['updatedAt'] = FieldValue.serverTimestamp();
       await _usersCollection.doc(uid).update(data);
     }
+  }
+
+  // ─── Exclusão de conta (GDPR/LGPD) ────────────────────────────
+
+  /// Apaga todos os documentos das subcoleções do utilizador e o próprio
+  /// documento em `/users/{uid}`. Subcoleções apagadas: metas, tarefas,
+  /// transações, contas, ativos, orçamentos, recorrentes, contatos,
+  /// notificações e tokens FCM.
+  Future<void> deleteUserData(String uid) async {
+    final userRef = _firestore.collection('users').doc(uid);
+
+    const subcollections = [
+      'goals',
+      'tasks',
+      'transactions',
+      'accounts',
+      'assets',
+      'budgets',
+      'recurringTransactions',
+      'contacts',
+      'notifications',
+      'fcmTokens',
+    ];
+
+    for (final sub in subcollections) {
+      try {
+        final snap = await userRef.collection(sub).get();
+        if (snap.docs.isEmpty) continue;
+        final batch = _firestore.batch();
+        for (final doc in snap.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+      } catch (e) {
+        debugPrint('[UserService] Erro ao apagar coleção "$sub": $e');
+      }
+    }
+
+    // Apaga o documento do utilizador.
+    await userRef.delete();
+  }
+
+  /// Apaga as fotos de perfil do utilizador no Firebase Storage.
+  Future<void> _deleteProfilePhotos(String uid) async {
+    try {
+      final storageRef = FirebaseStorage.instance.ref('profilePhotos/$uid');
+      final result = await storageRef.listAll();
+      for (final item in result.items) {
+        await item.delete();
+      }
+      for (final prefix in result.prefixes) {
+        final nested = await prefix.listAll();
+        for (final item in nested.items) {
+          await item.delete();
+        }
+      }
+    } catch (e) {
+      debugPrint('[UserService] Erro ao apagar fotos de perfil: $e');
+    }
+  }
+
+  /// Apaga todo o conteúdo do utilizador (fotos no Storage + dados no
+  /// Firestore), mantendo a sessão do Firebase Auth ainda ativa.
+  ///
+  /// A conta do Firebase Auth deve ser apagada depois, via
+  /// `AuthService().deleteAccount()`.
+  Future<void> deleteUserContent() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('Nenhum utilizador autenticado');
+    }
+    await _deleteProfilePhotos(user.uid);
+    await deleteUserData(user.uid);
   }
 }
