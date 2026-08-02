@@ -336,7 +336,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
               DailyReflectionCard(
-                quote: _activeReflection?.text ??
+                quote: _activeReflection?.localizedText(loc.languageCode) ??
                     loc.translate('reflection_fallback_quote'),
                 imageUrl: _activeReflection?.imageUrl.isNotEmpty == true
                     ? _activeReflection!.imageUrl
