@@ -733,7 +733,7 @@ class _LoahDrawerState extends State<LoahDrawer> {
 
                     Center(
                       child: Text(
-                        'Loah v2.4.0 • Made with Precision',
+                        'Loah v1.0.0 • Made by Lino Zeferino',
                         style: TextStyle(
                           fontSize: 10.5,
                           color: context.textSecondary,

@@ -117,7 +117,15 @@ class AuthService {
     await user.updatePassword(newPassword);
   }
 
-/// Reautentica o utilizador com a senha atual (para contas email/senha).
+/// Envia email de verificacao para o usuario atual.
+  Future<void> sendEmailVerification() async {
+    final user = _auth.currentUser;
+    if (user != null && !user.emailVerified) {
+      await user.sendEmailVerification();
+    }
+  }
+
+  /// Reautentica o utilizador com a senha atual (para contas email/senha).
   /// Útil antes de operações sensíveis como exclusão de conta.
   ///
   /// Lança [FirebaseAuthException] se a senha estiver errada ou se o

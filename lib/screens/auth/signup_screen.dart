@@ -4,7 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
-import 'package:loah_app/screens/onboarding/onboarding_screen.dart';
+import 'package:loah_app/screens/auth/email_verification_screen.dart';
 import 'package:loah_app/screens/contacts/widgets/country_code_picker_sheet.dart';
 import 'package:loah_app/screens/support/terms_privacy_screen.dart';
 import 'widgets/wave_lines/wave_card_header.dart';
@@ -125,8 +125,16 @@ class _SignupScreenState extends State<SignupScreen> {
 
 if (!mounted) return;
 
+      // Envia email de verificação e redireciona para a tela de verificação
+      await _authService.sendEmailVerification();
+      if (!mounted) return;
+
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+        MaterialPageRoute(
+          builder: (_) => EmailVerificationScreen(
+            email: _emailController.text.trim(),
+          ),
+        ),
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {
@@ -201,7 +209,11 @@ if (!mounted) return;
         );
 if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+          MaterialPageRoute(
+            builder: (_) => EmailVerificationScreen(
+              email: user.email ?? '',
+            ),
+          ),
           (route) => false,
         );
       }
@@ -258,7 +270,11 @@ if (!mounted) return;
         );
 if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+          MaterialPageRoute(
+            builder: (_) => EmailVerificationScreen(
+              email: user.email ?? '',
+            ),
+          ),
           (route) => false,
         );
       }

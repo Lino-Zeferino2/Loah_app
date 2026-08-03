@@ -596,7 +596,7 @@ Future<void> _saveProfile() async {
                           ),
                         ),
                       ),
-
+                    const SizedBox(height: 16),
                       // ── Save Button ──
                       SizedBox(
                         width: double.infinity,
