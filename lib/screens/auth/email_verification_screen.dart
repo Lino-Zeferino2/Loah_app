@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
-import 'package:loah_app/main.dart';
 import 'package:loah_app/screens/onboarding/onboarding_screen.dart';
 import 'package:loah_app/screens/auth/login_screen.dart';
 import 'widgets/wave_lines/wave_card_header.dart';
@@ -28,7 +27,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   final AuthService _authService = AuthService();
   bool _isChecking = false;
   bool _isResending = false;
-  bool _emailSent = true;
   Timer? _autoCheckTimer;
 
   @override
@@ -54,7 +52,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     try {
       await _authService.sendEmailVerification();
       if (mounted) {
-        setState(() => _emailSent = true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Email de verificação enviado! Verifique sua caixa de entrada.'),

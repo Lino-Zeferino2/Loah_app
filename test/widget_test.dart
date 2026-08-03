@@ -182,7 +182,7 @@ void main() {
     });
 
     test('copyWith toggles isDone and sets completedAt', () {
-      final task = TaskModel(id: 't3', title: 'Test');
+      const task = TaskModel(id: 't3', title: 'Test');
       final done = task.copyWith(isDone: true);
       expect(done.isDone, isTrue);
       expect(done.completedAt, isNotNull);
@@ -563,15 +563,15 @@ void main() {
   // GoalProgress
   // ─────────────────────────────────────────────────────────────────
   group('GoalProgress', () {
-    final goal = GoalModel(
+    const goal = GoalModel(
       id: 'g1', title: 'Comprar Carro', category: 'Financeiro',
       term: GoalTerm.longoPrazo, current: 2500, target: 10000,
     );
 
     final tasks = [
-      TaskModel(id: 't1', title: 'Task 1', isDone: true, goalId: 'g1'),
-      TaskModel(id: 't2', title: 'Task 2', isDone: false, goalId: 'g1'),
-      TaskModel(id: 't3', title: 'Standalone', isDone: true),
+      const TaskModel(id: 't1', title: 'Task 1', isDone: true, goalId: 'g1'),
+      const TaskModel(id: 't2', title: 'Task 2', isDone: false, goalId: 'g1'),
+      const TaskModel(id: 't3', title: 'Standalone', isDone: true),
     ];
 
     test('manualValue goal uses value progress when no tasks', () {
@@ -589,12 +589,16 @@ void main() {
       expect(linked.length, 2);
     });
 
-    test('taskChecklist goal uses only task progress', () {
-      final checklistGoal = GoalModel(
+test('taskChecklist goal uses only task progress', () {
+      const checklistGoal = GoalModel(
         id: 'g2', title: 'Checklist', category: 'Pessoal',
         term: GoalTerm.curtoPrazo, progressMode: GoalProgressMode.taskChecklist,
       );
-      final progress = GoalProgress.of(checklistGoal, tasks);
+      final checklistTasks = [
+        const TaskModel(id: 't4', title: 'Check 1', isDone: true, goalId: 'g2'),
+        const TaskModel(id: 't5', title: 'Check 2', isDone: false, goalId: 'g2'),
+      ];
+      final progress = GoalProgress.of(checklistGoal, checklistTasks);
       expect(progress, 0.5);
     });
   });
@@ -738,10 +742,10 @@ void main() {
   group('Widgets - LoahCard', () {
     testWidgets('LoahCard renders with child', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
             body: LoahCard(
-              child: const Text('Card Content'),
+              child: Text('Card Content'),
             ),
           ),
         ),
@@ -753,9 +757,9 @@ void main() {
   group('Widgets - SectionHeader', () {
     testWidgets('SectionHeader renders title', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
-            body: const SectionHeader(title: 'My Section'),
+            body: SectionHeader(title: 'My Section'),
           ),
         ),
       );
@@ -803,7 +807,7 @@ void main() {
   group('Widgets - LoahAppBar', () {
     testWidgets('LoahAppBar renders', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
             appBar: LoahAppBar(),
           ),
@@ -816,9 +820,9 @@ void main() {
   group('Widgets - LoahAppBarSimple', () {
     testWidgets('LoahAppBarSimple renders with title', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
-            appBar: const LoahAppBarSimple(title: 'Test Title'),
+            appBar: LoahAppBarSimple(title: 'Test Title'),
           ),
         ),
       );
@@ -829,9 +833,9 @@ void main() {
   group('Widgets - LabeledProgressBar', () {
     testWidgets('LabeledProgressBar renders', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
-            body: const LabeledProgressBar(
+            body: LabeledProgressBar(
               progress: 0.5,
               label: '50%',
             ),
