@@ -86,9 +86,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                 backgroundColor: Colors.green,
               ),
             );
+            // Remove TODAS as rotas da pilha (incluindo Signup/Login) e
+            // abre o Onboarding de forma limpa, sem risco de o usuário
+            // conseguir voltar para a tela de cadastro.
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-              (route) => route.isFirst && route is MaterialPageRoute && route.settings.name == 'login',
+              (route) => false,
             );
           }
           return;
