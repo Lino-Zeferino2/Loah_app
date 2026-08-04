@@ -41,7 +41,9 @@ compileSdk = 36
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String
             keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
+            // Resolve o caminho do keystore a partir da RAIZ do projeto
+            // (key.properties referencia `android/release-keystore.jks`).
+            storeFile = keystoreProperties["storeFile"]?.let { rootProject.file(it) }
             storePassword = keystoreProperties["storePassword"] as String
         }
     }

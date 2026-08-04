@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/l10n/app_localizations.dart';
@@ -136,31 +137,56 @@ static const _relationshipValues = [
   }
 
 
-  Future<void> _submit() async {
+Future<void> _submit() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       setState(() => _nameError = AppLocales.of(context).translate('addContact_nome_erro'));
       return;
     }
 
+    final existing = widget.existingContact;
+    // O ID é gerado antes para podermos usar no caminho do Storage.
+    final contactId = existing?.id ?? 'contact_${DateTime.now().microsecondsSinceEpoch}';
 
     try {
-      final existing = widget.existingContact;
+      final contactService = ContactService();
+
+      // ── Upload da foto selecionada (ficheiro local) para o Storage ──
+      // Se o utilizador escolheu uma imagem nova, `_avatarPath` aponta
+      // para um ficheiro local (ex.: /data/...). Se já existia uma URL
+      // (http/https) ou não há foto, mantém-se como está.
+      String? avatarUrl = _avatarPath;
+      final pickedFile = _avatarPath;
+      if (pickedFile != null &&
+          !pickedFile.startsWith('http://') &&
+          !pickedFile.startsWith('https://')) {
+        avatarUrl = await contactService.uploadAvatar(
+          File(pickedFile),
+          contactId: contactId,
+        );
+
+        // Se o contacto já tinha uma foto antiga no Storage, apaga-a
+        // para não acumular ficheiros órfãos.
+        if (existing?.avatarUrl != null &&
+            existing!.avatarUrl!.startsWith('http')) {
+          await contactService.deleteAvatar(existing.avatarUrl);
+        }
+      }
+
       final contact = ContactModel(
-        id: existing?.id ?? 'contact_${DateTime.now().microsecondsSinceEpoch}',
+        id: contactId,
         name: name,
         email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
         phone: _phoneController.text.trim().isEmpty
             ? null
             : '$_countryDialCode ${_phoneController.text.trim()}',
         relationshipTag: _relationship,
-        avatarUrl: _avatarPath,
+        avatarUrl: avatarUrl,
         isFavorite: existing?.isFavorite ?? false,
         desiredContactFrequencyDays: existing?.desiredContactFrequencyDays,
         interactions: existing?.interactions ?? const [],
       );
 
-      final contactService = ContactService();
       if (existing != null) {
         await contactService.updateContact(contact);
       } else {
@@ -174,8 +200,6 @@ static const _relationshipValues = [
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${AppLocales.of(context).translate('addContact_erro_salvar')}$e')),
       );
-    } finally {
-      if (mounted) {}
     }
   }
 

@@ -82,6 +82,56 @@ class AuthService {
     await _auth.sendPasswordResetEmail(email: email.trim());
   }
 
+  /// Envia email de redefinicao de senha com suporte a deep link.
+  ///
+  /// Ao passar [continueUrl] + [handleCodeInApp], o link no email pode
+  /// abrir diretamente na aplicação (universal link / app link) em vez
+  /// de abrir o browser. Quando `handleCodeInApp` é `true`, o código
+  /// não é consumido automaticamente e a app deve tratar a ação.
+  Future<void> sendPasswordResetEmailWithLink(
+    String email, {
+    String? continueUrl,
+    bool handleCodeInApp = false,
+    String? linkDomain,
+    String? androidPackageName,
+    bool androidInstallApp = true,
+    String? androidMinimumVersion,
+    String? iOSBundleId,
+  }) async {
+    final settings = ActionCodeSettings(
+      url: continueUrl ?? 'https://loahapp.firebaseapp.com',
+      handleCodeInApp: handleCodeInApp,
+      linkDomain: linkDomain,
+      androidPackageName: androidPackageName,
+      androidInstallApp: androidInstallApp,
+      androidMinimumVersion: androidMinimumVersion,
+      iOSBundleId: iOSBundleId,
+    );
+    await _auth.sendPasswordResetEmail(
+      email: email.trim(),
+      actionCodeSettings: settings,
+    );
+  }
+
+  /// Valida o código de ação (oobCode) de redefinição de senha.
+  ///
+  /// Retorna o email associado ao código. Lança [FirebaseAuthException]
+  /// se o código for inválido, expirado, etc.
+  Future<String> verifyPasswordResetCode(String oobCode) async {
+    return await _auth.verifyPasswordResetCode(oobCode);
+  }
+
+  /// Confirma a redefinição de senha usando o código de ação.
+  Future<void> resetPassword({
+    required String oobCode,
+    required String newPassword,
+  }) async {
+    await _auth.confirmPasswordReset(
+      code: oobCode,
+      newPassword: newPassword,
+    );
+  }
+
   /// Altera a senha do usuario atual, verificando a senha atual primeiro.
   /// Reautentica o usuario com [currentPassword] e, se bem-sucedido,
   /// atualiza para [newPassword].
@@ -117,7 +167,7 @@ class AuthService {
     await user.updatePassword(newPassword);
   }
 
-/// Envia email de verificacao para o usuario atual.
+  /// Envia email de verificacao para o usuario atual.
   Future<void> sendEmailVerification() async {
     final user = _auth.currentUser;
     if (user != null && !user.emailVerified) {
@@ -172,3 +222,4 @@ class AuthService {
     await _auth.signOut();
   }
 }
+

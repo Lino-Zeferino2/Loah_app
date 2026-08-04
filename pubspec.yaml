@@ -34,6 +34,9 @@ dependencies:
   sign_in_with_apple: ^6.1.4
   url_launcher: ^6.3.2
 
+  # Deep linking (password reset flow)
+  app_links: ^6.3.3
+
   # Export
   share_plus: ^10.1.4
   path_provider: ^2.1.5

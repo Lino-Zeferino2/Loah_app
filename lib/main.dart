@@ -14,6 +14,7 @@ import 'core/l10n/locale_controller.dart';
 import 'core/navigation/navigation_controller.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/contact_service.dart';
+import 'core/services/deep_link_service.dart';
 import 'core/services/goal_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/notification_scheduler.dart';
@@ -22,6 +23,7 @@ import 'core/services/user_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'models/app_notification.dart';
+import 'screens/auth/reset_password_screen.dart';
 import 'screens/contacts/contacts_screen.dart';
 import 'screens/contacts/contact_detail_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
@@ -94,6 +96,22 @@ void main() async {
   } catch (e) {
     debugPrint('[main] Analytics user config error (non-fatal): $e');
   }
+
+  // ── Deep Linking (password reset) ─────────────────────────────
+  // Quando o utilizador toca no link de "redefinir senha" enviado por
+  // email, o app é aberto e o oobCode é passado para a tela de nova
+  // senha. Usa o navigatorKey global porque o MaterialApp ainda não
+  // está montado quando o cold start acontece.
+  DeepLinkService().onPasswordReset = (oobCode) {
+    final nav = navigatorKey.currentState;
+    if (nav == null) return;
+    nav.push(
+      MaterialPageRoute(
+        builder: (_) => ResetPasswordScreen(oobCode: oobCode),
+      ),
+    );
+  };
+  DeepLinkService().initialize();
 
   runApp(const LoahApp());
 }
@@ -198,6 +216,7 @@ class _LoahAppState extends State<LoahApp> {
           child: MaterialApp(
             title: 'Loah',
             debugShowCheckedModeBanner: false,
+            navigatorKey: navigatorKey,
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: _themeMode,

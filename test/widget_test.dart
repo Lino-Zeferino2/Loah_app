@@ -670,18 +670,23 @@ test('taskChecklist goal uses only task progress', () {
   // ReportSummary
   // ─────────────────────────────────────────────────────────────────
   group('ReportSummary', () {
-    final now = DateTime.now();
+final now = DateTime.now();
     final accounts = [
       const AccountModel(id: 'a1', name: 'CC', type: AccountType.corrente, initialBalance: 1000),
     ];
+    // Transactions dated in the PAST (guaranteed to be before "now"),
+    // so the current-month balance is deterministic regardless of the
+    // real date the test runs on (e.g. no dependency on the 5th of the
+    // month having already passed).
     final txns = [
-      TransactionModel(id: 't1', title: 'Salário', category: 'Salário', amount: 3000, type: TransactionType.income, date: DateTime(now.year, now.month, 5)),
-      TransactionModel(id: 't2', title: 'Aluguel', category: 'Moradia', amount: 1200, type: TransactionType.expense, date: DateTime(now.year, now.month, 1)),
+      TransactionModel(id: 't1', title: 'Salário', category: 'Salário', amount: 3000, type: TransactionType.income, date: DateTime(now.year, now.month - 1, 5)),
+      TransactionModel(id: 't2', title: 'Aluguel', category: 'Moradia', amount: 1200, type: TransactionType.expense, date: DateTime(now.year, now.month - 1, 1)),
     ];
 
     test('balanceHistory returns list of points', () {
       final history = ReportSummary.balanceHistory(accounts, txns, months: 3);
       expect(history.length, 3);
+      // initial 1000 + income 3000 - expense 1200 = 2800
       expect(history.last.balance, 2800);
     });
 

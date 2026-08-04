@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loah_app/core/services/auth_service.dart';
@@ -37,7 +38,23 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     setState(() => _submitting = true);
 
     try {
-      await _authService.sendPasswordResetEmail(email);
+      // No mobile, enviamos um email com deep link para reabrir o app
+      // diretamente na tela de "definir nova senha". Na web usamos o
+      // fluxo padrão do Firebase (abre no browser).
+      final isMobile = !kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS);
+      if (isMobile) {
+        await _authService.sendPasswordResetEmailWithLink(
+          email,
+          continueUrl: 'https://loahapp.firebaseapp.com/__/auth/action',
+          handleCodeInApp: true,
+          androidPackageName: 'com.portifolio.linozeferino.loahapp',
+          iOSBundleId: 'com.portifolio.linozeferino.loahapp',
+        );
+      } else {
+        await _authService.sendPasswordResetEmail(email);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Email de redefinicao enviado para $email')),

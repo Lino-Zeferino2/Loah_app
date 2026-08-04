@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../../models/contact_model.dart';
 
 /// Serviço para gerenciar contactos no Firestore.
@@ -108,13 +110,49 @@ class ContactService {
     await col.doc(contactId).delete();
   }
 
-  /// Busca um único contacto pelo ID.
+/// Busca um único contacto pelo ID.
   Future<ContactModel?> getContact(String contactId) async {
     final col = _getContactsCollection();
     if (col == null) return null;
     final doc = await col.doc(contactId).get();
     if (!doc.exists) return null;
     return _fromDocument(doc);
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  //  Avatar / Foto de perfil (Firebase Storage)
+  // ────────────────────────────────────────────────────────────────
+
+/// Faz o upload de uma foto de perfil para Firebase Storage e
+  /// devolve a URL de download.
+  ///
+  /// O ficheiro fica em `profilePhotos/{userId}/{contactId}_{timestamp}.jpg` —
+  /// um caminho plano (2 segmentos) que respeita a storage rule
+  /// `profilePhotos/{userId}/{fileName}`, e inclui o contactId no nome
+  /// para não colidir com a foto de perfil do utilizador. Devolve `null`
+  /// se [file] for `null`.
+  Future<String?> uploadAvatar(File? file, {required String contactId}) async {
+    final uid = _userId;
+    if (file == null || uid == null) return null;
+
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final ref = FirebaseStorage.instance
+        .ref('profilePhotos/$uid/${contactId}_$timestamp.jpg');
+    final uploadTask = ref.putFile(file);
+    final snapshot = await uploadTask;
+    return await snapshot.ref.getDownloadURL();
+  }
+
+  /// Apaga uma foto de perfil do Firebase Storage a partir da URL.
+  /// Ignora erros silenciosamente (o ficheiro pode já não existir).
+  Future<void> deleteAvatar(String? avatarUrl) async {
+    if (avatarUrl == null || avatarUrl.isEmpty) return;
+    try {
+      final ref = FirebaseStorage.instance.refFromURL(avatarUrl);
+      await ref.delete();
+    } catch (_) {
+      // Ficheiro pode já ter sido removido — ignora.
+    }
   }
 }
 

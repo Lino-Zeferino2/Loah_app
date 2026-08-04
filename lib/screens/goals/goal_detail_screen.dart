@@ -195,6 +195,18 @@ builder: (sheetContext) {
     final progressPercent = (progress * 100).round();
     final doneCount = milestones.where((t) => t.isDone).length;
 
+    // Em metas com modo taskChecklist, o cabeçalho mostra a contagem de
+    // tarefas concluídas (ex.: "2 de 5 tarefas concluídas"). "CONCLUÍDO"
+    // só aparece quando o progresso atinge 100%.
+    final completedLabel =
+        goal.progressMode == GoalProgressMode.taskChecklist
+            ? (progress >= 1.0
+                ? loc.translate('goalDetail_concluido')
+                : loc.translate('goalCard_tarefas_concluidas')
+                    .replaceAll('%s', '$doneCount')
+                    .replaceAll('%s', '${milestones.length}'))
+            : loc.translate('goalDetail_concluido');
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -208,7 +220,7 @@ SliverAppBar(
                 goal: goal,
                 progress: progress,
                 percent: progressPercent,
-                completedLabel: loc.translate('goalDetail_concluido'),
+                completedLabel: completedLabel,
               ),
             ),
             actions: [

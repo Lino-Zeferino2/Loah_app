@@ -12,3 +12,22 @@
 
 # Keep model classes for Firestore serialization
 -keep class com.portifolio.linozeferino.loahapp.** { *; }
+
+# ── R8: suppress missing-class warnings for Play Core ────────────
+# These classes are referenced by Flutter's deferred components manager
+# (PlayStoreDeferredComponentManager) but are NOT used by this app (no
+# dynamic feature modules). The com.google.android.play:core dependency
+# is added in build.gradle.kts; the -dontwarn rules below silence the
+# R8 "Missing class ... SplitCompat/SplitInstall" diagnostics that would
+# otherwise fail the release build.
+-dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
+-dontwarn com.google.android.play.core.splitinstall.SplitInstallException
+-dontwarn com.google.android.play.core.splitinstall.SplitInstallManager
+-dontwarn com.google.android.play.core.splitinstall.SplitInstallManagerFactory
+-dontwarn com.google.android.play.core.splitinstall.SplitInstallRequest$Builder
+-dontwarn com.google.android.play.core.splitinstall.SplitInstallRequest
+-dontwarn com.google.android.play.core.splitinstall.SplitInstallSessionState
+-dontwarn com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
+-dontwarn com.google.android.play.core.tasks.OnFailureListener
+-dontwarn com.google.android.play.core.tasks.OnSuccessListener
+-dontwarn com.google.android.play.core.tasks.Task

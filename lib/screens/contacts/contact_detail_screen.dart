@@ -134,7 +134,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     );
     if (confirm != true) return;
 
-    try {
+try {
+      // Apaga também a foto de perfil do Storage (se existir) para
+      // não deixar ficheiros órfãos depois de remover o contacto.
+      if (_contact.avatarUrl != null) {
+        await _contactService.deleteAvatar(_contact.avatarUrl);
+      }
       await _contactService.deleteContact(_contact.id);
       if (!mounted) return;
       Navigator.of(context).pop();
