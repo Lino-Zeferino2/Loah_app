@@ -1,27 +1,24 @@
-# Plano de Implementação — Keystore + Deep Linking
+# TODO — Plano de Implementação
 
-## Tarefa 1 — Keystore de produção Android
-- [x] Corrigir `android/app/build.gradle.kts` (storeFile → rootProject.file)
-- [x] Rodar `flutter build apk --release` e validar assinatura
-- [x] Atualizar TODO.md
+## Tarefa: Testes de widget + Goal de Fundo de Emergência default
 
-## Tarefa 2 — Deep linking para recovery de senha
-- [x] Adicionar `app_links` ao pubspec.yaml
-- [x] Criar `lib/core/services/deep_link_service.dart`
-- [x] Criar `lib/screens/auth/reset_password_screen.dart`
-- [x] Atualizar `lib/core/services/auth_service.dart`
-- [x] Atualizar `lib/main.dart`
-- [x] Android: intent-filter no AndroidManifest.xml
-- [x] iOS: CFBundleURLTypes no Info.plist
-- [x] Atualizar TODO.md
+### 1. Criar goal de fundo de emergência default quando usuário não tem nenhum
+- [ ] `lib/screens/finances/finances_screen.dart`: adicionar criação automática da meta `goal_emergency_fund` quando não existir
 
-## Tarefa 3 — Follow-up
-- [x] `flutter pub get`
-- [x] `flutter analyze`
-- [x] `flutter build apk --release` (✅ SUCESSO, APK assinado)
+### 2. Adicionar testes de widget para telas principais
+- [ ] Criar `test/widget_screens_test.dart` com harness de teste (LocaleController, ThemeController, CurrencyController, AppTheme)
+- [ ] Adicionar mock HttpOverrides para Image.network
+- [ ] Testes Dashboard: BalanceCard, PendingTasksCard, NewItemCard, GoalsSummaryCard, DailyReflectionCard
+- [ ] Testes Metas: GoalCard, GoalTermSection
+- [ ] Testes Finanças: TransactionListItem, AccountCard, BudgetCard, TotalBalanceCard, AssetCard, RecurringTransactionCard, EmergencyGoalCard
+- [ ] Testes Tarefas: TaskListItem
+- [ ] Testes Contatos: ContactListTile
+- [ ] Testes Notificações: NotificationCard
 
-## Notas finais
-- R8: a dependência `com.google.android.play:core:1.10.3` causou conflito de classes
-  duplicadas com `core-common:2.0.3`; a solução definitiva foram as regras `-dontwarn`
-  adicionadas a `android/app/proguard-rules.pro`.
-- `flutter test` não foi executado nesta sessão (fora do âmbito desta tarefa).
+### 3. Verificação
+- [ ] Executar `flutter test` — todos passam
+- [ ] Executar `flutter analyze`
+
+### 4. Atualizar TODO.md
+- [ ] Marcar item 6 (Fundo de Emergência) como feito
+- [ ] Marcar "Adicionar testes de widget para telas principais" como feito

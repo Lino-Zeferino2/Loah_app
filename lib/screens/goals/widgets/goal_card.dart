@@ -39,9 +39,9 @@ class GoalCard extends StatelessWidget {
         : () {
             final linked = GoalProgress.linkedTasks(goal, allTasks);
             final done = linked.where((t) => t.isDone).length;
-            return loc.translate('goalCard_tarefas_concluidas')
-                .replaceAll('%s', '$done')
-                .replaceAll('%s', '${linked.length}');
+return loc.translate('goalCard_tarefas_concluidas')
+                .replaceFirst('%s', '$done')
+                .replaceFirst('%s', '${linked.length}');
           }();
 
     return LoahCard(

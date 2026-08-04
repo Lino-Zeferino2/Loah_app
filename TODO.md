@@ -30,7 +30,7 @@
 ### 6. Metas: Fundo de Emergência especial
 - [x] EmergencyGoalCard widget existe
 - [x] FinançasScreen já mostra emergencyGoal se existir
-- [ ] Criar goal de fundo de emergência default quando usuário não tem nenhum
+- [x] Criar goal de fundo de emergência default quando usuário não tem nenhum — **Implementado** (`_ensureEmergencyFundGoal` em `finances_screen.dart` cria `goal_emergency_fund` com target €5.000 se não existir)
 
 ### 7. Nome do app — Branding
 - [x] Android: mudar label de "loahapp" para "Loah"
@@ -41,8 +41,8 @@
 - [x] proguard-rules.pro existe com regras Flutter + Firebase
 
 ### 9. Testes
-- [x] Executar `flutter test` e verificar se passa — **✅ 78 testes, todos passam** (corrigido bug de teste date-dependent em `ReportSummary.balanceHistory` que usava datas do mês atual não garantidas no passado)
-- [ ] Adicionar testes de widget para telas principais
+- [x] Executar `flutter test` e verificar se passa — **✅ 98 testes, todos passam** (corrigido bug de teste date-dependent em `ReportSummary.balanceHistory` que usava datas do mês atual não garantidas no passado)
+- [x] Adicionar testes de widget para telas principais — **✅ Implementado** (`test/widget_screens_test.dart` com 20 testes de widget: Dashboard, Metas, Finanças, Tarefas, Contatos e Notificações). Também corrigido bug de produção `replaceAll`→`replaceFirst` em `goal_card.dart` e `goal_detail_screen.dart` (rótulo "X de Y tarefas concluídas" renderizava valor duplicado) e mock HTTP com `contentLength`/`compressionState` para `NetworkImage`
 
 ### 10. Firebase App Content (Políticas)
 - [ ] Upload de política_privacidade.txt para Firestore (appContent)

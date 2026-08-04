@@ -119,7 +119,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
         );
       }).toList();
 
-      final tasksSnapshot = await TaskService().getTasksStream().first;
+final tasksSnapshot = await TaskService().getTasksStream().first;
       final tasks = tasksSnapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         return TaskModel(
@@ -155,6 +155,11 @@ class _FinancesScreenState extends State<FinancesScreen> {
         );
       }).toList();
 
+      // Garante que o utilizador tenha sempre uma meta de Fundo de
+      // Emergência na tela de Finanças. Se nenhuma existir, cria a meta
+      // default `goal_emergency_fund` no Firestore.
+      await _ensureEmergencyFundGoal(goals);
+
       if (mounted) {
         setState(() {
           _transactions = txns;
@@ -169,6 +174,33 @@ class _FinancesScreenState extends State<FinancesScreen> {
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+/// Cria a meta de Fundo de Emergência default
+  /// (`goal_emergency_fund`) caso o utilizador ainda não tenha nenhuma.
+  /// Assim, o cartão especial de emergência aparece automaticamente na
+  /// tela de Finanças mesmo para novos utilizadores.
+  Future<void> _ensureEmergencyFundGoal(List<GoalModel> goals) async {
+    final hasEmergencyFund =
+        goals.any((g) => g.id == 'goal_emergency_fund');
+    if (hasEmergencyFund) return;
+
+    try {
+      final goal = GoalModel(
+        id: 'goal_emergency_fund',
+        title: 'Reserva de Emergência',
+        category: 'Financeiro',
+        term: GoalTerm.longoPrazo,
+        progressMode: GoalProgressMode.manualValue,
+        current: 0,
+        target: 5000,
+        description: 'Complete a sua reserva de emergência para ter segurança financeira.',
+        progressColor: Colors.teal,
+      );
+      await GoalService().addGoal(goal);
+    } catch (e) {
+      debugPrint('Finanças - Erro ao criar fundo de emergência default: $e');
     }
   }
 

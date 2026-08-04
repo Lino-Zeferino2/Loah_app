@@ -203,8 +203,8 @@ builder: (sheetContext) {
             ? (progress >= 1.0
                 ? loc.translate('goalDetail_concluido')
                 : loc.translate('goalCard_tarefas_concluidas')
-                    .replaceAll('%s', '$doneCount')
-                    .replaceAll('%s', '${milestones.length}'))
+                    .replaceFirst('%s', '$doneCount')
+                    .replaceFirst('%s', '${milestones.length}'))
             : loc.translate('goalDetail_concluido');
 
     return Scaffold(
@@ -257,7 +257,7 @@ SliverAppBar(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        loc.translate('goalDetail_valor_atual').replaceAll('%s', CurrencyFormatter.format(goal.current ?? 0, context: context)).replaceAll('%s', CurrencyFormatter.format(goal.target ?? 0, context: context)),
+loc.translate('goalDetail_valor_atual').replaceFirst('%s', CurrencyFormatter.format(goal.current ?? 0, context: context)).replaceFirst('%s', CurrencyFormatter.format(goal.target ?? 0, context: context)),
                         style: Theme.of(context)
                             .textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: goal.progressColor),
                       ),
@@ -309,8 +309,8 @@ SliverAppBar(
                             .textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
                     Text(
                       loc.translate('goalDetail_marcos_subtitulo')
-                          .replaceAll('%s', '$doneCount')
-                          .replaceAll('%s', '${milestones.length}'),
+                          .replaceFirst('%s', '$doneCount')
+                          .replaceFirst('%s', '${milestones.length}'),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
