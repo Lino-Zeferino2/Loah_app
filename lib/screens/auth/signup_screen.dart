@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/screens/auth/email_verification_screen.dart';
@@ -49,39 +50,39 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  String? _validateName(String? value) {
+  String? _validateName(String? value, AppLocales loc) {
     final v = value?.trim() ?? '';
-    if (v.isEmpty) return 'Informe seu nome completo';
-    if (!v.contains(' ')) return 'Informe nome e sobrenome';
+    if (v.isEmpty) return loc.translate('signup_nome_obrigatorio');
+    if (!v.contains(' ')) return loc.translate('signup_nome_sobrenome');
     return null;
   }
 
-  String? _validateEmail(String? value) {
+  String? _validateEmail(String? value, AppLocales loc) {
     final v = value?.trim() ?? '';
-    if (v.isEmpty) return 'Informe seu email';
-    if (!_emailRegex.hasMatch(v)) return 'Email invalido';
+    if (v.isEmpty) return loc.translate('signup_email_obrigatorio');
+    if (!_emailRegex.hasMatch(v)) return loc.translate('signup_email_invalido');
     return null;
   }
 
-  String? _validatePhone(String? value) {
+  String? _validatePhone(String? value, AppLocales loc) {
     final raw = (value ?? '').trim();
-    if (raw.isEmpty) return 'Informe seu numero de telemovel';
+    if (raw.isEmpty) return loc.translate('signup_telefone_obrigatorio');
     final digits = raw.replaceAll(RegExp(r'\D'), '');
-    if (digits.length < 8) return 'Numero de telemovel invalido';
+    if (digits.length < 8) return loc.translate('signup_telefone_invalido');
     return null;
   }
 
-  String? _validatePassword(String? value) {
+  String? _validatePassword(String? value, AppLocales loc) {
     final v = value ?? '';
-    if (v.isEmpty) return 'Informe sua senha';
-    if (v.length < 8) return 'A senha deve ter pelo menos 8 caracteres';
+    if (v.isEmpty) return loc.translate('signup_senha_obrigatoria');
+    if (v.length < 8) return loc.translate('signup_senha_minima');
     return null;
   }
 
-  String? _validateConfirmPassword(String? value) {
+  String? _validateConfirmPassword(String? value, AppLocales loc) {
     final v = value ?? '';
-    if (v.isEmpty) return 'Confirme sua senha';
-    if (v != _passwordController.text) return 'As senhas nao coincidem';
+    if (v.isEmpty) return loc.translate('signup_confirmar_obrigatoria');
+    if (v != _passwordController.text) return loc.translate('signup_senhas_nao_coincidem');
     return null;
   }
 
@@ -100,6 +101,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _onSubmit() async {
+    final loc = AppLocales.of(context);
     final form = _formKey.currentState;
     final formValid = form?.validate() ?? false;
     setState(() => _showTermsError = !_acceptedTerms);
@@ -123,7 +125,7 @@ class _SignupScreenState extends State<SignupScreen> {
         dialCode: _dialCode,
       );
 
-if (!mounted) return;
+      if (!mounted) return;
 
       // Envia email de verificação e redireciona para a tela de verificação
       await _authService.sendEmailVerification();
@@ -142,16 +144,16 @@ if (!mounted) return;
       String message;
       switch (e.code) {
         case 'email-already-in-use':
-          message = 'Este email ja esta em uso';
+          message = loc.translate('signup_email_em_uso');
           break;
         case 'weak-password':
-          message = 'Senha muito fraca';
+          message = loc.translate('signup_senha_fraca');
           break;
         case 'invalid-email':
-          message = 'Email invalido';
+          message = loc.translate('signup_email_invalido');
           break;
         default:
-          message = 'Erro ao criar conta: ${e.message}';
+          message = '${loc.translate('signup_erro_criar')}${e.message}';
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
@@ -159,7 +161,7 @@ if (!mounted) return;
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: $e')),
+        SnackBar(content: Text('${loc.translate('auth_erro_inesperado')}$e')),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -197,6 +199,7 @@ if (!mounted) return;
   }
 
   Future<void> _handleGoogleSignUp() async {
+    final loc = AppLocales.of(context);
     try {
       final userCredential = await _authService.signInWithGoogle();
       if (!mounted) return;
@@ -207,7 +210,7 @@ if (!mounted) return;
           name: user.displayName ?? 'Usuario',
           email: user.email ?? '',
         );
-if (!mounted) return;
+        if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (_) => EmailVerificationScreen(
@@ -221,18 +224,16 @@ if (!mounted) return;
       if (!mounted) return;
       if (e.code != 'canceled') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro Google: ${e.message}')),
+          SnackBar(content: Text('${loc.translate('auth_erro_google')}${e.message}')),
         );
       }
     } on FirebaseException catch (e) {
       if (!mounted) return;
       String message;
       if (e.code == 'permission-denied') {
-        message = 'Erro de permissao ao acessar seus dados. '
-            'As regras de seguranca do Firestore podem nao ter sido '
-            'implantadas ainda. Contate o administrador.';
+        message = loc.translate('auth_permissao_denegada');
       } else {
-        message = 'Erro no Firestore: ${e.message}';
+        message = '${loc.translate('auth_erro_firestore')}${e.message}';
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
@@ -240,19 +241,20 @@ if (!mounted) return;
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: $e')),
+        SnackBar(content: Text('${loc.translate('auth_erro_inesperado')}$e')),
       );
     }
   }
 
   Future<void> _handleAppleSignUp() async {
+    final loc = AppLocales.of(context);
     // Verifica se a plataforma é Android
     if (defaultTargetPlatform == TargetPlatform.android) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('O login com Apple está disponível apenas para iOS'),
-          duration: Duration(seconds: 3),
+        SnackBar(
+          content: Text(loc.translate('auth_apple_so_ios')),
+          duration: const Duration(seconds: 3),
         ),
       );
       return;
@@ -268,7 +270,7 @@ if (!mounted) return;
           name: user.displayName ?? 'Usuario Apple',
           email: user.email ?? '',
         );
-if (!mounted) return;
+        if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (_) => EmailVerificationScreen(
@@ -282,18 +284,16 @@ if (!mounted) return;
       if (!mounted) return;
       if (e.code != 'canceled') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro Apple: ${e.message}')),
+          SnackBar(content: Text('${loc.translate('auth_erro_apple')}${e.message}')),
         );
       }
     } on FirebaseException catch (e) {
       if (!mounted) return;
       String message;
       if (e.code == 'permission-denied') {
-        message = 'Erro de permissao ao acessar seus dados. '
-            'As regras de seguranca do Firestore podem nao ter sido '
-            'implantadas ainda. Contate o administrador.';
+        message = loc.translate('auth_permissao_denegada');
       } else {
-        message = 'Erro no Firestore: ${e.message}';
+        message = '${loc.translate('auth_erro_firestore')}${e.message}';
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
@@ -301,7 +301,7 @@ if (!mounted) return;
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: $e')),
+        SnackBar(content: Text('${loc.translate('auth_erro_inesperado')}$e')),
       );
     }
   }
@@ -310,6 +310,7 @@ if (!mounted) return;
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final loc = AppLocales.of(context);
     final textSecondary = scheme.onSurface.withValues(alpha: 0.65);
     final border = scheme.onSurface.withValues(alpha: 0.14);
     final cardBackground = scheme.surface;
@@ -337,7 +338,7 @@ if (!mounted) return;
                         children: [
                           const SizedBox(height: 12),
                           Text(
-                            'Crie sua conta',
+                            loc.translate('signup_titulo'),
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.4,
@@ -346,7 +347,7 @@ if (!mounted) return;
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Junte-se a comunidade Loah e comece sua jornada hoje.',
+                            loc.translate('signup_subtitulo'),
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withValues(alpha: 0.85),
@@ -357,7 +358,7 @@ if (!mounted) return;
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _FieldLabel(text: 'Nome completo', color: textSecondary),
+                    _FieldLabel(text: loc.translate('signup_nome_label'), color: textSecondary),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _nameController,
@@ -365,16 +366,16 @@ if (!mounted) return;
                       textCapitalization: TextCapitalization.words,
                       textInputAction: TextInputAction.next,
                       decoration: _fieldDecoration(
-                        hint: 'Ex: Maria Silva',
+                        hint: loc.translate('signup_nome_hint'),
                         icon: Icons.person_outline_rounded,
                         scheme: scheme,
                         border: border,
                         fillColor: cardBackground,
                       ),
-                      validator: _validateName,
+                      validator: (v) => _validateName(v, loc),
                     ),
                     const SizedBox(height: 16),
-                    _FieldLabel(text: 'E-mail', color: textSecondary),
+                    _FieldLabel(text: loc.translate('signup_email_label'), color: textSecondary),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _emailController,
@@ -382,16 +383,16 @@ if (!mounted) return;
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       decoration: _fieldDecoration(
-                        hint: 'nome@exemplo.com',
+                        hint: loc.translate('signup_email_hint'),
                         icon: Icons.mail_outline_rounded,
                         scheme: scheme,
                         border: border,
                         fillColor: cardBackground,
                       ),
-                      validator: _validateEmail,
+                      validator: (v) => _validateEmail(v, loc),
                     ),
                     const SizedBox(height: 16),
-                    _FieldLabel(text: 'Numero de telemovel', color: textSecondary),
+                    _FieldLabel(text: loc.translate('signup_telefone_label'), color: textSecondary),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -435,19 +436,19 @@ if (!mounted) return;
                             keyboardType: TextInputType.phone,
                             textInputAction: TextInputAction.next,
                             decoration: _fieldDecoration(
-                              hint: 'Ex: 9xx xxx xxx',
+                              hint: loc.translate('signup_telefone_hint'),
                               icon: Icons.phone_android_outlined,
                               scheme: scheme,
                               border: border,
                               fillColor: cardBackground,
                             ),
-                            validator: _validatePhone,
+                            validator: (v) => _validatePhone(v, loc),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _FieldLabel(text: 'Senha', color: textSecondary),
+                    _FieldLabel(text: loc.translate('signup_senha_label'), color: textSecondary),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _passwordController,
@@ -455,7 +456,7 @@ if (!mounted) return;
                       obscureText: _obscurePassword,
                       textInputAction: TextInputAction.next,
                       decoration: _fieldDecoration(
-                        hint: 'Minimo 8 caracteres',
+                        hint: loc.translate('signup_senha_hint'),
                         icon: Icons.lock_outline_rounded,
                         scheme: scheme,
                         border: border,
@@ -471,13 +472,13 @@ if (!mounted) return;
                           ),
                         ),
                       ),
-                      validator: _validatePassword,
+                      validator: (v) => _validatePassword(v, loc),
                       onFieldSubmitted: (_) {
                         FocusScope.of(context).nextFocus();
                       },
                     ),
                     const SizedBox(height: 16),
-                    _FieldLabel(text: 'Confirmar senha', color: textSecondary),
+                    _FieldLabel(text: loc.translate('signup_confirmar_senha_label'), color: textSecondary),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _confirmPasswordController,
@@ -485,7 +486,7 @@ if (!mounted) return;
                       obscureText: _obscureConfirmPassword,
                       textInputAction: TextInputAction.done,
                       decoration: _fieldDecoration(
-                        hint: 'Digite novamente',
+                        hint: loc.translate('signup_confirmar_senha_hint'),
                         icon: Icons.lock_outline_rounded,
                         scheme: scheme,
                         border: border,
@@ -501,7 +502,7 @@ if (!mounted) return;
                           ),
                         ),
                       ),
-                      validator: _validateConfirmPassword,
+                      validator: (v) => _validateConfirmPassword(v, loc),
                       onFieldSubmitted: (_) => _onSubmit(),
                     ),
                     const SizedBox(height: 16),
@@ -510,6 +511,7 @@ if (!mounted) return;
                       showError: _showTermsError,
                       scheme: scheme,
                       textSecondary: textSecondary,
+                      loc: loc,
                       onChanged: (v) {
                         setState(() {
                           _acceptedTerms = v ?? false;
@@ -557,7 +559,7 @@ if (!mounted) return;
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    'Criar Conta',
+                                    loc.translate('signup_criar_conta'),
                                     style: theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w800,
                                       color: Colors.white,
@@ -576,7 +578,7 @@ if (!mounted) return;
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
-                            'OU CADASTRE-SE COM',
+                            loc.translate('signup_ou_cadastre_com'),
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: textSecondary,
                               fontWeight: FontWeight.w800,
@@ -619,7 +621,7 @@ if (!mounted) return;
                         spacing: 6,
                         children: [
                           Text(
-                            'Ja tem uma conta?',
+                            loc.translate('signup_ja_tem_conta'),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: scheme.onSurface,
                               fontWeight: FontWeight.w600,
@@ -633,7 +635,7 @@ if (!mounted) return;
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                             child: Text(
-                              'Entrar',
+                              loc.translate('signup_entrar'),
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: scheme.primary,
                                 fontWeight: FontWeight.w900,
@@ -660,6 +662,7 @@ class _TermsCheckbox extends StatelessWidget {
   final bool showError;
   final ColorScheme scheme;
   final Color textSecondary;
+  final AppLocales loc;
   final ValueChanged<bool?> onChanged;
   final VoidCallback onTermsTap;
   final VoidCallback onPrivacyTap;
@@ -669,6 +672,7 @@ class _TermsCheckbox extends StatelessWidget {
     required this.showError,
     required this.scheme,
     required this.textSecondary,
+    required this.loc,
     required this.onChanged,
     required this.onTermsTap,
     required this.onPrivacyTap,
@@ -716,13 +720,13 @@ class _TermsCheckbox extends StatelessWidget {
                       height: 1.35,
                     ),
                     children: [
-                      const TextSpan(text: 'Aceito os '),
+                      TextSpan(text: loc.translate('signup_aceito_termos')),
                       TextSpan(
-                        text: 'termos e condicoes',
+                        text: loc.translate('signup_termos_condicoes'),
                         style: linkStyle,
                         recognizer: TapGestureRecognizer()..onTap = onTermsTap,
                       ),
-                      const TextSpan(text: ' e a politica de privacidade da Loah.'),
+                      TextSpan(text: loc.translate('signup_e_privacidade')),
                     ],
                   ),
                 ),
@@ -734,7 +738,7 @@ class _TermsCheckbox extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 34, top: 4),
             child: Text(
-              'E preciso aceitar os termos para continuar',
+              loc.translate('signup_aceitar_termos_erro'),
               style: theme.textTheme.bodySmall?.copyWith(color: scheme.error),
             ),
           ),

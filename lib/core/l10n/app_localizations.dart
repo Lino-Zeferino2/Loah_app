@@ -306,9 +306,473 @@ class AppLocales {
       'pt': 'Senha',
       'en': 'Password',
     },
-    'auth_recuperar_senha': {
+'auth_recuperar_senha': {
       'pt': 'Recuperar Senha',
       'en': 'Recover Password',
+    },
+
+    // ═══════ SPLASH SCREEN ═══════
+    'splash_subtitulo': {
+      'pt': 'Sincronize sua vida',
+      'en': 'Sync your life',
+    },
+    'splash_tagline': {
+      'pt': 'Tudo num só lugar',
+      'en': 'Everything in one place',
+    },
+
+    // ═══════ LOGIN SCREEN (detalhes) ═══════
+    'auth_bem_vindo_volta': {
+      'pt': 'Bem-vindo de Volta',
+      'en': 'Welcome Back',
+    },
+    'auth_login_subtitle': {
+      'pt': 'Entre com suas credenciais para aceder a sua conta Loah.',
+      'en': 'Sign in with your credentials to access your Loah account.',
+    },
+    'auth_email_label': {
+      'pt': 'E-MAIL',
+      'en': 'E-MAIL',
+    },
+    'auth_senha_label': {
+      'pt': 'SENHA',
+      'en': 'PASSWORD',
+    },
+    'auth_email_hint': {
+      'pt': 'seu@email.com',
+      'en': 'your@email.com',
+    },
+    'auth_esqueci_senha': {
+      'pt': 'Esqueci minha senha',
+      'en': 'Forgot my password',
+    },
+    'auth_entrar_btn': {
+      'pt': 'Entrar',
+      'en': 'Sign In',
+    },
+    'auth_ou_continue_com': {
+      'pt': 'OU CONTINUE COM',
+      'en': 'OR CONTINUE WITH',
+    },
+    'auth_nao_tem_conta': {
+      'pt': 'Nao tem uma conta?',
+      'en': "Don't have an account?",
+    },
+    'auth_cadastre_se': {
+      'pt': 'Cadastre-se',
+      'en': 'Sign Up',
+    },
+    'auth_email_obrigatorio': {
+      'pt': 'Informe seu email',
+      'en': 'Enter your email',
+    },
+    'auth_email_invalido': {
+      'pt': 'Email invalido',
+      'en': 'Invalid email',
+    },
+    'auth_senha_obrigatoria': {
+      'pt': 'Informe sua senha',
+      'en': 'Enter your password',
+    },
+    'auth_senha_minima': {
+      'pt': 'Senha deve ter pelo menos 6 caracteres',
+      'en': 'Password must be at least 6 characters',
+    },
+    'auth_conta_bloqueada': {
+      'pt': 'A sua conta foi bloqueada. Contacte o administrador.',
+      'en': 'Your account has been blocked. Contact the administrator.',
+    },
+    'auth_usuario_nao_encontrado': {
+      'pt': 'Usuario nao encontrado',
+      'en': 'User not found',
+    },
+'auth_senha_incorreta': {
+      'pt': 'Senha incorreta',
+      'en': 'Incorrect password',
+    },
+    'auth_credenciais_incorretas': {
+      'pt': 'Email ou senha incorretos',
+      'en': 'Incorrect email or password',
+    },
+    'auth_erro_entrar': {
+      'pt': 'Erro ao entrar: ',
+      'en': 'Error signing in: ',
+    },
+    'auth_erro_inesperado': {
+      'pt': 'Erro inesperado: ',
+      'en': 'Unexpected error: ',
+    },
+    'auth_erro_google': {
+      'pt': 'Erro Google: ',
+      'en': 'Google error: ',
+    },
+    'auth_erro_apple': {
+      'pt': 'Erro Apple: ',
+      'en': 'Apple error: ',
+    },
+    'auth_apple_so_ios': {
+      'pt': 'O login com Apple está disponível apenas para iOS',
+      'en': 'Apple sign-in is only available on iOS',
+    },
+    'auth_permissao_denegada': {
+      'pt': 'Erro de permissao ao acessar seus dados. As regras de seguranca do Firestore podem nao ter sido implantadas ainda. Contate o administrador.',
+      'en': 'Permission error accessing your data. The Firestore security rules may not have been deployed yet. Contact the administrator.',
+    },
+    'auth_erro_firestore': {
+      'pt': 'Erro no Firestore: ',
+      'en': 'Firestore error: ',
+    },
+
+    // ═══════ SIGNUP SCREEN ═══════
+    'signup_titulo': {
+      'pt': 'Crie sua conta',
+      'en': 'Create your account',
+    },
+    'signup_subtitulo': {
+      'pt': 'Junte-se a comunidade Loah e comece sua jornada hoje.',
+      'en': 'Join the Loah community and start your journey today.',
+    },
+    'signup_nome_label': {
+      'pt': 'Nome completo',
+      'en': 'Full name',
+    },
+    'signup_nome_hint': {
+      'pt': 'Ex: Maria Silva',
+      'en': 'E.g.: Maria Silva',
+    },
+    'signup_email_label': {
+      'pt': 'E-mail',
+      'en': 'Email',
+    },
+    'signup_email_hint': {
+      'pt': 'nome@exemplo.com',
+      'en': 'name@example.com',
+    },
+    'signup_telefone_label': {
+      'pt': 'Numero de telemovel',
+      'en': 'Mobile number',
+    },
+    'signup_telefone_hint': {
+      'pt': 'Ex: 9xx xxx xxx',
+      'en': 'E.g.: 9xx xxx xxx',
+    },
+    'signup_senha_label': {
+      'pt': 'Senha',
+      'en': 'Password',
+    },
+    'signup_senha_hint': {
+      'pt': 'Minimo 8 caracteres',
+      'en': 'Minimum 8 characters',
+    },
+    'signup_confirmar_senha_label': {
+      'pt': 'Confirmar senha',
+      'en': 'Confirm password',
+    },
+    'signup_confirmar_senha_hint': {
+      'pt': 'Digite novamente',
+      'en': 'Type again',
+    },
+    'signup_criar_conta': {
+      'pt': 'Criar Conta',
+      'en': 'Create Account',
+    },
+    'signup_ou_cadastre_com': {
+      'pt': 'OU CADASTRE-SE COM',
+      'en': 'OR SIGN UP WITH',
+    },
+    'signup_ja_tem_conta': {
+      'pt': 'Ja tem uma conta?',
+      'en': 'Already have an account?',
+    },
+    'signup_entrar': {
+      'pt': 'Entrar',
+      'en': 'Sign In',
+    },
+    'signup_nome_obrigatorio': {
+      'pt': 'Informe seu nome completo',
+      'en': 'Enter your full name',
+    },
+    'signup_nome_sobrenome': {
+      'pt': 'Informe nome e sobrenome',
+      'en': 'Enter first and last name',
+    },
+    'signup_email_obrigatorio': {
+      'pt': 'Informe seu email',
+      'en': 'Enter your email',
+    },
+    'signup_email_invalido': {
+      'pt': 'Email invalido',
+      'en': 'Invalid email',
+    },
+    'signup_telefone_obrigatorio': {
+      'pt': 'Informe seu numero de telemovel',
+      'en': 'Enter your mobile number',
+    },
+    'signup_telefone_invalido': {
+      'pt': 'Numero de telemovel invalido',
+      'en': 'Invalid mobile number',
+    },
+    'signup_senha_obrigatoria': {
+      'pt': 'Informe sua senha',
+      'en': 'Enter your password',
+    },
+    'signup_senha_minima': {
+      'pt': 'A senha deve ter pelo menos 8 caracteres',
+      'en': 'Password must be at least 8 characters',
+    },
+    'signup_confirmar_obrigatoria': {
+      'pt': 'Confirme sua senha',
+      'en': 'Confirm your password',
+    },
+    'signup_senhas_nao_coincidem': {
+      'pt': 'As senhas nao coincidem',
+      'en': 'Passwords do not match',
+    },
+    'signup_aceito_termos': {
+      'pt': 'Aceito os ',
+      'en': 'I accept the ',
+    },
+    'signup_termos_condicoes': {
+      'pt': 'termos e condicoes',
+      'en': 'terms and conditions',
+    },
+    'signup_e_privacidade': {
+      'pt': ' e a politica de privacidade da Loah.',
+      'en': ' and the Loah privacy policy.',
+    },
+    'signup_aceitar_termos_erro': {
+      'pt': 'E preciso aceitar os termos para continuar',
+      'en': 'You must accept the terms to continue',
+    },
+    'signup_email_em_uso': {
+      'pt': 'Este email ja esta em uso',
+      'en': 'This email is already in use',
+    },
+    'signup_senha_fraca': {
+      'pt': 'Senha muito fraca',
+      'en': 'Password too weak',
+    },
+    'signup_erro_criar': {
+      'pt': 'Erro ao criar conta: ',
+      'en': 'Error creating account: ',
+    },
+
+// ═══════ EMAIL VERIFICATION SCREEN ═══════
+    'emailVer_verificar_titulo': {
+      'pt': 'Verifique seu Email',
+      'en': 'Verify your Email',
+    },
+    'emailVer_enviado': {
+      'pt': 'Email de verificação enviado! Verifique sua caixa de entrada.',
+      'en': 'Verification email sent! Check your inbox.',
+    },
+    'emailVer_erro_enviar': {
+      'pt': 'Erro ao enviar email: ',
+      'en': 'Error sending email: ',
+    },
+    'emailVer_sucesso': {
+      'pt': 'Email verificado com sucesso!',
+      'en': 'Email verified successfully!',
+    },
+    'emailVer_enviamos_para': {
+      'pt': 'Enviamos um email de verificação para:',
+      'en': 'We sent a verification email to:',
+    },
+    'emailVer_instrucoes': {
+      'pt': 'Clique no link enviado para o seu email para ativar sua conta. '
+          'Após verificar, volte a esta tela e clique em "Já verifiquei".',
+      'en': 'Click the link sent to your email to activate your account. '
+          'After verifying, return to this screen and click "I have verified".',
+    },
+    'emailVer_ja_verifiquei': {
+      'pt': 'Já verifiquei — Continuar',
+      'en': 'I have verified — Continue',
+    },
+    'emailVer_reenviar': {
+      'pt': 'Reenviar email',
+      'en': 'Resend email',
+    },
+    'emailVer_nao_recebeu': {
+      'pt': 'Não recebeu o email?',
+      'en': 'Didn\'t receive the email?',
+    },
+    'emailVer_dica_spam': {
+      'pt': 'Verifique a pasta de spam ou lixo eletrônico. '
+          'Certifique-se de que o email digitado está correto.',
+      'en': 'Check your spam or junk folder. '
+          'Make sure the email you entered is correct.',
+    },
+    'emailVer_voltar_login': {
+      'pt': 'Voltar ao login',
+      'en': 'Back to login',
+    },
+
+    // ═══════ PASSWORD RECOVERY SCREEN ═══════
+    'pwdRec_titulo': {
+      'pt': 'Esqueceu a senha?',
+      'en': 'Forgot your password?',
+    },
+    'pwdRec_subtitulo': {
+      'pt': 'Não se preocupe! Insira o e-mail associado à sua conta '
+          'e enviaremos instruções para redefinir sua senha.',
+      'en': 'Don\'t worry! Enter the email associated with your account '
+          'and we\'ll send you instructions to reset your password.',
+    },
+    'pwdRec_email_label': {
+      'pt': 'E-mail',
+      'en': 'Email',
+    },
+    'pwdRec_email_hint': {
+      'pt': 'seu@email.com',
+      'en': 'your@email.com',
+    },
+    'pwdRec_enviar': {
+      'pt': 'Enviar Instruções',
+      'en': 'Send Instructions',
+    },
+    'pwdRec_voltar_login': {
+      'pt': 'Voltar para o Login',
+      'en': 'Back to Login',
+    },
+    'pwdRec_spam': {
+      'pt': 'O email pode parar no Span',
+      'en': 'The email may end up in Spam',
+    },
+    'pwdRec_enviado': {
+      'pt': 'Email de redefinicao enviado para ',
+      'en': 'Password reset email sent to ',
+    },
+    'pwdRec_erro': {
+      'pt': 'Erro: ',
+      'en': 'Error: ',
+    },
+
+    // ═══════ RESET PASSWORD SCREEN ═══════
+    'resetPwd_definir': {
+      'pt': 'Definir nova senha',
+      'en': 'Set new password',
+    },
+    'resetPwd_subtitulo': {
+      'pt': 'Escolha uma nova senha para a sua conta Loah.',
+      'en': 'Choose a new password for your Loah account.',
+    },
+    'resetPwd_nova_label': {
+      'pt': 'NOVA SENHA',
+      'en': 'NEW PASSWORD',
+    },
+    'resetPwd_confirmar_label': {
+      'pt': 'CONFIRMAR NOVA SENHA',
+      'en': 'CONFIRM NEW PASSWORD',
+    },
+    'resetPwd_hint_min': {
+      'pt': 'Mínimo 6 caracteres',
+      'en': 'Minimum 6 characters',
+    },
+    'resetPwd_hint_confirmar': {
+      'pt': 'Digite novamente',
+      'en': 'Type again',
+    },
+    'resetPwd_botao': {
+      'pt': 'Redefinir Senha',
+      'en': 'Reset Password',
+    },
+    'resetPwd_voltar_login': {
+      'pt': 'Voltar para o Login',
+      'en': 'Back to Login',
+    },
+    'resetPwd_sucesso': {
+      'pt': 'Senha redefinida com sucesso! Faça login com a nova senha.',
+      'en': 'Password reset successfully! Sign in with your new password.',
+    },
+    'resetPwd_erro_expirado': {
+      'pt': 'Este link de redefinição expirou. Solicite um novo email de recuperação.',
+      'en': 'This reset link has expired. Request a new recovery email.',
+    },
+    'resetPwd_erro_invalido': {
+      'pt': 'Link de redefinição inválido. Verifique o email e tente novamente.',
+      'en': 'Invalid reset link. Check the email and try again.',
+    },
+    'resetPwd_erro_desativado': {
+      'pt': 'Esta conta foi desativada. Contacte o suporte.',
+      'en': 'This account has been disabled. Contact support.',
+    },
+    'resetPwd_erro_nao_encontrado': {
+      'pt': 'Utilizador não encontrado.',
+      'en': 'User not found.',
+    },
+    'resetPwd_erro_validar': {
+      'pt': 'Não foi possível validar o link de redefinição.',
+      'en': 'Could not validate the reset link.',
+    },
+    'resetPwd_obrigatoria': {
+      'pt': 'Informe a nova senha',
+      'en': 'Enter the new password',
+    },
+    'resetPwd_minima': {
+      'pt': 'A nova senha deve ter pelo menos 6 caracteres',
+      'en': 'The new password must be at least 6 characters',
+    },
+    'resetPwd_confirmar_obrigatoria': {
+      'pt': 'Confirme a nova senha',
+      'en': 'Confirm the new password',
+    },
+    'resetPwd_nao_coincidem': {
+      'pt': 'As senhas não coincidem',
+      'en': 'Passwords do not match',
+    },
+    'resetPwd_fraca': {
+      'pt': 'A nova senha é muito fraca',
+      'en': 'The new password is too weak',
+    },
+    'resetPwd_expirado_curto': {
+      'pt': 'O link de redefinição expirou. Solicite um novo.',
+      'en': 'The reset link has expired. Request a new one.',
+    },
+    'resetPwd_invalido_curto': {
+      'pt': 'O link de redefinição é inválido.',
+      'en': 'The reset link is invalid.',
+    },
+    'resetPwd_erro_redefinir': {
+      'pt': 'Erro ao redefinir senha: ',
+      'en': 'Error resetting password: ',
+    },
+
+    // ═══════ ONBOARDING SCREEN ═══════
+    'onb_meta_titulo': {
+      'pt': 'Defina Metas',
+      'en': 'Set Goals',
+    },
+    'onb_meta_desc': {
+      'pt': 'Estabeleça metas pessoais, financeiras e profissionais. Acompanhe o progresso com gráficos visuais e marcos importantes.',
+      'en': 'Set personal, financial and professional goals. Track progress with visual charts and important milestones.',
+    },
+    'onb_tarefa_titulo': {
+      'pt': 'Gerencie Tarefas',
+      'en': 'Manage Tasks',
+    },
+    'onb_tarefa_desc': {
+      'pt': 'Organize suas tarefas diárias com prioridades, prazos e categorias. Vincule tarefas a metas e acompanhe tudo num só lugar.',
+      'en': 'Organize your daily tasks with priorities, deadlines and categories. Link tasks to goals and track everything in one place.',
+    },
+    'onb_financa_titulo': {
+      'pt': 'Controle Finanças',
+      'en': 'Control Finances',
+    },
+    'onb_financa_desc': {
+      'pt': 'Registe transações, crie orçamentos, acompanhe contas e ativos. Receba lembretes de contas recorrentes e notificações inteligentes.',
+      'en': 'Record transactions, create budgets, track accounts and assets. Get reminders for recurring bills and smart notifications.',
+    },
+    'onb_pular': {
+      'pt': 'Pular',
+      'en': 'Skip',
+    },
+    'onb_continuar': {
+      'pt': 'Continuar',
+      'en': 'Continue',
+    },
+    'onb_comecar': {
+      'pt': 'Começar a usar Loah',
+      'en': 'Start using Loah',
     },
 
     // ═══════ DASHBOARD ═══════

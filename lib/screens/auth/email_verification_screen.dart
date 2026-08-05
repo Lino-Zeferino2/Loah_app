@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
 import 'package:loah_app/screens/onboarding/onboarding_screen.dart';
@@ -28,10 +29,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   bool _isChecking = false;
   bool _isResending = false;
   Timer? _autoCheckTimer;
+  late final AppLocales _loc;
 
   @override
   void initState() {
     super.initState();
+    _loc = AppLocales.of(context);
     // Envia o email de verificação automaticamente ao abrir a tela
     _sendVerificationEmail();
 
@@ -53,8 +56,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       await _authService.sendEmailVerification();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Email de verificação enviado! Verifique sua caixa de entrada.'),
+          SnackBar(
+            content: Text(_loc.translate('emailVer_enviado')),
             backgroundColor: Colors.green,
           ),
         );
@@ -62,7 +65,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao enviar email: $e')),
+          SnackBar(content: Text('${_loc.translate('emailVer_erro_enviar')} $e')),
         );
       }
     } finally {
@@ -81,8 +84,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
           _autoCheckTimer?.cancel();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Email verificado com sucesso!'),
+              SnackBar(
+                content: Text(_loc.translate('emailVer_sucesso')),
                 backgroundColor: Colors.green,
               ),
             );
@@ -127,7 +130,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Verifique seu Email',
+                        _loc.translate('emailVer_verificar_titulo'),
                         style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -144,7 +147,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   children: [
                     const SizedBox(height: 16),
                     Text(
-                      'Enviamos um email de verificação para:',
+                      _loc.translate('emailVer_enviamos_para'),
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: scheme.onSurface,
                       ),
@@ -168,8 +171,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Clique no link enviado para o seu email para ativar sua conta. '
-                      'Após verificar, volte a esta tela e clique em "Já verifiquei".',
+                      _loc.translate('emailVer_instrucoes'),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: scheme.onSurface.withValues(alpha: 0.7),
                         height: 1.5,
@@ -205,7 +207,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                   const Icon(Icons.check_circle_outline, size: 20),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Já verifiquei — Continuar',
+                                    _loc.translate('emailVer_ja_verifiquei'),
                                     style: theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w800,
                                       color: Colors.white,
@@ -240,7 +242,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                   const Icon(Icons.refresh_rounded, size: 20),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Reenviar email',
+                                    _loc.translate('emailVer_reenviar'),
                                     style: theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w800,
                                     ),
@@ -272,15 +274,14 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Não recebeu o email?',
+                                  _loc.translate('emailVer_nao_recebeu'),
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Verifique a pasta de spam ou lixo eletrônico. '
-                                  'Certifique-se de que o email digitado está correto.',
+                                  _loc.translate('emailVer_dica_spam'),
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: scheme.onSurface.withValues(alpha: 0.7),
                                     height: 1.4,
@@ -308,7 +309,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                           }
                         },
                         child: Text(
-                          'Voltar ao login',
+                          _loc.translate('emailVer_voltar_login'),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: scheme.primary,
                             fontWeight: FontWeight.w700,

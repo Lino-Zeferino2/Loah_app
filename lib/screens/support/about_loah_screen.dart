@@ -71,13 +71,13 @@ class _AboutLoahScreenState extends State<AboutLoahScreen> {
                         Text('• Finanças com visão clara'),
                         SizedBox(height: 8),
                         Text('• Tarefas para manter o progresso'),
-                      ],
+],
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Versão atual: 2.4.0',
+                  'Versão atual: 1.0.0',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),

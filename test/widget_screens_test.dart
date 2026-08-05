@@ -151,7 +151,7 @@ Widget wrapLoah(Widget child) {
       locale: const Locale('pt'),
       onLocaleChanged: (_) {},
       child: CurrencyController(
-        currencyCode: 'BRL',
+        currencyCode: 'EUR',
         onCurrencyChanged: (_) {},
         child: MaterialApp(
           theme: AppTheme.light,
@@ -180,9 +180,9 @@ void main() {
       await tester.pumpWidget(wrapLoah(
         const BalanceCard(available: 4820.50, progressToGoal: 0.5),
       ));
-      // "PATRIMÔNIO TOTAL" label + formatted BRL value
+// "PATRIMÔNIO TOTAL" label + formatted EUR value
       expect(find.textContaining('PATRIMÔNIO TOTAL'), findsOneWidget);
-      expect(find.textContaining('R\$'), findsWidgets);
+      expect(find.textContaining('€'), findsWidgets);
       expect(find.textContaining('50%'), findsOneWidget);
     });
 
@@ -260,7 +260,7 @@ void main() {
         target: 10000,
       );
       await tester.pumpWidget(wrapLoah(
-        GoalCard(goal: goal, allTasks: const []),
+        const GoalCard(goal: goal, allTasks: []),
       ));
       expect(find.text('Comprar Carro'), findsOneWidget);
       expect(find.text('Financeiro'), findsOneWidget);
@@ -277,9 +277,12 @@ void main() {
         progressMode: GoalProgressMode.taskChecklist,
       );
       final tasks = [
-        const TaskModel(id: 't1', title: 'Módulo 1', isDone: true, goalId: 'g2'),
-        const TaskModel(id: 't2', title: 'Módulo 2', isDone: true, goalId: 'g2'),
-        const TaskModel(id: 't3', title: 'Módulo 3', isDone: false, goalId: 'g2'),
+        const TaskModel(
+            id: 't1', title: 'Módulo 1', isDone: true, goalId: 'g2'),
+        const TaskModel(
+            id: 't2', title: 'Módulo 2', isDone: true, goalId: 'g2'),
+        const TaskModel(
+            id: 't3', title: 'Módulo 3', isDone: false, goalId: 'g2'),
       ];
       await tester.pumpWidget(wrapLoah(
         GoalCard(goal: checklistGoal, allTasks: tasks),
@@ -364,7 +367,7 @@ void main() {
         category: 'Alimentação',
         monthlyLimit: 800,
       );
-      final progress = BudgetProgress(budget: budget, spent: 500);
+      const progress = BudgetProgress(budget: budget, spent: 500);
       await tester.pumpWidget(wrapLoah(
         BudgetCard(progress: progress, onTap: () {}),
       ));
@@ -397,7 +400,8 @@ void main() {
       expect(find.textContaining('250.000'), findsOneWidget);
     });
 
-    testWidgets('RecurringTransactionCard renders title and day', (tester) async {
+    testWidgets('RecurringTransactionCard renders title and day',
+        (tester) async {
       const recurring = RecurringTransactionModel(
         id: 'r1',
         title: 'Netflix',
@@ -417,7 +421,8 @@ void main() {
       expect(find.text('Todo dia 15'), findsOneWidget);
     });
 
-    testWidgets('EmergencyGoalCard renders progress and target', (tester) async {
+    testWidgets('EmergencyGoalCard renders progress and target',
+        (tester) async {
       await tester.pumpWidget(wrapLoah(
         const EmergencyGoalCard(target: 5000, progress: 0.5),
       ));

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
@@ -48,6 +49,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   /// Valida o oobCode junto do Firebase antes de exibir o formulário.
   Future<void> _validateCode() async {
+    final loc = AppLocales.of(context);
     try {
       await _authService.verifyPasswordResetCode(widget.oobCode);
       if (!mounted) return;
@@ -59,47 +61,48 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       if (!mounted) return;
       setState(() {
         _checkingCode = false;
-        _errorMessage = _codeErrorMessage(e.code);
+        _errorMessage = _codeErrorMessage(e.code, loc);
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _checkingCode = false;
-        _errorMessage = 'Erro inesperado: $e';
+        _errorMessage = '${loc.translate('auth_erro_inesperado')}$e';
       });
     }
   }
 
-  String _codeErrorMessage(String code) {
+  String _codeErrorMessage(String code, AppLocales loc) {
     switch (code) {
       case 'expired-action-code':
-        return 'Este link de redefinição expirou. Solicite um novo email de recuperação.';
+        return loc.translate('resetPwd_erro_expirado');
       case 'invalid-action-code':
-        return 'Link de redefinição inválido. Verifique o email e tente novamente.';
+        return loc.translate('resetPwd_erro_invalido');
       case 'user-disabled':
-        return 'Esta conta foi desativada. Contacte o suporte.';
+        return loc.translate('resetPwd_erro_desativado');
       case 'user-not-found':
-        return 'Utilizador não encontrado.';
+        return loc.translate('resetPwd_erro_nao_encontrado');
       default:
-        return 'Não foi possível validar o link de redefinição.';
+        return loc.translate('resetPwd_erro_validar');
     }
   }
 
-  String? _validateNewPassword(String? value) {
+  String? _validateNewPassword(String? value, AppLocales loc) {
     final v = value ?? '';
-    if (v.isEmpty) return 'Informe a nova senha';
-    if (v.length < 6) return 'A nova senha deve ter pelo menos 6 caracteres';
+    if (v.isEmpty) return loc.translate('resetPwd_obrigatoria');
+    if (v.length < 6) return loc.translate('resetPwd_minima');
     return null;
   }
 
-  String? _validateConfirm(String? value) {
+  String? _validateConfirm(String? value, AppLocales loc) {
     final v = value ?? '';
-    if (v.isEmpty) return 'Confirme a nova senha';
-    if (v != _newPasswordController.text) return 'As senhas não coincidem';
+    if (v.isEmpty) return loc.translate('resetPwd_confirmar_obrigatoria');
+    if (v != _newPasswordController.text) return loc.translate('resetPwd_nao_coincidem');
     return null;
   }
 
   Future<void> _onSubmit() async {
+    final loc = AppLocales.of(context);
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
 
@@ -113,9 +116,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Senha redefinida com sucesso! Faça login com a nova senha.'),
-          backgroundColor: Color(0xFF2ECC71),
+        SnackBar(
+          content: Text(loc.translate('resetPwd_sucesso')),
+          backgroundColor: const Color(0xFF2ECC71),
         ),
       );
 
@@ -128,16 +131,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       String message;
       switch (e.code) {
         case 'weak-password':
-          message = 'A nova senha é muito fraca';
+          message = loc.translate('resetPwd_fraca');
           break;
         case 'expired-action-code':
-          message = 'O link de redefinição expirou. Solicite um novo.';
+          message = loc.translate('resetPwd_expirado_curto');
           break;
         case 'invalid-action-code':
-          message = 'O link de redefinição é inválido.';
+          message = loc.translate('resetPwd_invalido_curto');
           break;
         default:
-          message = 'Erro ao redefinir senha: ${e.message}';
+          message = '${loc.translate('resetPwd_erro_redefinir')}${e.message}';
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
@@ -145,7 +148,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: $e')),
+        SnackBar(content: Text('${loc.translate('auth_erro_inesperado')}$e')),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -158,6 +161,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final scheme = theme.colorScheme;
     final loahColors = context.loahColors;
     final textSec = context.textSecondary;
+    final loc = AppLocales.of(context);
 
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
 
@@ -166,7 +170,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context, scheme, textSec),
+            _buildHeader(context, scheme, textSec, loc),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -176,7 +180,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     children: [
                       _buildSecurityBadge(loahColors),
                       const SizedBox(height: 28),
-                      _buildCard(context, scheme, loahColors, textSec),
+                      _buildCard(context, scheme, loahColors, textSec, loc),
                       const SizedBox(height: 40),
                       Text(
                         '© 2026 LOAH DIGITAL ECOSYSTEM',
@@ -198,7 +202,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, ColorScheme scheme, Color textSec) {
+  Widget _buildHeader(BuildContext context, ColorScheme scheme, Color textSec, AppLocales loc) {
     return Container(
       height: 56,
       color: AppColors.darkSurface,
@@ -216,7 +220,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   Icon(Icons.arrow_back, color: scheme.primary, size: 20),
                   const SizedBox(width: 6),
                   Text(
-                    'Voltar',
+                    loc.translate('common_voltar'),
                     style: TextStyle(
                       color: scheme.primary,
                       fontSize: 14,
@@ -266,7 +270,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildCard(BuildContext context, ColorScheme scheme, LoahColors loahColors, Color textSec) {
+  Widget _buildCard(BuildContext context, ColorScheme scheme, LoahColors loahColors, Color textSec, AppLocales loc) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -290,12 +294,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
             )
           : _errorMessage != null
-              ? _buildErrorState(scheme, textSec)
-              : _buildForm(scheme, textSec),
+              ? _buildErrorState(scheme, textSec, loc)
+              : _buildForm(scheme, textSec, loc),
     );
   }
 
-  Widget _buildErrorState(ColorScheme scheme, Color textSec) {
+  Widget _buildErrorState(ColorScheme scheme, Color textSec, AppLocales loc) {
     return Column(
       children: [
         Icon(Icons.error_outline_rounded, color: scheme.error, size: 48),
@@ -323,9 +327,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              'Voltar para o Login',
-              style: TextStyle(fontWeight: FontWeight.w700),
+            child: Text(
+              loc.translate('resetPwd_voltar_login'),
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
         ),
@@ -333,12 +337,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildForm(ColorScheme scheme, Color textSec) {
+  Widget _buildForm(ColorScheme scheme, Color textSec, AppLocales loc) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          'Definir nova senha',
+          loc.translate('resetPwd_definir'),
           style: TextStyle(
             color: scheme.onSurface,
             fontSize: 24,
@@ -347,7 +351,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Escolha uma nova senha para a sua conta Loah.',
+          loc.translate('resetPwd_subtitulo'),
           textAlign: TextAlign.center,
           style: TextStyle(color: textSec, fontSize: 13, height: 1.45),
         ),
@@ -358,7 +362,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'NOVA SENHA',
+                loc.translate('resetPwd_nova_label'),
                 style: TextStyle(
                   color: textSec,
                   fontSize: 13,
@@ -370,12 +374,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 controller: _newPasswordController,
                 obscure: _obscureNew,
                 onToggle: () => setState(() => _obscureNew = !_obscureNew),
-                validator: _validateNewPassword,
-                hint: 'Mínimo 6 caracteres',
+                validator: (v) => _validateNewPassword(v, loc),
+                hint: loc.translate('resetPwd_hint_min'),
               ),
               const SizedBox(height: 18),
               Text(
-                'CONFIRMAR NOVA SENHA',
+                loc.translate('resetPwd_confirmar_label'),
                 style: TextStyle(
                   color: textSec,
                   fontSize: 13,
@@ -387,8 +391,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 controller: _confirmPasswordController,
                 obscure: _obscureConfirm,
                 onToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                validator: _validateConfirm,
-                hint: 'Digite novamente',
+                validator: (v) => _validateConfirm(v, loc),
+                hint: loc.translate('resetPwd_hint_confirmar'),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -412,9 +416,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Text(
-                          'Redefinir Senha',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                      : Text(
+                          loc.translate('resetPwd_botao'),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                 ),
               ),
@@ -467,4 +471,3 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 }
-

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
@@ -27,10 +28,11 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
   }
 
   Future<void> _handleSendInstructions() async {
+    final loc = AppLocales.of(context);
     final email = _emailController.text.trim();
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe seu email')),
+        SnackBar(content: Text(loc.translate('auth_email_obrigatorio'))),
       );
       return;
     }
@@ -57,20 +59,20 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Email de redefinicao enviado para $email')),
+        SnackBar(content: Text('${loc.translate('pwdRec_enviado')}$email')),
       );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       String message;
       switch (e.code) {
         case 'invalid-email':
-          message = 'Email invalido';
+          message = loc.translate('auth_email_invalido');
           break;
         case 'user-not-found':
-          message = 'Usuario nao encontrado';
+          message = loc.translate('auth_usuario_nao_encontrado');
           break;
         default:
-          message = 'Erro: ${e.message}';
+          message = '${loc.translate('pwdRec_erro')}${e.message}';
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
@@ -78,7 +80,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: $e')),
+        SnackBar(content: Text('${loc.translate('auth_erro_inesperado')}$e')),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -91,6 +93,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     final scheme = theme.colorScheme;
     final loahColors = context.loahColors;
     final textSec = context.textSecondary;
+    final loc = AppLocales.of(context);
 
     // Configura os ícones da barra de status (iOS/Android)
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
@@ -101,7 +104,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         child: Column(
           children: [
             // Header Topo
-            _buildHeader(context, scheme, textSec),
+            _buildHeader(context, scheme, textSec, loc),
 
             // Conteúdo Rolável e Responsivo
             Expanded(
@@ -117,7 +120,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                       const SizedBox(height: 28),
 
                       // Card Principal de Recuperação
-                      _buildRecoveryCard(context, scheme, loahColors, textSec),
+                      _buildRecoveryCard(context, scheme, loahColors, textSec, loc),
 
                       const SizedBox(height: 40),
 
@@ -143,7 +146,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
   }
 
   /// Cabeçalho com botão "Voltar" e o Título "Loah"
-  Widget _buildHeader(BuildContext context, ColorScheme scheme, Color textSec) {
+  Widget _buildHeader(BuildContext context, ColorScheme scheme, Color textSec, AppLocales loc) {
     return Container(
       height: 56,
       color: AppColors.darkSurface,
@@ -161,7 +164,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                   Icon(Icons.arrow_back, color: scheme.primary, size: 20),
                   const SizedBox(width: 6),
                   Text(
-                    'Voltar',
+loc.translate('common_voltar'),
                     style: TextStyle(
                       color: scheme.primary,
                       fontSize: 14,
@@ -214,7 +217,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
 
   /// Card Escuro Contendo o Formulário
   Widget _buildRecoveryCard(
-      BuildContext context, ColorScheme scheme, LoahColors loahColors, Color textSec) {
+      BuildContext context, ColorScheme scheme, LoahColors loahColors, Color textSec, AppLocales loc) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -234,7 +237,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            'Esqueceu a senha?',
+            loc.translate('pwdRec_titulo'),
             style: TextStyle(
               color: scheme.onSurface,
               fontSize: 24,
@@ -243,7 +246,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Não se preocupe! Insira o e-mail associado à sua conta e enviaremos instruções para redefinir sua senha.',
+            loc.translate('pwdRec_subtitulo'),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: textSec,
@@ -255,8 +258,8 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
 
           // Campo de Entrada do E-mail
           CustomInputField(
-            label: 'E-mail',
-            hintText: 'seu@email.com',
+            label: loc.translate('pwdRec_email_label'),
+            hintText: loc.translate('pwdRec_email_hint'),
             prefixIcon: Icons.mail_outline_rounded,
             controller: _emailController,
           ),
@@ -265,7 +268,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
 
           // Botão Ação
           PrimaryButton(
-            text: 'Enviar Instruções',
+            text: loc.translate('pwdRec_enviar'),
             icon: Icons.send_rounded,
             isLoading: _submitting,
             onPressed: _submitting
@@ -286,7 +289,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                 Icon(Icons.arrow_back, color: textSec, size: 16),
                 const SizedBox(width: 8),
                 Text(
-                  'Voltar para o Login',
+                  loc.translate('pwdRec_voltar_login'),
                   style: TextStyle(
                     color: scheme.onSurface,
                     fontSize: 13,
@@ -298,7 +301,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'O email pode parar no Span',
+            loc.translate('pwdRec_spam'),
             style: TextStyle(color: scheme.error),
             textAlign: TextAlign.center,
           ),

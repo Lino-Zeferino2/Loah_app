@@ -504,7 +504,7 @@ A nossa equipa está comprometida em evoluir continuamente o Loah, ouvindo os no
 
 O Loah é mais do que um aplicativo — é um companheiro na sua jornada rumo a uma vida mais organizada, equilibrada e realizada.
 
-Versão atual: 2.4.0`,
+Versão atual: 1.0.0`,
       content_en: `ABOUT LOAH
 
 Loah was born from the conviction that everyone deserves clarity and control over their financial and personal life. We are an intuitive and complete platform that combines financial management, productivity and digital well-being in a single experience.
@@ -527,7 +527,7 @@ Our team is committed to continuously evolving Loah, listening to our users and 
 
 Loah is more than an app — it is a companion on your journey towards a more organized, balanced and fulfilled life.
 
-Current version: 2.4.0`,
+Current version: 1.0.0`,
     },
     {
       id: 'politica_privacidade',
@@ -816,7 +816,7 @@ For questions regarding these Terms, please contact us through the Help Center i
     },
   ];
 
-  for (const content of appContent) {
+for (const content of appContent) {
     const contentDoc = db.collection('appContent').doc(content.id);
     batch.set(contentDoc, {
       content_pt: content.content_pt,
@@ -825,6 +825,27 @@ For questions regarding these Terms, please contact us through the Help Center i
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
   }
+
+  // ─── CONTEUDO DO APP - documento aboutLoah (formato usado pelo app) ──
+  // O app Flutter (HelpCenterService.getAboutLoahContent) lê o documento
+  // `appContent/aboutLoah` com os campos terms/privacyPolicy/aboutUs.
+  // Este documento é o que alimenta as telas TermosPrivacyScreen e
+  // AboutLoahScreen. Usa o mesmo conteudo dos ficheiros assets/content.
+  const aboutLoah = {
+    id: 'aboutLoah',
+    terms: appContent.find(c => c.id === 'termos_condicoes')?.content_pt || '',
+    privacyPolicy: appContent.find(c => c.id === 'politica_privacidade')?.content_pt || '',
+    aboutUs: appContent.find(c => c.id === 'sobre_nos')?.content_pt || '',
+  };
+  const aboutLoahDoc = db.collection('appContent').doc(aboutLoah.id);
+  batch.set(aboutLoahDoc, {
+    terms: aboutLoah.terms,
+    privacyPolicy: aboutLoah.privacyPolicy,
+    aboutUs: aboutLoah.aboutUs,
+    lastUpdatedBy: 'seed',
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
 
   await batch.commit();
   console.log('✅ App data seeded successfully!');

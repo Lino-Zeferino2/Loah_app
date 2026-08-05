@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
 import 'package:loah_app/main.dart';
 
@@ -17,33 +18,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  static const _pages = [
-    _OnboardingPageData(
-      icon: Icons.track_changes_outlined,
-      title: 'Defina Metas',
-      description:
-          'Estabeleça metas pessoais, financeiras e profissionais. '
-          'Acompanhe o progresso com gráficos visuais e marcos importantes.',
-      color: AppColors.primary,
-    ),
-    _OnboardingPageData(
-      icon: Icons.check_circle_outline,
-      title: 'Gerencie Tarefas',
-      description:
-          'Organize suas tarefas diárias com prioridades, prazos e '
-          'categorias. Vincule tarefas a metas e acompanhe tudo num só lugar.',
-      color: AppColors.success,
-    ),
-    _OnboardingPageData(
-      icon: Icons.account_balance_wallet_outlined,
-      title: 'Controle Finanças',
-      description:
-          'Registe transações, crie orçamentos, acompanhe contas e ativos. '
-          'Receba lembretes de contas recorrentes e notificações inteligentes.',
-      color: AppColors.primaryLight,
-    ),
-  ];
-
   @override
   void dispose() {
     _pageController.dispose();
@@ -51,7 +25,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _goToNext() {
-    if (_currentPage < _pages.length - 1) {
+    if (_currentPage < 2) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
@@ -68,10 +42,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  List<_OnboardingPageData> _buildPages(AppLocales loc) {
+    return [
+      _OnboardingPageData(
+        icon: Icons.track_changes_outlined,
+        title: loc.translate('onb_meta_titulo'),
+        description: loc.translate('onb_meta_desc'),
+        color: AppColors.primary,
+      ),
+      _OnboardingPageData(
+        icon: Icons.check_circle_outline,
+        title: loc.translate('onb_tarefa_titulo'),
+        description: loc.translate('onb_tarefa_desc'),
+        color: AppColors.success,
+      ),
+      _OnboardingPageData(
+        icon: Icons.account_balance_wallet_outlined,
+        title: loc.translate('onb_financa_titulo'),
+        description: loc.translate('onb_financa_desc'),
+        color: AppColors.primaryLight,
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final loc = AppLocales.of(context);
+    final pages = _buildPages(loc);
 
     return Scaffold(
       body: SafeArea(
@@ -86,7 +85,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
                 child: Text(
-                  'Pular',
+                  loc.translate('onb_pular'),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: scheme.primary,
                     fontWeight: FontWeight.w700,
@@ -100,9 +99,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: PageView.builder(
                 controller: _pageController,
                 onPageChanged: (index) => setState(() => _currentPage = index),
-                itemCount: _pages.length,
+                itemCount: pages.length,
                 itemBuilder: (context, index) {
-                  final page = _pages[index];
+                  final page = pages[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Column(
@@ -148,7 +147,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             // ── Dot indicators ──
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_pages.length, (index) {
+              children: List.generate(pages.length, (index) {
                 final isActive = index == _currentPage;
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
@@ -184,9 +183,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        _currentPage < _pages.length - 1
-                            ? 'Continuar'
-                            : 'Começar a usar Loah',
+                        _currentPage < pages.length - 1
+                            ? loc.translate('onb_continuar')
+                            : loc.translate('onb_comecar'),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -194,7 +193,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                       const SizedBox(width: 8),
                       Icon(
-                        _currentPage < _pages.length - 1
+                        _currentPage < pages.length - 1
                             ? Icons.arrow_forward_rounded
                             : Icons.check_rounded,
                         size: 20,

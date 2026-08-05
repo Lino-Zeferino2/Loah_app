@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
@@ -10,7 +11,6 @@ import '../auth/login_screen.dart';
 
 class SplashScreenVistoso extends StatefulWidget {
   const SplashScreenVistoso({super.key});
-
 
   @override
   State<SplashScreenVistoso> createState() => _SplashScreenVistosoState();
@@ -29,6 +29,7 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
 
   bool _leaving = false;
   bool _navigated = false; // Evita navegação duplicada
+  late AppLocales _loc;
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();
   StreamSubscription<User?>? _authSubscription;
@@ -85,6 +86,15 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
         }
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // AppLocales.of depende de um inherited widget (LocaleController),
+    // portanto só pode ser acedido a partir de didChangeDependencies
+    // (ou build), nunca a partir de initState.
+    _loc = AppLocales.of(context);
   }
 
   Future<void> _checkAndNavigate(User user) async {
@@ -241,7 +251,7 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
                               builder: (_, __) => Opacity(
                                 opacity: _titleFade.value,
                                 child: Text(
-                                  'Sincronize sua vida',
+                                  _loc.translate('splash_subtitulo'),
                                   style: theme.textTheme.headlineSmall?.copyWith(
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: -0.2,
@@ -256,7 +266,7 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
                               builder: (_, __) => Opacity(
                                 opacity: _taglineFade.value,
                                 child: Text(
-                                  'Tudo num so lugar',
+                                  _loc.translate('splash_tagline'),
                                   textAlign: TextAlign.center,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: context.textSecondary,
@@ -344,4 +354,3 @@ class _DotGridPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _DotGridPainter oldDelegate) => oldDelegate.color != color;
 }
-

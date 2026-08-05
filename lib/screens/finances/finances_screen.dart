@@ -119,7 +119,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
         );
       }).toList();
 
-final tasksSnapshot = await TaskService().getTasksStream().first;
+      final tasksSnapshot = await TaskService().getTasksStream().first;
       final tasks = tasksSnapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         return TaskModel(
@@ -177,17 +177,16 @@ final tasksSnapshot = await TaskService().getTasksStream().first;
     }
   }
 
-/// Cria a meta de Fundo de Emergência default
+  /// Cria a meta de Fundo de Emergência default
   /// (`goal_emergency_fund`) caso o utilizador ainda não tenha nenhuma.
   /// Assim, o cartão especial de emergência aparece automaticamente na
   /// tela de Finanças mesmo para novos utilizadores.
   Future<void> _ensureEmergencyFundGoal(List<GoalModel> goals) async {
-    final hasEmergencyFund =
-        goals.any((g) => g.id == 'goal_emergency_fund');
+    final hasEmergencyFund = goals.any((g) => g.id == 'goal_emergency_fund');
     if (hasEmergencyFund) return;
 
     try {
-      final goal = GoalModel(
+      const goal = GoalModel(
         id: 'goal_emergency_fund',
         title: 'Reserva de Emergência',
         category: 'Financeiro',
@@ -195,7 +194,8 @@ final tasksSnapshot = await TaskService().getTasksStream().first;
         progressMode: GoalProgressMode.manualValue,
         current: 0,
         target: 5000,
-        description: 'Complete a sua reserva de emergência para ter segurança financeira.',
+        description:
+            'Complete a sua reserva de emergência para ter segurança financeira.',
         progressColor: Colors.teal,
       );
       await GoalService().addGoal(goal);
@@ -207,9 +207,10 @@ final tasksSnapshot = await TaskService().getTasksStream().first;
   Future<void> _addTransaction() async {
     if (_accounts.isEmpty) {
       if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocales.of(context).translate('finances_criar_conta_primeiro')),
+            content: Text(AppLocales.of(context)
+                .translate('finances_criar_conta_primeiro')),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -286,7 +287,8 @@ final tasksSnapshot = await TaskService().getTasksStream().first;
         _goals.where((g) => g.id == 'goal_emergency_fund').firstOrNull;
 
     return Scaffold(
-      drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
+      drawer: LoahDrawer(
+          currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
       appBar: LoahAppBar(
         title: loc.translate('finances_title'),
         actions: [
@@ -294,11 +296,12 @@ final tasksSnapshot = await TaskService().getTasksStream().first;
             children: [
               IconButton(
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const NotificationsScreen()),
                 ),
                 icon: const Icon(Icons.notifications_none_rounded),
               ),
-if (_unreadCount > 0)
+              if (_unreadCount > 0)
                 Positioned(
                   right: 6,
                   top: 6,
@@ -308,7 +311,8 @@ if (_unreadCount > 0)
                       color: Colors.redAccent,
                       shape: BoxShape.circle,
                     ),
-                    constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                    constraints:
+                        const BoxConstraints(minWidth: 18, minHeight: 18),
                     child: Text(
                       '$_unreadCount',
                       style: const TextStyle(
@@ -332,7 +336,8 @@ if (_unreadCount > 0)
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   children: [
-                    TotalBalanceCard(total: total, income: income, expense: expense),
+                    TotalBalanceCard(
+                        total: total, income: income, expense: expense),
                     const SizedBox(height: AppSpacing.md),
                     SizedBox(
                       height: 120,
@@ -344,7 +349,8 @@ if (_unreadCount > 0)
                             child: _FinanceEntryCard(
                               icon: Icons.account_balance_wallet_outlined,
                               label: loc.translate('finances_contas'),
-                              value: CurrencyFormatter.format(total, context: context),
+                              value: CurrencyFormatter.format(total,
+                                  context: context),
                               onTap: _openAccounts,
                             ),
                           ),
@@ -355,7 +361,8 @@ if (_unreadCount > 0)
                               icon: Icons.account_balance_outlined,
                               label: loc.translate('finances_patrimonio'),
                               value: CurrencyFormatter.format(
-                                _assets.fold<double>(0, (sum, a) => sum + a.currentValue),
+                                _assets.fold<double>(
+                                    0, (sum, a) => sum + a.currentValue),
                                 context: context,
                               ),
                               onTap: _openAssets,
@@ -379,7 +386,8 @@ if (_unreadCount > 0)
                             child: _FinanceEntryCard(
                               icon: Icons.autorenew,
                               label: loc.translate('finances_recorrentes'),
-                              value: '${_recurring.where((r) => r.active).length} ${loc.translate('finances_ativas')}',
+                              value:
+                                  '${_recurring.where((r) => r.active).length} ${loc.translate('finances_ativas')}',
                               onTap: _openRecurring,
                             ),
                           ),
@@ -405,22 +413,27 @@ if (_unreadCount > 0)
                     ],
                     const SizedBox(height: AppSpacing.lg),
                     if (distribution.isEmpty)
-                      _EmptyDistributionHint(colors: colors)
+                      const _EmptyDistributionHint()
                     else
-                    ExpenseDistributionCard(
+                      ExpenseDistributionCard(
                         categories: distribution,
                         onDetails: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const ExpenseDistributionDetailScreen()),
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  const ExpenseDistributionDetailScreen()),
                         ),
                       ),
                     const SizedBox(height: AppSpacing.lg),
                     SectionHeader(
                       title: loc.translate('finances_transacoes_recentes'),
                       trailing: IconButton(
-                        icon: Icon(Icons.filter_list, color: colors.accentBlue, size: 18),
+                        icon: Icon(Icons.filter_list,
+                            color: colors.accentBlue, size: 18),
                         onPressed: () async {
                           await Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const TransactionHistoryScreen()),
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const TransactionHistoryScreen()),
                           );
                           _loadData();
                         },
@@ -442,14 +455,16 @@ if (_unreadCount > 0)
                       )
                     else
                       for (final t in recentCapped) ...[
-                        TransactionListItem(transaction: t, onTap: () => _editTransaction(t)),
+                        TransactionListItem(
+                            transaction: t, onTap: () => _editTransaction(t)),
                         const SizedBox(height: AppSpacing.sm),
                       ],
                     const SizedBox(height: 4),
-                   OutlinedButton(
+                    OutlinedButton(
                       onPressed: () async {
                         await Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const TransactionHistoryScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const TransactionHistoryScreen()),
                         );
                         _loadData();
                       },
@@ -466,7 +481,7 @@ if (_unreadCount > 0)
               ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary ,
+        backgroundColor: AppColors.primary,
         heroTag: 'finances_fab',
         onPressed: _addTransaction,
         child: const Icon(Icons.add),
@@ -476,11 +491,11 @@ if (_unreadCount > 0)
 }
 
 class _EmptyDistributionHint extends StatelessWidget {
-  final LoahColors colors;
-  const _EmptyDistributionHint({required this.colors});
+  const _EmptyDistributionHint();
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.loahColors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -538,7 +553,8 @@ class _FinanceEntryCard extends StatelessWidget {
                 children: [
                   Icon(icon, size: 18, color: colors.accentBlue),
                   const Spacer(),
-                  Icon(Icons.chevron_right, size: 16, color: context.textSecondary),
+                  Icon(Icons.chevron_right,
+                      size: 16, color: context.textSecondary),
                 ],
               ),
               const SizedBox(height: 8),
@@ -547,7 +563,8 @@ class _FinanceEntryCard extends StatelessWidget {
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                style:
+                    const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
             ],
           ),

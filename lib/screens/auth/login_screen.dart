@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/main.dart';
@@ -48,17 +49,17 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  String? _validateEmail(String? value) {
+String? _validateEmail(String? value, AppLocales loc) {
     final v = value?.trim() ?? '';
-    if (v.isEmpty) return 'Informe seu email';
-    if (!_emailRegex.hasMatch(v)) return 'Email invalido';
+    if (v.isEmpty) return loc.translate('auth_email_obrigatorio');
+    if (!_emailRegex.hasMatch(v)) return loc.translate('auth_email_invalido');
     return null;
   }
 
-  String? _validatePassword(String? value) {
+  String? _validatePassword(String? value, AppLocales loc) {
     final v = value ?? '';
-    if (v.isEmpty) return 'Informe sua senha';
-    if (v.length < 6) return 'Senha deve ter pelo menos 6 caracteres';
+    if (v.isEmpty) return loc.translate('auth_senha_obrigatoria');
+    if (v.length < 6) return loc.translate('auth_senha_minima');
     return null;
   }
 
@@ -280,11 +281,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final textSecondary = scheme.onSurface.withValues(alpha: 0.65);
     final border = scheme.onSurface.withValues(alpha: 0.14);
     final cardBackground = scheme.surface;
+    final loc = AppLocales.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -307,8 +309,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             const SizedBox(height: 12),
-                            Text(
-                              'Bem-vindo de Volta',
+Text(
+                              loc.translate('auth_bem_vindo_volta'),
                               style: theme.textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.4,
@@ -317,7 +319,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Entre com suas credenciais para aceder a sua conta Loah.',
+                              loc.translate('auth_login_subtitle'),
                               textAlign: TextAlign.center,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.85),
@@ -333,7 +335,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _FieldLabel(text: 'E-MAIL', color: textSecondary),
+_FieldLabel(text: loc.translate('auth_email_label'), color: textSecondary),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _emailController,
@@ -341,7 +343,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
-                                hintText: 'seu@email.com',
+hintText: loc.translate('auth_email_hint'),
                                 prefixIcon: const Icon(Icons.mail_outline_rounded),
                                 filled: true,
                                 fillColor: cardBackground,
@@ -359,13 +361,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                   borderSide: BorderSide(color: scheme.primary),
                                 ),
                               ),
-                              validator: _validateEmail,
+validator: (value) => _validateEmail(value, loc),
                             ),
                             const SizedBox(height: 16),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                _FieldLabel(text: 'SENHA', color: textSecondary),
+_FieldLabel(text: loc.translate('auth_senha_label'), color: textSecondary),
                                 TextButton(
                                   style: TextButton.styleFrom(
                                     padding: EdgeInsets.zero,
@@ -377,8 +379,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                       MaterialPageRoute(builder: (_) => const PasswordRecoveryScreen()),
                                     );
                                   },
-                                  child: Text(
-                                    'Esqueci minha senha',
+child: Text(
+                                    loc.translate('auth_esqueci_senha'),
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: scheme.primary,
                                       fontWeight: FontWeight.w800,
@@ -420,7 +422,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   borderSide: BorderSide(color: scheme.primary),
                                 ),
                               ),
-                              validator: _validatePassword,
+validator: (value) => _validatePassword(value, loc),
                               onFieldSubmitted: (_) => _onSubmit(),
                             ),
                             const SizedBox(height: 24),
@@ -448,8 +450,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     : Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          Text(
-                                            'Entrar',
+Text(
+                                            loc.translate('auth_entrar_btn'),
                                             style: theme.textTheme.titleMedium?.copyWith(
                                               fontWeight: FontWeight.w800,
                                               color: Colors.white,
@@ -467,8 +469,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Expanded(child: Divider(thickness: 1, height: 1, color: border)),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  child: Text(
-                                    'OU CONTINUE COM',
+child: Text(
+                                    loc.translate('auth_ou_continue_com'),
                                     style: theme.textTheme.labelSmall?.copyWith(
                                       color: textSecondary,
                                       fontWeight: FontWeight.w800,
@@ -506,8 +508,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 alignment: WrapAlignment.center,
                                 spacing: 6,
                                 children: [
-                                  Text(
-                                    'Nao tem uma conta?',
+Text(
+                                    loc.translate('auth_nao_tem_conta'),
                                     style: theme.textTheme.bodyMedium?.copyWith(
                                       color: scheme.onSurface,
                                       fontWeight: FontWeight.w600,
@@ -524,8 +526,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                       minimumSize: Size.zero,
                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                     ),
-                                    child: Text(
-                                      'Cadastre-se',
+child: Text(
+                                      loc.translate('auth_cadastre_se'),
                                       style: theme.textTheme.bodyMedium?.copyWith(
                                         color: scheme.primary,
                                         fontWeight: FontWeight.w900,
@@ -617,4 +619,3 @@ class _SocialButton extends StatelessWidget {
     );
   }
 }
-

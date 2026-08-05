@@ -128,7 +128,7 @@ class LoahApp extends StatefulWidget {
 class _LoahAppState extends State<LoahApp> {
   ThemeMode _themeMode = ThemeMode.dark;
   Locale _locale = const Locale('pt');
-  String _currencyCode = 'BRL';
+  String _currencyCode = 'EUR';
 
   void _toggleTheme() {
     setState(() {
