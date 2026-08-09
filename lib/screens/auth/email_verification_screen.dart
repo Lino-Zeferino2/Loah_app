@@ -21,7 +21,8 @@ class EmailVerificationScreen extends StatefulWidget {
   const EmailVerificationScreen({super.key, required this.email});
 
   @override
-  State<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
+  State<EmailVerificationScreen> createState() =>
+      _EmailVerificationScreenState();
 }
 
 class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
@@ -34,7 +35,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   @override
   void initState() {
     super.initState();
-    _loc = AppLocales.of(context);
     // Envia o email de verificação automaticamente ao abrir a tela
     _sendVerificationEmail();
 
@@ -42,6 +42,15 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     _autoCheckTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       _checkEmailVerified();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // AppLocales.of depende de um inherited widget (LocaleController),
+    // portanto só pode ser acedido a partir de didChangeDependencies
+    // (ou build), nunca a partir de initState.
+    _loc = AppLocales.of(context);
   }
 
   @override
@@ -65,7 +74,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${_loc.translate('emailVer_erro_enviar')} $e')),
+          SnackBar(
+              content: Text('${_loc.translate('emailVer_erro_enviar')} $e')),
         );
       }
     } finally {
@@ -198,17 +208,20 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
                                 ),
                               )
                             : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.check_circle_outline, size: 20),
+                                  const Icon(Icons.check_circle_outline,
+                                      size: 20),
                                   const SizedBox(width: 8),
                                   Text(
                                     _loc.translate('emailVer_ja_verifiquei'),
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w800,
                                       color: Colors.white,
                                     ),
@@ -234,7 +247,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -243,7 +257,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                   const SizedBox(width: 8),
                                   Text(
                                     _loc.translate('emailVer_reenviar'),
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
@@ -257,7 +272,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: context.loahColors.accentBlue.withValues(alpha: 0.1),
+                        color: context.loahColors.accentBlue
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -283,7 +299,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                 Text(
                                   _loc.translate('emailVer_dica_spam'),
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                    color: scheme.onSurface.withValues(alpha: 0.7),
+                                    color:
+                                        scheme.onSurface.withValues(alpha: 0.7),
                                     height: 1.4,
                                   ),
                                 ),
@@ -303,7 +320,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                           _authService.signOut();
                           if (mounted) {
                             Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(builder: (_) => const LoginScreen()),
+                              MaterialPageRoute(
+                                  builder: (_) => const LoginScreen()),
                               (route) => false,
                             );
                           }
