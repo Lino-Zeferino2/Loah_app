@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/gestures.dart';
@@ -107,13 +108,17 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _showTermsError = !_acceptedTerms);
     if (!formValid || !_acceptedTerms) return;
 
-    setState(() => _submitting = true);
+setState(() => _submitting = true);
 
     try {
       final userCredential = await _authService.signUpWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+
+      // Reativa a rede do Firestore que foi desligada no logout,
+      // caso contrário a escrita do perfil abaixo fica pendurada.
+      await FirebaseFirestore.instance.enableNetwork();
 
       await _userService.updateDisplayName(_nameController.text.trim());
 
@@ -198,13 +203,15 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Future<void> _handleGoogleSignUp() async {
+Future<void> _handleGoogleSignUp() async {
     final loc = AppLocales.of(context);
     try {
       final userCredential = await _authService.signInWithGoogle();
       if (!mounted) return;
       final user = userCredential.user;
       if (user != null) {
+        // Reativa a rede do Firestore que foi desligada no logout.
+        await FirebaseFirestore.instance.enableNetwork();
         await _userService.createUserProfile(
           uid: user.uid,
           name: user.displayName ?? 'Usuario',
@@ -263,8 +270,10 @@ class _SignupScreenState extends State<SignupScreen> {
     try {
       final userCredential = await _authService.signInWithApple();
       if (!mounted) return;
-      final user = userCredential.user;
+final user = userCredential.user;
       if (user != null) {
+        // Reativa a rede do Firestore que foi desligada no logout.
+        await FirebaseFirestore.instance.enableNetwork();
         await _userService.createUserProfile(
           uid: user.uid,
           name: user.displayName ?? 'Usuario Apple',
