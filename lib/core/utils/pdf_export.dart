@@ -64,7 +64,7 @@ class PdfExport {
       children: [
         pw.Text(
           'Loah — Relatório Financeiro',
-          style: pw.TextStyle(
+          style: const pw.TextStyle(
             fontSize: 22,
             fontWeight: pw.FontWeight.bold,
             color: PdfColors.blue700,
@@ -89,7 +89,7 @@ class PdfExport {
       children: [
         pw.Text(
           'Evolução do Saldo',
-          style: pw.TextStyle(
+          style: const pw.TextStyle(
             fontSize: 14,
             fontWeight: pw.FontWeight.bold,
           ),
@@ -135,7 +135,7 @@ class PdfExport {
       children: [
         pw.Text(
           'Gasto por Categoria',
-          style: pw.TextStyle(
+          style: const pw.TextStyle(
             fontSize: 14,
             fontWeight: pw.FontWeight.bold,
           ),
@@ -196,7 +196,7 @@ class PdfExport {
       children: [
         pw.Text(
           'Transações Recentes',
-          style: pw.TextStyle(
+          style: const pw.TextStyle(
             fontSize: 14,
             fontWeight: pw.FontWeight.bold,
           ),
@@ -254,7 +254,7 @@ class PdfExport {
       children: [
         pw.Text(
           'Patrimônio',
-          style: pw.TextStyle(
+          style: const pw.TextStyle(
             fontSize: 14,
             fontWeight: pw.FontWeight.bold,
           ),
