@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
+import 'package:loah_app/screens/finances/add_account_screen.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/utils/account_balance.dart';
@@ -204,7 +205,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
     }
   }
 
-  Future<void> _addTransaction() async {
+Future<void> _addTransaction() async {
     if (_accounts.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -215,8 +216,26 @@ class _FinancesScreenState extends State<FinancesScreen> {
           ),
         );
       }
+
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+
+      final accountResult = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => const AddAccountScreen()),
+      );
+
+      if (accountResult == true) {
+        await _loadData();
+        if (!mounted) return;
+
+        final result = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
+        );
+        if (result == true) _loadData();
+      }
       return;
     }
+
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
     );
