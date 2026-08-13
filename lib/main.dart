@@ -80,7 +80,13 @@ void main() async {
   }
 
   // ── FCM Push Notifications ────────────────────────────────────
-  await NotificationService().initialize();
+// Não bloqueia o arranque do app: em simuladores iOS sem APNS,
+// partes do FCM podem demorar ou nunca resolver. O app deve
+// abrir normalmente mesmo que a inicialização de notificações
+// ainda esteja em curso ou falhe.
+NotificationService().initialize().catchError((e) {
+  debugPrint('[main] Notification init error (non-fatal): $e');
+});
 
   // Start periodic checks for local notifications (contact overdue,
   // tasks due, recurring bills, budgets over limit, etc.)

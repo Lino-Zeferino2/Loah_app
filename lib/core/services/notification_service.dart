@@ -82,9 +82,36 @@ class NotificationService {
     );
 
     // ── 3. Get & register the FCM token ──────────────────────────
-    _currentToken = await _messaging.getToken();
-    debugPrint('[NotificationService] FCM Token: $_currentToken');
-    await _saveTokenToFirestore(_currentToken);
+    // No iOS, o token FCM depende do APNS token, que só chega depois
+    // de o sistema registar o device para push. Em simuladores esse
+    // APNS token pode nunca chegar — sem esta checagem, getToken()
+    // lança exceção e derruba o app inteiro (main() faz await nisto).
+    // No Android este bloco continua a funcionar exatamente igual.
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final apnsToken = await _messaging.getAPNSToken();
+      if (apnsToken == null) {
+        debugPrint(
+          '[NotificationService] APNS token ainda não disponível '
+          '(normal em simulador). A saltar registo de FCM token.',
+        );
+      } else {
+        try {
+          _currentToken = await _messaging.getToken();
+          debugPrint('[NotificationService] FCM Token: $_currentToken');
+          await _saveTokenToFirestore(_currentToken);
+        } catch (e) {
+          debugPrint('[NotificationService] Erro ao obter FCM token: $e');
+        }
+      }
+    } else {
+      try {
+        _currentToken = await _messaging.getToken();
+        debugPrint('[NotificationService] FCM Token: $_currentToken');
+        await _saveTokenToFirestore(_currentToken);
+      } catch (e) {
+        debugPrint('[NotificationService] Erro ao obter FCM token: $e');
+      }
+    }
 
     // Listen for token refresh
     _messaging.onTokenRefresh.listen((newToken) {
