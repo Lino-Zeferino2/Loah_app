@@ -1398,7 +1398,34 @@ class AppLocales {
       'pt': 'Vincular a uma meta',
       'en': 'Link to a goal',
     },
+   // ═══════ ADD TASK SCREEN ═══════
 
+  
+    // ─── Recorrência (múltiplas datas) ───
+    'addTask_repetir_label': {
+      'pt': 'DATA(S)',
+      'en': 'DATE(S)',
+    },
+    'addTask_repetir_hint': {
+      'pt': 'Selecionar data(s)',
+      'en': 'Select date(s)',
+    },
+    'addTask_repetir_selecionadas': {
+      'pt': '{count} data(s) selecionada(s)',
+      'en': '{count} date(s) selected',
+    },
+    'addTask_selecionar_datas': {
+      'pt': 'Selecionar Datas',
+      'en': 'Select Dates',
+    },
+    'addTask_limite_datas': {
+      'pt': 'Limite de {max} datas por tarefa.',
+      'en': 'Limit of {max} dates per task.',
+    },
+    'addTask_confirmar': {
+      'pt': 'Confirmar',
+      'en': 'Confirm',
+    },
     // ═══════ TASK DATE LABELS ═══════
     'task_completed_label': {
       'pt': 'Concluído em {date}',

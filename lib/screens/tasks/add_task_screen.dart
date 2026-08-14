@@ -255,7 +255,7 @@ Future<void> _submit() async {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: Text(sheetLoc.translate('addTask_cancelar')),
+                        child: Text(sheetLoc.translate('addTask_cancelar'),style: const TextStyle(color: Colors.white)),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -268,7 +268,7 @@ Future<void> _submit() async {
                               borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: () => Navigator.of(sheetContext).pop(true),
-                        child: Text(sheetLoc.translate('addTask_excluir_confirmar')),
+                        child: Text(sheetLoc.translate('addTask_excluir_confirmar'), style: const TextStyle(color: Colors.white)),
                       ),
                     ),
                   ],
@@ -454,6 +454,7 @@ Future<void> _submit() async {
                       child: Text(
                         loc.translate('addTask_dica'),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4),
+                     
                       ),
                     ),
                   ],
