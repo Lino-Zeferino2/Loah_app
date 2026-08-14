@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/task_model.dart';
 
@@ -24,8 +23,6 @@ class TaskService {
 
   /// Retorna um [Stream] de [QuerySnapshot] para ser usado com
   /// [StreamBuilder] nas telas de tarefas.
-  /// Devolve um stream vazio se o utilizador não estiver autenticado,
-  /// evitando erros PERMISSION_DENIED após logout.
   Stream<QuerySnapshot> getTasksStream() {
     final col = _getTasksCollection();
     if (col == null) return const Stream.empty();
@@ -65,6 +62,7 @@ class TaskService {
               orElse: () => TaskStatus.pendente,
             )
           : null,
+      seriesId: data['seriesId'],
     );
   }
 
@@ -88,9 +86,20 @@ class TaskService {
           ? Timestamp.fromDate(task.createdAt!)
           : FieldValue.serverTimestamp(),
       'status': task.status?.name,
+      'seriesId': task.seriesId,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
+
+  /// Gera um ID único de documento sem gravar nada ainda — usar antes
+  /// de criar várias tarefas de uma série, para evitar colisão de IDs.
+  String newTaskId() {
+    final col = _getTasksCollection();
+    return col?.doc().id ?? 'task_${DateTime.now().microsecondsSinceEpoch}';
+  }
+
+  /// Gera um seriesId único para agrupar as ocorrências de uma recorrência.
+  String newSeriesId() => _firestore.collection('_').doc().id;
 
   /// Adiciona uma nova tarefa ao Firestore.
   Future<void> addTask(TaskModel task) async {
@@ -98,6 +107,18 @@ class TaskService {
     if (col == null) return;
     final data = _taskToMap(task);
     await col.doc(task.id).set(data);
+  }
+
+  /// Cria várias tarefas de uma vez, de forma atômica: se alguma falhar,
+  /// nenhuma é gravada. Usado para tarefas recorrentes com datas múltiplas.
+  Future<void> addTasksBatch(List<TaskModel> tasks) async {
+    final col = _getTasksCollection();
+    if (col == null || tasks.isEmpty) return;
+    final batch = _firestore.batch();
+    for (final task in tasks) {
+      batch.set(col.doc(task.id), _taskToMap(task));
+    }
+    await batch.commit();
   }
 
   /// Atualiza uma tarefa existente.
@@ -127,9 +148,7 @@ class TaskService {
   Future<List<TaskModel>> getTasksByGoalId(String goalId) async {
     final col = _getTasksCollection();
     if (col == null) return [];
-    final querySnapshot = await col
-        .where('goalId', isEqualTo: goalId)
-        .get();
+    final querySnapshot = await col.where('goalId', isEqualTo: goalId).get();
     return querySnapshot.docs.map((doc) => _fromDocument(doc)).toList();
   }
 }

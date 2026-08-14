@@ -9,6 +9,7 @@ import '../../models/task_model.dart';
 import 'widgets/goal_picker_sheet.dart';
 import 'widgets/priority_selector.dart';
 import 'widgets/related_goal_card.dart';
+import 'widgets/multi_date_picker_sheet.dart';
 
 /// "Loah - Adicionar/Editar Tarefa": a single form covering three use
 /// cases:
@@ -58,7 +59,20 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       _loadGoal(existingGoalId);
     }
   }
+List<DateTime> _recurringDates = [];
 
+Future<void> _pickRecurringDates() async {
+  final result = await showModalBottomSheet<List<DateTime>?>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: context.loahColors.cardBackground,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) => MultiDatePickerSheet(initialDates: _recurringDates),
+  );
+  if (result != null) setState(() => _recurringDates = result);
+}
   Future<void> _loadGoal(String goalId) async {
     final goal = await _goalService.getGoal(goalId);
     if (mounted) setState(() => _selectedGoal = goal);
@@ -81,6 +95,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
     );
     if (picked != null) setState(() => _dueDate = picked);
+    
   }
 
   Future<void> _pickGoal() async {
@@ -133,18 +148,44 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     if (mounted) setState(() => _selectedGoal = goal);
   }
 
-  Future<void> _submit() async {
-    final title = _titleController.text.trim();
-    if (title.isEmpty) {
-      setState(() => _titleError = AppLocales.of(context).translate('addTask_nome_erro'));
+Future<void> _submit() async {
+  final title = _titleController.text.trim();
+  if (title.isEmpty) {
+    setState(() => _titleError = AppLocales.of(context).translate('addTask_nome_erro'));
+    return;
+  }
+
+  setState(() => _isSaving = true);
+  final existing = widget.existingTask;
+
+  try {
+    // Criação recorrente: só disponível para tarefa nova (nunca editando).
+    if (!widget.isEditing && _recurringDates.isNotEmpty) {
+      final seriesId = _taskService.newSeriesId();
+      final tasks = _recurringDates.map((date) {
+        return TaskModel(
+          id: _taskService.newTaskId(),
+          title: title,
+          description: _descriptionController.text.trim().isEmpty
+              ? null
+              : _descriptionController.text.trim(),
+          dueDate: date,
+          dueLabel: TaskModel.shortDate(date),
+          priority: _priority,
+          goalId: _selectedGoal?.id,
+          createdAt: DateTime.now(),
+          seriesId: seriesId,
+        );
+      }).toList();
+
+      await _taskService.addTasksBatch(tasks);
+      if (mounted) Navigator.of(context).pop(tasks.first);
       return;
     }
 
-    setState(() => _isSaving = true);
-    final existing = widget.existingTask;
-
+    // Fluxo original: tarefa única (nova ou edição).
     final task = TaskModel(
-      id: existing?.id ?? 'task_${DateTime.now().microsecondsSinceEpoch}',
+      id: existing?.id ?? _taskService.newTaskId(),
       title: title,
       description: _descriptionController.text.trim().isEmpty
           ? null
@@ -159,24 +200,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       status: existing?.status,
     );
 
-    try {
-      if (existing != null) {
-        await _taskService.updateTask(task);
-      } else {
-        await _taskService.addTask(task);
-      }
-      if (mounted) Navigator.of(context).pop(task);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${AppLocales.of(context).translate('addTask_erro_salvar')}$e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
+    if (existing != null) {
+      await _taskService.updateTask(task);
+    } else {
+      await _taskService.addTask(task);
     }
+    if (mounted) Navigator.of(context).pop(task);
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${AppLocales.of(context).translate('addTask_erro_salvar')}$e')),
+      );
+    }
+  } finally {
+    if (mounted) setState(() => _isSaving = false);
   }
-
+}
   Future<void> _delete() async {
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
@@ -318,37 +357,79 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             const SizedBox(height: 20),
 
-            _SectionLabel(loc.translate('addTask_data_label')),
-            const SizedBox(height: 8),
-            InkWell(
-              onTap: _pickDate,
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                decoration: BoxDecoration(
-                  color: colors.cardBackgroundAlt,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.calendar_today_outlined, size: 18, color: context.textSecondary),
-                    const SizedBox(width: 10),
-                    Text(
-                      _dueDate == null
-                          ? loc.translate('addTask_data_hint')
-                          : '${_dueDate!.day.toString().padLeft(2, '0')}/'
-                              '${_dueDate!.month.toString().padLeft(2, '0')}/'
-                              '${_dueDate!.year}',
-                      style: TextStyle(
-                        color: _dueDate == null ? context.textSecondary : null,
+           // Data única — só faz sentido ao editar uma tarefa já
+            // existente (ela já tem exatamente uma data). Ao criar uma
+            // tarefa nova, a data vem do seletor de múltiplas datas
+            // abaixo, mesmo que o usuário escolha só uma.
+            if (isEditing) ...[
+              _SectionLabel(loc.translate('addTask_data_label')),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: _pickDate,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: colors.cardBackgroundAlt,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_today_outlined, size: 18, color: context.textSecondary),
+                      const SizedBox(width: 10),
+                      Text(
+                        _dueDate == null
+                            ? loc.translate('addTask_data_hint')
+                            : '${_dueDate!.day.toString().padLeft(2, '0')}/'
+                                '${_dueDate!.month.toString().padLeft(2, '0')}/'
+                                '${_dueDate!.year}',
+                        style: TextStyle(
+                          color: _dueDate == null ? context.textSecondary : null,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
+            ],
 
+            
+              if (!isEditing) ...[
+  const SizedBox(height: 20),
+  _SectionLabel(loc.translate('addTask_repetir_label')),
+  const SizedBox(height: 8),
+  InkWell(
+    onTap: _pickRecurringDates,
+    borderRadius: BorderRadius.circular(12),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: colors.cardBackgroundAlt,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.event_repeat, size: 18, color: context.textSecondary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _recurringDates.isEmpty
+                  ? loc.translate('addTask_repetir_hint')
+                  : loc.translate('addTask_repetir_selecionadas')
+                      .replaceFirst('{count}', '${_recurringDates.length}'),
+            ),
+          ),
+          if (_recurringDates.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.close, size: 18),
+              onPressed: () => setState(() => _recurringDates = []),
+            ),
+        ],
+      ),
+    ),
+  ),
+],
             _SectionLabel(loc.translate('addTask_prioridade_label')),
             const SizedBox(height: 8),
             PrioritySelector(

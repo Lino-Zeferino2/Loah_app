@@ -9,45 +9,26 @@ enum TaskStatus { pendente, emProgresso, concluida }
 
 /// A to-do item shown on the Dashboard and Tarefas screens.
 class TaskModel {
-  /// Stable identifier — maps to a Firestore document ID later.
   final String id;
-
   final String title;
   final String? subtitle;
   final String? tag;
   final String? dueLabel;
   final TaskPriority? priority;
   final bool isDone;
-
-  /// If set, this task counts toward a [GoalModel] with
-  /// `progressMode == GoalProgressMode.taskChecklist` and the same id.
   final String? goalId;
-
-  /// When the task was marked done — shown as "Concluído em 15 Out" in
-  /// the Goal Detail screen. Set automatically by [copyWith] when
-  /// [isDone] flips to true; cleared when flipped back to false.
   final DateTime? completedAt;
-
-  /// Longer free-text notes, e.g. "Detalhes importantes para esta
-  /// etapa..." — shown on the Add/Edit Task form and the Task Detail
-  /// screen. Separate from [subtitle], which stays a short metadata
-  /// line (e.g. "Hoje, 17:00") used in compact list rows.
   final String? description;
-
-  /// The actual due date, used for sorting/reminders. [dueLabel] is
-  /// still what's displayed in list rows (e.g. "Hoje", "Amanhã") — set
-  /// it explicitly for those relative labels, or derive a short date
-  /// string from [dueDate] via [TaskModel.shortDate] when creating a
-  /// task from a raw date picker value.
   final DateTime? dueDate;
-
-  /// When the task itself was created — shown as "Criada em 18 de
-  /// Outubro, 2024" on the Task Detail screen.
   final DateTime? createdAt;
-
-  /// Explicit status for an *incomplete* task (pendente vs em
-  /// progresso). Ignored once [isDone] is true — see [effectiveStatus].
   final TaskStatus? status;
+
+  /// Se definido, esta tarefa faz parte de um grupo de tarefas criadas
+  /// juntas (recorrência por datas múltiplas). Cada ocorrência é um
+  /// documento independente — editar/apagar uma não afeta as outras.
+  /// [seriesId] serve só para identificação futura (ex.: mostrar um
+  /// ícone de "faz parte de uma série").
+  final String? seriesId;
 
   const TaskModel({
     required this.id,
@@ -63,6 +44,7 @@ class TaskModel {
     this.dueDate,
     this.createdAt,
     this.status,
+    this.seriesId,
   });
 
   /// The status actually shown in the UI: [isDone] always wins
