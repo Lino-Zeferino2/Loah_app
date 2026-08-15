@@ -88,5 +88,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSContactsUsageDescription</key>
+	<string>O Loah precisa aceder aos seus contactos para que você possa importá-los para a sua lista de Contactos no app.</string>
 </dict>
 </plist>

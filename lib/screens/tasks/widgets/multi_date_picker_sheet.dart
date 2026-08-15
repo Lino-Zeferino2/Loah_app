@@ -158,7 +158,7 @@ class _MultiDatePickerSheetState extends State<MultiDatePickerSheet> {
                           color: isSelected
                               ? Colors.white
                               : isPast
-                                  ? context.textSecondary?.withValues(alpha: 0.4)
+                                  ? context.textSecondary.withValues(alpha: 0.4)
                                   : null,
                           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                         ),

@@ -154,5 +154,30 @@ class ContactService {
       // Ficheiro pode já ter sido removido — ignora.
     }
   }
+
+/// Gera um ID único de documento sem gravar nada ainda — usar antes
+  /// de importar vários contactos de uma vez, para evitar colisão de
+  /// IDs (mesmo raciocínio do padrão antigo em outros serviços).
+  String newContactId() {
+    final col = _getContactsCollection();
+    return col?.doc().id ?? 'contact_${DateTime.now().microsecondsSinceEpoch}';
+  }
+
+  /// Cria vários contactos de uma vez, de forma atômica: se algum
+  /// falhar, nenhum é gravado. Usado na importação de contactos do
+  /// telemóvel.
+  Future<void> addContactsBatch(List<ContactModel> contacts) async {
+    final col = _getContactsCollection();
+    if (col == null || contacts.isEmpty) return;
+    final batch = _firestore.batch();
+    for (final contact in contacts) {
+      final data = _contactToMap(contact);
+      data['createdAt'] = FieldValue.serverTimestamp();
+      batch.set(col.doc(contact.id), data);
+    }
+    await batch.commit();
+  }
+
+
 }
 

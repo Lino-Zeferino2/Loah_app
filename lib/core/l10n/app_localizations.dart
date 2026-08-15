@@ -1922,7 +1922,47 @@ class AppLocales {
       'pt': 'Erro ao salvar contato: ',
       'en': 'Error saving contact: ',
     },
-
+// ═══════ IMPORT CONTACTS SCREEN ═══════
+    'importContacts_titulo': {
+      'pt': 'Importar Contactos',
+      'en': 'Import Contacts',
+    },
+    'importContacts_pesquisar': {
+      'pt': 'Pesquisar contacto...',
+      'en': 'Search contact...',
+    },
+    'importContacts_selecionar_todos': {
+      'pt': 'Selecionar todos',
+      'en': 'Select all',
+    },
+    'importContacts_ja_importado': {
+      'pt': 'Já importado',
+      'en': 'Already imported',
+    },
+    'importContacts_sem_contatos': {
+      'pt': 'Nenhum contacto com telefone ou email encontrado no telemóvel.',
+      'en': 'No contact with a phone number or email was found on this device.',
+    },
+    'importContacts_importar_btn': {
+      'pt': 'Importar ({count})',
+      'en': 'Import ({count})',
+    },
+    'importContacts_sucesso': {
+      'pt': '{count} contacto(s) importado(s) com sucesso.',
+      'en': '{count} contact(s) imported successfully.',
+    },
+    'importContacts_erro': {
+      'pt': 'Erro ao importar: ',
+      'en': 'Error importing: ',
+    },
+    'importContacts_permissao_negada': {
+      'pt': 'O Loah precisa de acesso aos seus contactos para importar. Ative a permissão nas definições do telemóvel.',
+      'en': 'Loah needs access to your contacts to import them. Enable the permission in your device settings.',
+    },
+    'importContacts_abrir_config': {
+      'pt': 'Abrir Definições',
+      'en': 'Open Settings',
+    },
     // ═══════ CONTACT DETAIL ═══════
     'contactDetail_favoritar_titulo': {
       'pt': 'Adicionar aos favoritos',

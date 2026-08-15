@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
+import 'package:loah_app/screens/contacts/import_contacts_screen.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/navigation/navigation_controller.dart';
@@ -278,7 +279,12 @@ child: ContactListTile(
     );
     // The Firestore stream will automatically update the list.
   }
-
+Future<void> _openImportContacts() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ImportContactsScreen()),
+    );
+    // The Firestore stream will automatically update the list.
+  }
   Future<void> _openFilters() async {
     // Build available relationships from current stream data
     final snapshot = await _contactService.getContactsStream().first;
@@ -308,8 +314,28 @@ child: ContactListTile(
 
     return Scaffold(
       drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
-      appBar: LoahAppBar(title: AppLocales.of(context).translate('contacts_titulo'), actions: const [LoahAvatarAction()]),
-      body: SafeArea(
+    appBar: LoahAppBar(
+  title: AppLocales.of(context).translate('contacts_titulo'),
+  actions: [
+    PopupMenuButton<void>(
+      icon: const Icon(Icons.more_vert),
+      onSelected: (_) {},
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          onTap: _openImportContacts,
+          child: Row(
+            children: [
+              const Icon(Icons.contact_page_outlined, size: 20),
+              const SizedBox(width: 10),
+              Text(AppLocales.of(context).translate('importContacts_titulo')),
+            ],
+          ),
+        ),
+      ],
+    ),
+  ],
+),
+body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
