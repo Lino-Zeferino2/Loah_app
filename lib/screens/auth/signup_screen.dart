@@ -132,10 +132,6 @@ setState(() => _submitting = true);
 
       if (!mounted) return;
 
-      // Envia email de verificação e redireciona para a tela de verificação
-      await _authService.sendEmailVerification();
-      if (!mounted) return;
-
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) => EmailVerificationScreen(

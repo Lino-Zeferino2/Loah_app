@@ -7,6 +7,7 @@ import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
 import 'package:loah_app/main.dart';
+import 'package:loah_app/screens/auth/email_verification_screen.dart';
 import '../auth/login_screen.dart';
 
 class SplashScreenVistoso extends StatefulWidget {
@@ -98,24 +99,64 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
   }
 
   Future<void> _checkAndNavigate(User user) async {
-    try {
-      final doc = await _userService.getUserProfile(user.uid);
-      if (doc.exists) {
-        final data = doc.data() as Map<String, dynamic>;
-        if (data['blocked'] == true) {
-          // Utilizador bloqueado - faz logout e vai para login
-          await _authService.signOut();
-          if (!mounted) return;
-          _navigateToLogin();
-          return;
-        }
-      }
-    } catch (_) {
-      // Em caso de erro, permite o acesso normal
-    }
+  // Recarrega o usuário para garantir que emailVerified está atualizado
+  // (o Firebase Auth só atualiza esse campo localmente após um reload
+  // explícito ou um novo login — sessões persistidas antigas podem
+  // estar com o valor desatualizado em memória).
+  try {
+    await user.reload();
+  } catch (_) {
+    // Se nem o reload funciona, trata como sessão inválida.
     if (!mounted) return;
-    _navigateToRoot();
+    _navigateToLogin();
+    return;
   }
+
+  final refreshedUser = _authService.currentUser;
+  if (refreshedUser == null) {
+    if (!mounted) return;
+    _navigateToLogin();
+    return;
+  }
+
+  // Contas de provedor social (Google/Apple) já vêm verificadas pelo
+  // próprio provedor — refreshedUser.emailVerified reflete isso
+  // corretamente, sem tratamento especial necessário aqui.
+  if (!refreshedUser.emailVerified) {
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => EmailVerificationScreen(email: refreshedUser.email ?? ''),
+      ),
+      (route) => false,
+    );
+    return;
+  }
+
+  try {
+    final doc = await _userService.getUserProfile(refreshedUser.uid);
+    if (doc.exists) {
+      final data = doc.data() as Map<String, dynamic>;
+      if (data['blocked'] == true) {
+        await _authService.signOut();
+        if (!mounted) return;
+        _navigateToLogin();
+        return;
+      }
+    }
+  } catch (e) {
+    // Erro real ao consultar o perfil: não libera acesso "por padrão".
+    // Melhor bloquear e deixar o usuário tentar de novo do que arriscar
+    // passar alguém que devia estar bloqueado.
+    debugPrint('[Splash] Erro ao verificar perfil: $e');
+    if (!mounted) return;
+    _navigateToLogin();
+    return;
+  }
+
+  if (!mounted) return;
+  _navigateToRoot();
+}
 
   void _navigateToRoot() {
     if (_navigated) return;

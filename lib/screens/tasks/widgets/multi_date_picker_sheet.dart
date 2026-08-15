@@ -183,18 +183,19 @@ class _MultiDatePickerSheetState extends State<MultiDatePickerSheet> {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: FilledButton(
-                    onPressed: _selected.isEmpty
-                        ? null
-                        : () => Navigator.of(context).pop(_selected.toList()..sort()),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colors.accentBlue,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text(loc.translate('addTask_confirmar')),
-                  ),
-                ),
+  child: FilledButton(
+    onPressed: _selected.isEmpty
+        ? null
+        : () => Navigator.of(context).pop(_selected.toList()..sort()),
+    style: FilledButton.styleFrom(
+      backgroundColor: colors.accentBlue,
+      foregroundColor: Colors.white, // ← adiciona esta linha
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+    child: Text(loc.translate('addTask_confirmar')),
+  ),
+),
               ],
             ),
           ],
