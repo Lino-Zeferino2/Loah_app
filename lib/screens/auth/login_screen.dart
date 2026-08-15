@@ -9,6 +9,7 @@ import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/main.dart';
+import 'package:loah_app/screens/auth/email_verification_screen.dart';
 import 'password_recovery_screen.dart';
 import 'signup_screen.dart';
 import 'widgets/wave_lines/wave_card_header.dart';
@@ -64,80 +65,98 @@ String? _validateEmail(String? value, AppLocales loc) {
   }
 
   Future<void> _onSubmit() async {
-    final form = _formKey.currentState;
-    if (form == null) return;
-    if (!form.validate()) return;
+  final form = _formKey.currentState;
+  if (form == null) return;
+  if (!form.validate()) return;
 
-    setState(() => _submitting = true);
+  setState(() => _submitting = true);
 
-    try {
-      final userCredential = await _authService.signInWithEmail(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+  try {
+    final userCredential = await _authService.signInWithEmail(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      // Verificar se o utilizador está bloqueado no Firestore
-      final uid = userCredential.user?.uid;
-      if (uid != null) {
-        final userDoc = await _userService.getUserProfile(uid);
-        if (userDoc.exists) {
-          final userData = userDoc.data() as Map<String, dynamic>;
-          if (userData['blocked'] == true) {
-            // Utilizador bloqueado - faz logout e mostra erro
-            await _authService.signOut();
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('A sua conta foi bloqueada. Contacte o administrador.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            setState(() => _submitting = false);
-            return;
-          }
+    final uid = userCredential.user?.uid;
+    if (uid != null) {
+      final userDoc = await _userService.getUserProfile(uid);
+      if (userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>;
+        if (userData['blocked'] == true) {
+          await _authService.signOut();
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('A sua conta foi bloqueada. Contacte o administrador.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          setState(() => _submitting = false);
+          return;
         }
       }
+    }
 
-      // Reativa a rede do Firestore que foi desligada no logout
-      await FirebaseFirestore.instance.enableNetwork();
-      
+    // Recarrega o usuário para garantir que emailVerified está atualizado
+    // — o valor em memória pode estar desatualizado numa sessão antiga.
+    await userCredential.user?.reload();
+    final refreshedUser = _authService.currentUser;
+
+    if (!mounted) return;
+
+    // Reativa a rede do Firestore que foi desligada no logout
+    await FirebaseFirestore.instance.enableNetwork();
+
+    if (refreshedUser != null && !refreshedUser.emailVerified) {
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const RootShell()),
+        MaterialPageRoute(
+          builder: (_) => EmailVerificationScreen(
+            email: refreshedUser.email ?? '',
+          ),
+        ),
         (route) => false,
       );
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      String message;
-      switch (e.code) {
-        case 'user-not-found':
-          message = 'Usuario nao encontrado';
-          break;
-        case 'wrong-password':
-          message = 'Senha incorreta';
-          break;
-        case 'invalid-email':
-          message = 'Email invalido';
-          break;
-        case 'invalid-credential':
-          message = 'Email ou senha incorretos';
-          break;
-        default:
-          message = 'Erro ao entrar: ${e.message}';
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _submitting = false);
+      return;
     }
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const RootShell()),
+      (route) => false,
+    );
+  } on FirebaseAuthException catch (e) {
+    if (!mounted) return;
+    String message;
+    switch (e.code) {
+      case 'user-not-found':
+        message = 'Usuario nao encontrado';
+        break;
+      case 'wrong-password':
+        message = 'Senha incorreta';
+        break;
+      case 'invalid-email':
+        message = 'Email invalido';
+        break;
+      case 'invalid-credential':
+        message = 'Email ou senha incorretos';
+        break;
+      default:
+        message = 'Erro ao entrar: ${e.message}';
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erro inesperado: $e')),
+    );
+  } finally {
+    if (mounted) setState(() => _submitting = false);
   }
+}
+
 
   Future<void> _handleGoogleLogin() async {
     try {

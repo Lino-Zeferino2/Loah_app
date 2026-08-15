@@ -684,51 +684,45 @@ class _LoahDrawerState extends State<LoahDrawer> {
                     ),
 
                     const SizedBox(height: 12),
+SizedBox(
+  width: double.infinity,
+  child: OutlinedButton.icon(
+    onPressed: () async {
+      Navigator.of(context).pop(); // close drawer
 
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          Navigator.of(context).pop(); // close drawer
-                          // 1) Desliga a rede do Firestore para interromper
-                          //    todos os listeners ativos (IndexedStack mantém
-                          //    as screens vivas com streams de tasks, contacts,
-                          //    notifications, etc.) sem causar erros
-                          //    PERMISSION_DENIED que podem travar a app.
-                          await FirebaseFirestore.instance.disableNetwork();
-                          // 2) Faz signOut para revogar o token Firebase
-                          await AuthService().signOut();
-                          // 3) Agora navega para o Login com stack limpo
-                          if (!context.mounted) return;
-                          await Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                              builder: (_) => const LoginScreen(),
-                            ),
-                            (route) => false,
-                          );
-                        },
-                        icon: const Icon(
-                          Icons.logout,
-                          size: 18,
-                          color: Colors.redAccent,
-                        ),
-                        label: Text(
-                          AppLocales.of(context).drawerSair,
-                          style: const TextStyle(
-                            color: Colors.redAccent,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.redAccent),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
+      // Termina a instância do Firestore por completo — isso garante
+      // (ao contrário de disableNetwork, que só suspende) que todas
+      // as streams ativas do RootShell antigo sejam efetivamente
+      // canceladas antes de prosseguirmos. disableNetwork() sozinho
+      // deixava as streams "pausadas" esperando a rede voltar, o que
+      // causava permission-denied quando a rede era reativada durante
+      // um signup/login seguinte com um usuário diferente.
+      try {
+        await FirebaseFirestore.instance.terminate();
+      } catch (e) {
+        debugPrint('[Logout] Erro ao terminar Firestore: $e');
+      }
 
+      await AuthService().signOut();
+
+      if (!context.mounted) return;
+      await Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    },
+    icon: const Icon(Icons.logout, size: 18, color: Colors.redAccent),
+    label: Text(
+      AppLocales.of(context).drawerSair,
+      style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+    ),
+    style: OutlinedButton.styleFrom(
+      side: const BorderSide(color: Colors.redAccent),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+  ),
+),
                     const SizedBox(height: 14),
 
                     Center(
