@@ -980,6 +980,12 @@ class AppLocales {
       'pt': 'Minhas Finanças',
       'en': 'My Finances',
     },
+    'finances_contas': {
+     'pt': 'Contas',
+  '   en': 'Accounts',
+    },
+
+
     'finances_patrimonio': {
       'pt': 'Patrimônio',
       'en': 'Assets',
@@ -3004,7 +3010,20 @@ class AppLocales {
 /// Traduz uma relationshipTag armazenada em português (ex: "Amigo", "Familiar")
   /// para o idioma atualmente selecionado.
   String translateRelationshipTag(String tag) {
-    final key = 'rel_${tag.toLowerCase()}';
+    final normalized = tag
+        .toLowerCase()
+        .replaceAll('ã', 'a')
+        .replaceAll('á', 'a')
+        .replaceAll('â', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ô', 'o')
+        .replaceAll('õ', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ç', 'c');
+    final key = 'rel_$normalized';
     return translate(key);
   }
 

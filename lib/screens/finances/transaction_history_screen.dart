@@ -28,7 +28,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   final FinanceService _financeService = FinanceService();
   List<TransactionModel> _transactions = [];
   List<AccountModel> _accounts = [];
+  bool _isLoading = true;
   String _query = '';
+  
   TransactionFilters _filters = const TransactionFilters();
 
   List<String> _monthFull(BuildContext context) {
@@ -56,12 +58,26 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   }
 
   Future<void> _loadData() async {
+    setState(() => _isLoading = true);
     try {
       final txns = await _financeService.getAllTransactions();
       final accts = await _financeService.getAllAccounts();
-      if (mounted) setState(() { _transactions = txns; _accounts = accts; });
-    } catch (_) {
-      if (mounted) {}
+      if (mounted) {
+        setState(() {
+          _transactions = txns;
+          _accounts = accts;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${AppLocales.of(context).translate('txnHistory_erro_exportar')}$e'),
+          ),
+        );
+      }
     }
   }
 
@@ -207,30 +223,32 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
               ),
             ),
             Expanded(
-              child: months.isEmpty
-                  ? Center(
-                      child: Text(
-                        loc.translate('txnHistory_sem_resultados'),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    )
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                      children: [
-                        for (final month in months) ...[
-                          _MonthHeader(
-                            label: '${_monthFull(context)[month.month - 1]} ${month.year}',
-                            transactions: grouped[month]!,
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : months.isEmpty
+                      ? Center(
+                          child: Text(
+                            loc.translate('txnHistory_sem_resultados'),
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
-                          const SizedBox(height: 10),
-                          for (final t in grouped[month]!) ...[
-                            TransactionListItem(transaction: t, onTap: () => _editTransaction(t)),
-                            const SizedBox(height: 8),
+                        )
+                      : ListView(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                          children: [
+                            for (final month in months) ...[
+                              _MonthHeader(
+                                label: '${_monthFull(context)[month.month - 1]} ${month.year}',
+                                transactions: grouped[month]!,
+                              ),
+                              const SizedBox(height: 10),
+                              for (final t in grouped[month]!) ...[
+                                TransactionListItem(transaction: t, onTap: () => _editTransaction(t)),
+                                const SizedBox(height: 8),
+                              ],
+                              const SizedBox(height: 12),
+                            ],
                           ],
-                          const SizedBox(height: 12),
-                        ],
-                      ],
-                    ),
+                        ),
             ),
           ],
         ),

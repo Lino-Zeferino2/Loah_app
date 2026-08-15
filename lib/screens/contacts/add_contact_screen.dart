@@ -349,9 +349,11 @@ Future<void> _submit() async {
 
 _SectionLabel(loc.translate('addContact_grau_label')),
             const SizedBox(height: 8),
-            ChipSelector<String>(
-              options: _relationshipValues.map((v) => ChipOption(loc.translate('rel_${v.toLowerCase()}'), v)).toList(),
-              selected: _relationship,
+            
+              ChipSelector<String>(
+              options: _relationshipValues
+                  .map((v) => ChipOption(loc.translateRelationshipTag(v), v))
+                  .toList(),selected: _relationship,
               onChanged: (v) => setState(() => _relationship = v),
             ),
             const SizedBox(height: 28),
