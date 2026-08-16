@@ -501,25 +501,19 @@ child: Text(
                               ],
                             ),
                             const SizedBox(height: 18),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _SocialButton(
-                                    icon: const FaIcon(FontAwesomeIcons.google, size: 16),
-                                    label: 'Google',
-                                    onTap: _submitting ? null : _handleGoogleLogin,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _SocialButton(
-                                    icon: const FaIcon(FontAwesomeIcons.apple, size: 18),
-                                    label: 'Apple',
-                                    onTap: _submitting ? null : _handleAppleLogin,
-                                  ),
-                                ),
-                              ],
-                            ),
+                            if (defaultTargetPlatform == TargetPlatform.android)
+                              _SocialButton(
+                                icon: const FaIcon(FontAwesomeIcons.google, size: 16),
+                                label: 'Google',
+                                onTap: _submitting ? null : _handleGoogleLogin,
+                              )
+                            else if (defaultTargetPlatform == TargetPlatform.iOS)
+                              _SocialButton(
+                                icon: const FaIcon(FontAwesomeIcons.apple, size: 18),
+                                label: 'Apple',
+                                onTap: _submitting ? null : _handleAppleLogin,
+                              ),
+                            const SizedBox(height: 28),
                             const SizedBox(height: 28),
                             Center(
                               child: Wrap(

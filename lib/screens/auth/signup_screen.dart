@@ -594,30 +594,24 @@ final user = userCredential.user;
                         Expanded(child: Divider(thickness: 1, height: 1, color: border)),
                       ],
                     ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _SocialButton(
-                            icon: Icons.g_mobiledata_rounded,
-                            label: 'Google',
-                            scheme: scheme,
-                            border: border,
-                            onTap: _submitting ? null : _handleGoogleSignUp,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _SocialButton(
-                            icon: Icons.apple_rounded,
-                            label: 'Apple',
-                            scheme: scheme,
-                            border: border,
-                            onTap: _submitting ? null : _handleAppleSignUp,
-                          ),
-                        ),
-                      ],
-                    ),
+                   const SizedBox(height: 18),
+                    if (defaultTargetPlatform == TargetPlatform.android)
+                      _SocialButton(
+                        icon: Icons.g_mobiledata_rounded,
+                        label: 'Google',
+                        scheme: scheme,
+                        border: border,
+                        onTap: _submitting ? null : _handleGoogleSignUp,
+                      )
+                    else if (defaultTargetPlatform == TargetPlatform.iOS)
+                      _SocialButton(
+                        icon: Icons.apple_rounded,
+                        label: 'Apple',
+                        scheme: scheme,
+                        border: border,
+                        onTap: _submitting ? null : _handleAppleSignUp,
+                      ),
+                    const SizedBox(height: 28),
                     const SizedBox(height: 28),
                     Center(
                       child: Wrap(
