@@ -56,7 +56,7 @@ flutter:
   config:
     enable-swift-package-manager: false
 flutter_launcher_icons:
-  android: false
+  android: "launcher_icon"
   ios: true
   image_path: "assets/images/logo.jpeg"
   remove_alpha_ios: true

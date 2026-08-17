@@ -25,6 +25,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _phoneNumberController = TextEditingController();
   String _dialCode = '+351';
+  // NOVO: guarda a bandeira selecionada, tal como no add_contact_screen.
+  String _countryFlag = '🇵🇹';
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -95,9 +97,21 @@ class _SignupScreenState extends State<SignupScreen> {
       builder: (_) => const CountryCodePickerSheet(),
     );
     if (res == null || !mounted) return;
-    final parts = res.split('|');
-    if (parts.length == 2) {
-      setState(() => _dialCode = parts[1]);
+
+    // CORRIGIDO: trata os dois formatos que o CountryCodePickerSheet pode
+    // devolver — "🇧🇷|+55" (seleção da lista) ou só "+000" (entrada
+    // manual, sem bandeira), tal como já é feito no add_contact_screen.
+    if (res.contains('|')) {
+      final parts = res.split('|');
+      setState(() {
+        _countryFlag = parts[0];
+        _dialCode = parts[1];
+      });
+    } else {
+      setState(() {
+        _countryFlag = '🏳️';
+        _dialCode = res;
+      });
     }
   }
 
@@ -108,7 +122,7 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _showTermsError = !_acceptedTerms);
     if (!formValid || !_acceptedTerms) return;
 
-setState(() => _submitting = true);
+    setState(() => _submitting = true);
 
     try {
       final userCredential = await _authService.signUpWithEmail(
@@ -199,7 +213,7 @@ setState(() => _submitting = true);
     );
   }
 
-Future<void> _handleGoogleSignUp() async {
+  Future<void> _handleGoogleSignUp() async {
     final loc = AppLocales.of(context);
     try {
       final userCredential = await _authService.signInWithGoogle();
@@ -266,7 +280,7 @@ Future<void> _handleGoogleSignUp() async {
     try {
       final userCredential = await _authService.signInWithApple();
       if (!mounted) return;
-final user = userCredential.user;
+      final user = userCredential.user;
       if (user != null) {
         // Reativa a rede do Firestore que foi desligada no logout.
         await FirebaseFirestore.instance.enableNetwork();
@@ -415,7 +429,11 @@ final user = userCredential.user;
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.flag_outlined, size: 18),
+                                  // CORRIGIDO: era um Icon(Icons.flag_outlined)
+                                  // fixo — agora mostra a bandeira real do
+                                  // país selecionado, tal como no
+                                  // add_contact_screen.
+                                  Text(_countryFlag, style: const TextStyle(fontSize: 18)),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -594,7 +612,7 @@ final user = userCredential.user;
                         Expanded(child: Divider(thickness: 1, height: 1, color: border)),
                       ],
                     ),
-                   const SizedBox(height: 18),
+                    const SizedBox(height: 18),
                     if (defaultTargetPlatform == TargetPlatform.android)
                       _SocialButton(
                         icon: Icons.g_mobiledata_rounded,
