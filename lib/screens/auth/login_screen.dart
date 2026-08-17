@@ -222,81 +222,85 @@ String? _validateEmail(String? value, AppLocales loc) {
     }
   }
 
-  Future<void> _handleAppleLogin() async {
-    // Verifica se a plataforma é Android
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('O login com Apple está disponível apenas para iOS'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-      return;
-    }
-
-    try {
-      final userCredential = await _authService.signInWithApple();
-      if (!mounted) return;
-      final user = userCredential.user;
-      if (user != null) {
-        final doc = await _userService.getUserProfile(user.uid);
-        if (!doc.exists) {
-          await _userService.createUserProfile(
-            uid: user.uid,
-            name: user.displayName ?? 'Usuario Apple',
-            email: user.email ?? '',
-          );
-        } else {
-          // Verificar se o utilizador está bloqueado
-          final userData = doc.data() as Map<String, dynamic>;
-          if (userData['blocked'] == true) {
-            await _authService.signOut();
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('A sua conta foi bloqueada. Contacte o administrador.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
-        }
-        if (!mounted) return;
-        // Reativa a rede do Firestore que foi desligada no logout
-        await FirebaseFirestore.instance.enableNetwork();
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const RootShell()),
-          (route) => false,
-        );
-      }
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      if (e.code != 'canceled') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro Apple: ${e.message}')),
-        );
-      }
-    } on FirebaseException catch (e) {
-      if (!mounted) return;
-      String message;
-      if (e.code == 'permission-denied') {
-        message = 'Erro de permissao ao acessar seus dados. '
-            'As regras de seguranca do Firestore podem nao ter sido '
-            'implantadas ainda. Contate o administrador.';
-      } else {
-        message = 'Erro no Firestore: ${e.message}';
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: $e')),
-      );
-    }
-  }
+  // NOTA: _handleAppleLogin() foi removido do fluxo de UI (o botão que o
+  // chamava já não é construído — ver build() abaixo). O método em si
+  // fica comentado aqui, pronto a reativar quando a conta paga Apple
+  // Developer Program estiver ativa: basta descomentar e devolver o
+  // bloco `else if (defaultTargetPlatform == TargetPlatform.iOS)` no
+  // Row de botões sociais.
+  //
+  // Future<void> _handleAppleLogin() async {
+  //   if (defaultTargetPlatform == TargetPlatform.android) {
+  //     if (!mounted) return;
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('O login com Apple está disponível apenas para iOS'),
+  //         duration: Duration(seconds: 3),
+  //       ),
+  //     );
+  //     return;
+  //   }
+  //
+  //   try {
+  //     final userCredential = await _authService.signInWithApple();
+  //     if (!mounted) return;
+  //     final user = userCredential.user;
+  //     if (user != null) {
+  //       final doc = await _userService.getUserProfile(user.uid);
+  //       if (!doc.exists) {
+  //         await _userService.createUserProfile(
+  //           uid: user.uid,
+  //           name: user.displayName ?? 'Usuario Apple',
+  //           email: user.email ?? '',
+  //         );
+  //       } else {
+  //         final userData = doc.data() as Map<String, dynamic>;
+  //         if (userData['blocked'] == true) {
+  //           await _authService.signOut();
+  //           if (!mounted) return;
+  //           ScaffoldMessenger.of(context).showSnackBar(
+  //             const SnackBar(
+  //               content: Text('A sua conta foi bloqueada. Contacte o administrador.'),
+  //               backgroundColor: Colors.red,
+  //             ),
+  //           );
+  //           return;
+  //         }
+  //       }
+  //       if (!mounted) return;
+  //       await FirebaseFirestore.instance.enableNetwork();
+  //       Navigator.of(context).pushAndRemoveUntil(
+  //         MaterialPageRoute(builder: (_) => const RootShell()),
+  //         (route) => false,
+  //       );
+  //     }
+  //   } on FirebaseAuthException catch (e) {
+  //     if (!mounted) return;
+  //     if (e.code != 'canceled') {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('Erro Apple: ${e.message}')),
+  //       );
+  //     }
+  //   } on FirebaseException catch (e) {
+  //     if (!mounted) return;
+  //     String message;
+  //     if (e.code == 'permission-denied') {
+  //       message = 'Erro de permissao ao acessar seus dados. '
+  //           'As regras de seguranca do Firestore podem nao ter sido '
+  //           'implantadas ainda. Contate o administrador.';
+  //     } else {
+  //       message = 'Erro no Firestore: ${e.message}';
+  //     }
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text(message)),
+  //     );
+  //   } catch (e) {
+  //     if (!mounted) return;
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Erro inesperado: $e')),
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -483,36 +487,37 @@ Text(
                               ),
                             ),
                             const SizedBox(height: 32),
-                            Row(
-                              children: [
-                                Expanded(child: Divider(thickness: 1, height: 1, color: border)),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                            // Divisor + botão social: só existe sentido
+                            // mostrá-los no Android (onde o Google ainda
+                            // está ativo). No iOS, sem nenhum botão
+                            // social, o divisor ficaria sozinho — por
+                            // isso ambos entram na mesma condição.
+                            if (defaultTargetPlatform == TargetPlatform.android) ...[
+                              Row(
+                                children: [
+                                  Expanded(child: Divider(thickness: 1, height: 1, color: border)),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
 child: Text(
-                                    loc.translate('auth_ou_continue_com'),
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: textSecondary,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.6,
+                                      loc.translate('auth_ou_continue_com'),
+                                      style: theme.textTheme.labelSmall?.copyWith(
+                                        color: textSecondary,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.6,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                Expanded(child: Divider(thickness: 1, height: 1, color: border)),
-                              ],
-                            ),
-                            const SizedBox(height: 18),
-                            if (defaultTargetPlatform == TargetPlatform.android)
+                                  Expanded(child: Divider(thickness: 1, height: 1, color: border)),
+                                ],
+                              ),
+                              const SizedBox(height: 18),
                               _SocialButton(
                                 icon: const FaIcon(FontAwesomeIcons.google, size: 16),
                                 label: 'Google',
                                 onTap: _submitting ? null : _handleGoogleLogin,
-                              )
-                            else if (defaultTargetPlatform == TargetPlatform.iOS)
-                              _SocialButton(
-                                icon: const FaIcon(FontAwesomeIcons.apple, size: 18),
-                                label: 'Apple',
-                                onTap: _submitting ? null : _handleAppleLogin,
                               ),
+                              const SizedBox(height: 28),
+                            ],
                             const SizedBox(height: 28),
                             const SizedBox(height: 28),
                             Center(

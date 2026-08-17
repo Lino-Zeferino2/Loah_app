@@ -595,41 +595,39 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    Row(
-                      children: [
-                        Expanded(child: Divider(thickness: 1, height: 1, color: border)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            loc.translate('signup_ou_cadastre_com'),
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: textSecondary,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.6,
+                    // Divisor + botão social: só existe sentido
+                    // mostrá-los no Android (onde o Google ainda está
+                    // ativo). No iOS, sem nenhum botão social, o
+                    // divisor ficaria sozinho — por isso ambos entram
+                    // na mesma condição.
+                    if (defaultTargetPlatform == TargetPlatform.android) ...[
+                      Row(
+                        children: [
+                          Expanded(child: Divider(thickness: 1, height: 1, color: border)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              loc.translate('signup_ou_cadastre_com'),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: textSecondary,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.6,
+                              ),
                             ),
                           ),
-                        ),
-                        Expanded(child: Divider(thickness: 1, height: 1, color: border)),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    if (defaultTargetPlatform == TargetPlatform.android)
+                          Expanded(child: Divider(thickness: 1, height: 1, color: border)),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
                       _SocialButton(
                         icon: Icons.g_mobiledata_rounded,
                         label: 'Google',
                         scheme: scheme,
                         border: border,
                         onTap: _submitting ? null : _handleGoogleSignUp,
-                      )
-                    else if (defaultTargetPlatform == TargetPlatform.iOS)
-                      _SocialButton(
-                        icon: Icons.apple_rounded,
-                        label: 'Apple',
-                        scheme: scheme,
-                        border: border,
-                        onTap: _submitting ? null : _handleAppleSignUp,
                       ),
-                    const SizedBox(height: 28),
+                      const SizedBox(height: 28),
+                    ],
                     const SizedBox(height: 28),
                     Center(
                       child: Wrap(

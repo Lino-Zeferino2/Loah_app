@@ -28,11 +28,16 @@ class UserService {
       'phoneNumber': phoneNumber ?? '',
       'dialCode': dialCode,
       'role': 'user', // Padrão: usuário normal. Para tornar admin, alterar manualmente no Firestore.
+
+      // ── Subscrição (preparado para planos pagos futuros) ──
+      'subscriptionTier': 'free',        // 'free' | 'premium' — string para suportar múltiplos tiers no futuro (ex: tier de IA)
+      'subscriptionExpiresAt': null,     // preenchido quando houver subscrição ativa
+      'revenueCatUserId': null,          // preenchido quando o RevenueCat for integrado
+
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
-
   /// Atualiza o nome de exibição do usuário no Firebase Auth.
   Future<void> updateDisplayName(String displayName) async {
     final user = FirebaseAuth.instance.currentUser;
