@@ -156,8 +156,13 @@ class _CategoriesTab extends StatelessWidget {
   }
 
   void _openCategorySheet(BuildContext context, FaqCategory? existing) {
-    final nameController =
-        TextEditingController(text: existing?.name ?? '');
+    // CORRIGIDO: era um único nameController (existing?.name). Agora
+    // dois controllers, um por idioma — namePt é obrigatório, nameEn
+    // é opcional (cai de volta para PT no app se ficar vazio).
+    final namePtController =
+        TextEditingController(text: existing?.namePt ?? '');
+    final nameEnController =
+        TextEditingController(text: existing?.nameEn ?? '');
     String selectedIcon = existing?.iconName ?? 'help_outline';
     final isEditing = existing != null;
 
@@ -188,10 +193,31 @@ class _CategoriesTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // NOVO: rótulo + campo PT
+                      const Text('Nome (Português)',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
                       TextField(
-                        controller: nameController,
+                        controller: namePtController,
                         decoration: InputDecoration(
-                          hintText: 'Nome da categoria',
+                          hintText: 'Ex: Metas',
+                          filled: true,
+                          fillColor: context.loahColors.cardBackgroundAlt,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // NOVO: rótulo + campo EN
+                      const Text('Nome (Inglês)',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: nameEnController,
+                        decoration: InputDecoration(
+                          hintText: 'Ex: Goals',
                           filled: true,
                           fillColor: context.loahColors.cardBackgroundAlt,
                           border: OutlineInputBorder(
@@ -253,18 +279,23 @@ class _CategoriesTab extends StatelessWidget {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () async {
-                            final name = nameController.text.trim();
-                            if (name.isEmpty) return;
+                            // CORRIGIDO: valida e usa namePt/nameEn em
+                            // vez do único "name" que já não existe.
+                            final namePt = namePtController.text.trim();
+                            final nameEn = nameEnController.text.trim();
+                            if (namePt.isEmpty) return;
                             if (isEditing) {
                               await service.updateCategory(existing.copyWith(
-                                name: name,
+                                namePt: namePt,
+                                nameEn: nameEn,
                                 iconName: selectedIcon,
                               ));
                             } else {
                               final maxOrder = await _getMaxOrder();
                               await service.addCategory(FaqCategory(
                                 id: '',
-                                name: name,
+                                namePt: namePt,
+                                nameEn: nameEn,
                                 iconName: selectedIcon,
                                 order: maxOrder + 1,
                               ));
@@ -314,8 +345,10 @@ class _CategoriesTab extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Apagar Categoria'),
+        // CORRIGIDO: era category.name — agora category.namePt (o
+        // admin trabalha sempre em PT como idioma de referência).
         content: Text(
-            'Tem a certeza que deseja apagar "${category.name}"?\n\nOs artigos associados também serão removidos.'),
+            'Tem a certeza que deseja apagar "${category.namePt}"?\n\nOs artigos associados também serão removidos.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
@@ -393,16 +426,30 @@ class _CategoryTile extends StatelessWidget {
           _getIconData(category.iconName),
           color: category.active ? colors.accentBlue : context.textSecondary,
         ),
+        // CORRIGIDO: category.name → category.namePt (lista do admin
+        // mostra sempre PT como referência).
         title: Text(
-          category.name,
+          category.namePt,
           style: TextStyle(
             fontWeight: FontWeight.w600,
             color: category.active ? null : context.textSecondary,
           ),
         ),
-        subtitle: Text('Ordem: ${category.order}',
-            style: TextStyle(
-                color: context.textSecondary, fontSize: 11)),
+        subtitle: Text(
+          // NOVO: sinaliza no admin se a tradução EN ainda falta,
+          // para não ficar esquecida sem se notar.
+          category.nameEn.trim().isEmpty
+              ? 'Ordem: ${category.order} · EN em falta'
+              : 'Ordem: ${category.order}',
+          style: TextStyle(
+            color: category.nameEn.trim().isEmpty
+                ? Colors.orange
+                : context.textSecondary,
+            fontSize: 11,
+            fontWeight:
+                category.nameEn.trim().isEmpty ? FontWeight.w700 : FontWeight.w400,
+          ),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -515,7 +562,8 @@ class _FaqsTabState extends State<_FaqsTab> {
                     ...categories.map((cat) => Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: _FilterChip(
-                            label: cat.name,
+                            // CORRIGIDO: cat.name → cat.namePt
+                            label: cat.namePt,
                             selected: _selectedCategoryId == cat.id,
                             onTap: () => setState(
                                 () => _selectedCategoryId = cat.id),
@@ -595,10 +643,16 @@ class _FaqsTabState extends State<_FaqsTab> {
   }
 
   void _openArticleSheet(BuildContext context, FaqArticle? existing) {
-    final questionController =
-        TextEditingController(text: existing?.question ?? '');
-    final answerController =
-        TextEditingController(text: existing?.answer ?? '');
+    // CORRIGIDO: 4 controllers agora (question/answer × pt/en) em vez
+    // de 2. questionPt/answerPt são obrigatórios; os EN são opcionais.
+    final questionPtController =
+        TextEditingController(text: existing?.questionPt ?? '');
+    final questionEnController =
+        TextEditingController(text: existing?.questionEn ?? '');
+    final answerPtController =
+        TextEditingController(text: existing?.answerPt ?? '');
+    final answerEnController =
+        TextEditingController(text: existing?.answerEn ?? '');
     String selectedCategoryId = existing?.categoryId ?? '';
     bool popular = existing?.popular ?? false;
     final isEditing = existing != null;
@@ -657,7 +711,8 @@ class _FaqsTabState extends State<_FaqsTab> {
                                 .where((c) => c.active)
                                 .map((cat) => DropdownMenuItem(
                                       value: cat.id,
-                                      child: Text(cat.name),
+                                      // CORRIGIDO: cat.name → cat.namePt
+                                      child: Text(cat.namePt),
                                     ))
                                 .toList(),
                             onChanged: (val) =>
@@ -665,12 +720,16 @@ class _FaqsTabState extends State<_FaqsTab> {
                           );
                         },
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
 
+                      // NOVO: pergunta em PT e EN, lado a lado por seção
+                      const Text('Pergunta (Português)',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
                       TextField(
-                        controller: questionController,
+                        controller: questionPtController,
                         decoration: InputDecoration(
-                          hintText: 'Pergunta',
+                          hintText: 'Pergunta em português',
                           filled: true,
                           fillColor: context.loahColors.cardBackgroundAlt,
                           border: OutlineInputBorder(
@@ -680,12 +739,50 @@ class _FaqsTabState extends State<_FaqsTab> {
                         ),
                       ),
                       const SizedBox(height: 12),
-
+                      const Text('Pergunta (Inglês)',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
                       TextField(
-                        controller: answerController,
+                        controller: questionEnController,
+                        decoration: InputDecoration(
+                          hintText: 'Question in English',
+                          filled: true,
+                          fillColor: context.loahColors.cardBackgroundAlt,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // NOVO: resposta em PT e EN
+                      const Text('Resposta (Português)',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: answerPtController,
                         maxLines: 6,
                         decoration: InputDecoration(
-                          hintText: 'Resposta',
+                          hintText: 'Resposta em português',
+                          filled: true,
+                          fillColor: context.loahColors.cardBackgroundAlt,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.all(14),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text('Resposta (Inglês)',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: answerEnController,
+                        maxLines: 6,
+                        decoration: InputDecoration(
+                          hintText: 'Answer in English',
                           filled: true,
                           fillColor: context.loahColors.cardBackgroundAlt,
                           border: OutlineInputBorder(
@@ -710,23 +807,33 @@ class _FaqsTabState extends State<_FaqsTab> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () async {
-                            final question = questionController.text.trim();
-                            final answer = answerController.text.trim();
-                            if (question.isEmpty ||
-                                answer.isEmpty ||
+                            // CORRIGIDO: valida e usa os 4 campos
+                            // pt/en em vez de question/answer únicos.
+                            // EN continua opcional — só PT é obrigatório,
+                            // para não travar o admin se a tradução
+                            // ainda não estiver pronta (o app cai de
+                            // volta para PT automaticamente nesse caso).
+                            final questionPt = questionPtController.text.trim();
+                            final questionEn = questionEnController.text.trim();
+                            final answerPt = answerPtController.text.trim();
+                            final answerEn = answerEnController.text.trim();
+                            if (questionPt.isEmpty ||
+                                answerPt.isEmpty ||
                                 selectedCategoryId.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
-                                      'Preencha todos os campos obrigatórios.'),
+                                      'Preencha pelo menos a pergunta e resposta em português, e selecione a categoria.'),
                                 ),
                               );
                               return;
                             }
                             if (isEditing) {
                               await widget.service.updateArticle(existing.copyWith(
-                                question: question,
-                                answer: answer,
+                                questionPt: questionPt,
+                                questionEn: questionEn,
+                                answerPt: answerPt,
+                                answerEn: answerEn,
                                 categoryId: selectedCategoryId,
                                 popular: popular,
                               ));
@@ -734,8 +841,10 @@ class _FaqsTabState extends State<_FaqsTab> {
                               await widget.service.addArticle(FaqArticle(
                                 id: '',
                                 categoryId: selectedCategoryId,
-                                question: question,
-                                answer: answer,
+                                questionPt: questionPt,
+                                questionEn: questionEn,
+                                answerPt: answerPt,
+                                answerEn: answerEn,
                                 popular: popular,
                               ));
                             }
@@ -767,13 +876,14 @@ class _FaqsTabState extends State<_FaqsTab> {
     );
   }
 
-void _confirmDeleteArticle(BuildContext context, FaqArticle article) {
+  void _confirmDeleteArticle(BuildContext context, FaqArticle article) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Apagar Artigo'),
+        // CORRIGIDO: article.question → article.questionPt
         content: Text(
-            'Tem a certeza que deseja apagar o artigo "${article.question}"?'),
+            'Tem a certeza que deseja apagar o artigo "${article.questionPt}"?'),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
@@ -849,6 +959,10 @@ class _ArticleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    // NOVO: sinaliza tradução em falta, igual ao que fizemos nas
+    // categorias — ajuda o admin a não esquecer de preencher o EN.
+    final missingTranslation =
+        article.questionEn.trim().isEmpty || article.answerEn.trim().isEmpty;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -870,7 +984,8 @@ class _ArticleTile extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    article.question,
+                    // CORRIGIDO: article.question → article.questionPt
+                    article.questionPt,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
@@ -900,7 +1015,8 @@ class _ArticleTile extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              article.answer,
+              // CORRIGIDO: article.answer → article.answerPt
+              article.answerPt,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -909,25 +1025,51 @@ class _ArticleTile extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
+            // CORRIGIDO: overflow de 18px nesta Row (linha ~1028 no
+            // ficheiro original). Antes: views + data + "EN em falta"
+            // + Spacer + 3 IconButtons tudo numa única linha rígida —
+            // em ecrãs estreitos ou com o aviso ativo não cabia.
+            // Agora: os textos informativos entram num Expanded+Wrap
+            // (quebram linha automaticamente se não couberem) e só os
+            // 3 botões de ação ficam fixos à direita, fora do Wrap.
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  '👁 ${article.views} visualizações',
-                  style: TextStyle(
-                    color: context.textSecondary,
-                    fontSize: 11,
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        '👁 ${article.views} visualizações',
+                        style: TextStyle(
+                          color: context.textSecondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                      if (article.createdAt != null)
+                        Text(
+                          _formatDate(article.createdAt!),
+                          style: TextStyle(
+                            color: context.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      // NOVO: aviso visual de tradução em falta
+                      if (missingTranslation)
+                        const Text(
+                          'EN em falta',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                if (article.createdAt != null)
-                  Text(
-                    _formatDate(article.createdAt!),
-                    style: TextStyle(
-                      color: context.textSecondary,
-                      fontSize: 11,
-                    ),
-                  ),
-                const Spacer(),
+                // Botões de ação fixos, sempre visíveis à direita.
                 IconButton(
                   icon: Icon(
                     article.popular
@@ -938,19 +1080,27 @@ class _ArticleTile extends StatelessWidget {
                   ),
                   onPressed: onTogglePopular,
                   visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
+                const SizedBox(width: 8),
                 IconButton(
                   icon: Icon(Icons.edit_outlined,
                       size: 18, color: colors.accentBlue),
                   onPressed: onEdit,
                   visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
+                const SizedBox(width: 8),
                 IconButton(
                   icon: Icon(Icons.delete_outline,
                       size: 18,
                       color: Colors.redAccent.withValues(alpha: 0.7)),
                   onPressed: onDelete,
                   visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
               ],
             ),
@@ -1393,4 +1543,3 @@ class _StatusBadge extends StatelessWidget {
     );
   }
 }
-

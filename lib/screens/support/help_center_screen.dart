@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/help_center_service.dart';
 import 'package:loah_app/models/help_center_models.dart';
+import '../../core/l10n/app_localizations.dart';
 import 'article_detail_screen.dart';
 import 'my_messages_screen.dart';
 import 'send_message_screen.dart';
@@ -91,7 +92,12 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     });
   }
 
-  Widget _buildFilterChip(String label, bool selected, VoidCallback onTap) {
+  // CORRIGIDO: recebe langCode como parâmetro em vez de tentar ler uma
+  // variável que não existe neste escopo (este é um método da classe
+  // State, não um widget separado — não tinha acesso ao langCode do
+  // build() sem que fosse passado explicitamente).
+  Widget _buildFilterChip(
+      String label, bool selected, VoidCallback onTap) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
@@ -122,7 +128,10 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     );
   }
 
-  void _openCategoryArticles(FaqCategory category) async {
+  // CORRIGIDO: agora recebe e repassa langCode para _CategoryArticlesScreen
+  // — antes não passava nada, e essa tela usava uma variável langCode
+  // inexistente no seu próprio escopo.
+  void _openCategoryArticles(FaqCategory category, String langCode) async {
     final articles = await _service.getArticlesByCategory(category.id);
     if (!mounted) return;
 
@@ -132,6 +141,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
           category: category,
           articles: articles,
           service: _service,
+          langCode: langCode,
         ),
       ),
     );
@@ -149,6 +159,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final langCode = AppLocales.of(context).languageCode;
 
     return Scaffold(
       appBar: AppBar(
@@ -206,7 +217,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                         const SizedBox(height: 24),
 
                         if (_isSearching && _searchController.text.isNotEmpty)
-                          _buildSearchResults()
+                          _buildSearchResults(langCode)
                         else ...[
                           // Categories
                           if (_categories.isNotEmpty) ...[
@@ -214,7 +225,12 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                             const SizedBox(height: 12),
                             _CategoryGrid(
                               categories: _categories,
-                              onCategoryTap: _openCategoryArticles,
+                              // CORRIGIDO: onCategoryTap agora repassa
+                              // langCode, já que _openCategoryArticles
+                              // passou a exigi-lo.
+                              onCategoryTap: (cat) =>
+                                  _openCategoryArticles(cat, langCode),
+                              langCode: langCode,
                             ),
                             const SizedBox(height: 24),
                           ],
@@ -226,6 +242,11 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                             _PopularArticlesList(
                               articles: _popularArticles,
                               onArticleTap: _openArticleDetail,
+                              // CORRIGIDO: langCode agora é passado como
+                              // parâmetro — antes a classe não o recebia
+                              // e usava uma variável inexistente dentro
+                              // do próprio build().
+                              langCode: langCode,
                             ),
                             const SizedBox(height: 24),
                           ],
@@ -249,7 +270,10 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                                   ..._categories.map((cat) => Padding(
                                         padding: const EdgeInsets.only(right: 8),
                                         child: _buildFilterChip(
-                                          cat.name,
+                                          // CORRIGIDO: era cat.name (campo
+                                          // que não existe mais) — agora
+                                          // cat.name(langCode).
+                                          cat.name(langCode),
                                           _selectedCategoryId == cat.id,
                                           () => setState(
                                               () => _selectedCategoryId = cat.id),
@@ -262,8 +286,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                             ..._filteredArticles.map((article) => Padding(
                                   padding: const EdgeInsets.only(bottom: 10),
                                   child: _PopularArticleTile(
-                                    title: article.question,
+                                    title: article.question(langCode),
                                     onTap: () => _openArticleDetail(article),
+                                    langCode: langCode,
                                   ),
                                 )),
                             const SizedBox(height: 24),
@@ -292,7 +317,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     );
   }
 
-  Widget _buildSearchResults() {
+  // CORRIGIDO: recebe langCode como parâmetro (chamado a partir do
+  // build(), que já tem essa variável).
+  Widget _buildSearchResults(String langCode) {
     if (_searchResults.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 32),
@@ -329,8 +356,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         ..._searchResults.map((article) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: _PopularArticleTile(
-                title: article.question,
+                title: article.question(langCode),
                 onTap: () => _openArticleDetail(article),
+                langCode: langCode,
               ),
             )),
       ],
@@ -398,10 +426,12 @@ class _HelpSearchField extends StatelessWidget {
 class _CategoryGrid extends StatelessWidget {
   final List<FaqCategory> categories;
   final void Function(FaqCategory) onCategoryTap;
+  final String langCode;
 
   const _CategoryGrid({
     required this.categories,
     required this.onCategoryTap,
+    required this.langCode,
   });
 
   @override
@@ -423,13 +453,20 @@ class _CategoryGrid extends StatelessWidget {
             crossAxisSpacing: 12,
             childAspectRatio: 1.5,
           ),
-          itemBuilder: (context, i) =>
-              _CategoryCard(category: gridItems[i], onTap: onCategoryTap),
+          itemBuilder: (context, i) => _CategoryCard(
+            category: gridItems[i],
+            langCode: langCode,
+            onTap: onCategoryTap,
+          ),
         ),
         if (lastItem != null) ...[
           const SizedBox(height: 12),
           _CategoryCard(
-              category: lastItem, fullWidth: true, onTap: onCategoryTap),
+            category: lastItem,
+            fullWidth: true,
+            onTap: onCategoryTap,
+            langCode: langCode,
+          ),
         ],
       ],
     );
@@ -440,10 +477,12 @@ class _CategoryCard extends StatelessWidget {
   final FaqCategory category;
   final bool fullWidth;
   final void Function(FaqCategory) onTap;
+  final String langCode;
 
   const _CategoryCard({
     required this.category,
     this.fullWidth = false,
+    required this.langCode,
     required this.onTap,
   });
 
@@ -504,7 +543,7 @@ class _CategoryCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              category.name,
+              category.name(langCode),
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -519,10 +558,12 @@ class _CategoryCard extends StatelessWidget {
 class _PopularArticlesList extends StatelessWidget {
   final List<FaqArticle> articles;
   final void Function(FaqArticle) onArticleTap;
+  final String langCode;
 
   const _PopularArticlesList({
     required this.articles,
     required this.onArticleTap,
+    required this.langCode,
   });
 
   @override
@@ -532,8 +573,9 @@ class _PopularArticlesList extends StatelessWidget {
         return Padding(
           padding: EdgeInsets.only(bottom: i == articles.length - 1 ? 0 : 10),
           child: _PopularArticleTile(
-            title: articles[i].question,
+            title: articles[i].question(langCode),
             onTap: () => onArticleTap(articles[i]),
+            langCode: langCode,
           ),
         );
       }),
@@ -544,10 +586,12 @@ class _PopularArticlesList extends StatelessWidget {
 class _PopularArticleTile extends StatelessWidget {
   final String title;
   final VoidCallback onTap;
+  final String langCode;
 
   const _PopularArticleTile({
     required this.title,
     required this.onTap,
+    required this.langCode,
   });
 
   @override
@@ -707,11 +751,13 @@ class _CategoryArticlesScreen extends StatelessWidget {
   final FaqCategory category;
   final List<FaqArticle> articles;
   final HelpCenterService service;
+  final String langCode;
 
   const _CategoryArticlesScreen({
     required this.category,
     required this.articles,
     required this.service,
+    required this.langCode,
   });
 
   IconData _getIconData(String iconName) {
@@ -759,7 +805,9 @@ class _CategoryArticlesScreen extends StatelessWidget {
                 size: 20, color: scheme.primary),
             const SizedBox(width: 8),
             Text(
-              category.name,
+              // CORRIGIDO: category.name(langCode) — langCode agora
+              // existe como campo da classe.
+              category.name(langCode),
               style: theme.textTheme.titleMedium?.copyWith(
                 color: scheme.primary,
                 fontWeight: FontWeight.w900,
@@ -830,7 +878,9 @@ class _CategoryArticlesScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    article.question,
+                                    // CORRIGIDO: era article.question
+                                    // (campo que não existe mais).
+                                    article.question(langCode),
                                     style: theme.textTheme.bodyMedium
                                         ?.copyWith(
                                       fontWeight: FontWeight.w700,
@@ -840,7 +890,8 @@ class _CategoryArticlesScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    article.answer,
+                                    // CORRIGIDO: era article.answer.
+                                    article.answer(langCode),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -867,6 +918,3 @@ class _CategoryArticlesScreen extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/help_center_service.dart';
 import 'package:loah_app/models/help_center_models.dart';
+import '../../core/l10n/app_localizations.dart';
 
 /// Full-screen detail view for a FAQ article.
 class ArticleDetailScreen extends StatefulWidget {
@@ -35,6 +36,9 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final article = widget.article;
+    // NOVO: código do idioma atual, usado para escolher a versão certa
+    // da pergunta/resposta.
+    final langCode = AppLocales.of(context).languageCode;
 
     return Scaffold(
       appBar: AppBar(
@@ -88,7 +92,9 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
 
               // Question
               Text(
-                article.question,
+                // CORRIGIDO: era article.question (campo que não existe
+                // mais no modelo — agora é um método que recebe o idioma).
+                article.question(langCode),
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: scheme.primary,
@@ -129,7 +135,8 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                   ),
                 ),
                 child: SelectableText(
-                  article.answer,
+                  // CORRIGIDO: era article.answer.
+                  article.answer(langCode),
                   style: theme.textTheme.bodyLarge?.copyWith(
                     height: 1.7,
                     color: scheme.onSurface,
@@ -244,4 +251,3 @@ class _FeedbackButton extends StatelessWidget {
     );
   }
 }
-

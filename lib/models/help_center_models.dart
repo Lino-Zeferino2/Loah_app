@@ -1,9 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Represents a FAQ category (e.g., "Metas", "Tarefas", "Finanças").
+///
+/// CORRIGIDO: `name` era um único campo (só português). Agora existem
+/// `namePt` e `nameEn`, com `name(locale)` a devolver o correto — e um
+/// fallback para PT caso o EN ainda não tenha sido preenchido pelo
+/// admin, para nunca mostrar um campo vazio.
 class FaqCategory {
   final String id;
-  final String name;
+  final String namePt;
+  final String nameEn;
   final String iconName;
   final int order;
   final bool active;
@@ -11,17 +17,29 @@ class FaqCategory {
 
   const FaqCategory({
     required this.id,
-    required this.name,
+    required this.namePt,
+    this.nameEn = '',
     this.iconName = 'help_outline',
     this.order = 0,
     this.active = true,
     this.createdAt,
   });
 
+  /// Devolve o nome no idioma pedido. Se o EN ainda não foi
+  /// preenchido pelo admin, cai de volta para o PT em vez de mostrar
+  /// vazio.
+  String name(String languageCode) {
+    if (languageCode == 'en' && nameEn.trim().isNotEmpty) return nameEn;
+    return namePt;
+  }
+
   factory FaqCategory.fromMap(String id, Map<String, dynamic> data) {
     return FaqCategory(
       id: id,
-      name: data['name'] as String? ?? '',
+      // Compatibilidade: categorias antigas só têm 'name' (sem sufixo).
+      // Se 'namePt' não existir ainda, usa 'name' como valor inicial.
+      namePt: data['namePt'] as String? ?? data['name'] as String? ?? '',
+      nameEn: data['nameEn'] as String? ?? '',
       iconName: data['iconName'] as String? ?? 'help_outline',
       order: data['order'] as int? ?? 0,
       active: data['active'] as bool? ?? true,
@@ -31,7 +49,8 @@ class FaqCategory {
 
   Map<String, dynamic> toMap() {
     return {
-      'name': name,
+      'namePt': namePt,
+      'nameEn': nameEn,
       'iconName': iconName,
       'order': order,
       'active': active,
@@ -41,7 +60,8 @@ class FaqCategory {
 
   FaqCategory copyWith({
     String? id,
-    String? name,
+    String? namePt,
+    String? nameEn,
     String? iconName,
     int? order,
     bool? active,
@@ -49,7 +69,8 @@ class FaqCategory {
   }) {
     return FaqCategory(
       id: id ?? this.id,
-      name: name ?? this.name,
+      namePt: namePt ?? this.namePt,
+      nameEn: nameEn ?? this.nameEn,
       iconName: iconName ?? this.iconName,
       order: order ?? this.order,
       active: active ?? this.active,
@@ -59,11 +80,18 @@ class FaqCategory {
 }
 
 /// Represents a FAQ article (question + answer).
+///
+/// CORRIGIDO: `question`/`answer` eram campos únicos (só português).
+/// Agora existem versões `Pt`/`En` de cada, com `question(locale)` e
+/// `answer(locale)` a devolver o texto certo — com fallback para PT se
+/// o EN ainda não tiver sido preenchido.
 class FaqArticle {
   final String id;
   final String categoryId;
-  final String question;
-  final String answer;
+  final String questionPt;
+  final String questionEn;
+  final String answerPt;
+  final String answerEn;
   final bool popular;
   final int views;
   final DateTime? createdAt;
@@ -72,20 +100,37 @@ class FaqArticle {
   const FaqArticle({
     required this.id,
     required this.categoryId,
-    required this.question,
-    required this.answer,
+    required this.questionPt,
+    this.questionEn = '',
+    required this.answerPt,
+    this.answerEn = '',
     this.popular = false,
     this.views = 0,
     this.createdAt,
     this.updatedAt,
   });
 
+  String question(String languageCode) {
+    if (languageCode == 'en' && questionEn.trim().isNotEmpty) return questionEn;
+    return questionPt;
+  }
+
+  String answer(String languageCode) {
+    if (languageCode == 'en' && answerEn.trim().isNotEmpty) return answerEn;
+    return answerPt;
+  }
+
   factory FaqArticle.fromMap(String id, Map<String, dynamic> data) {
     return FaqArticle(
       id: id,
       categoryId: data['categoryId'] as String? ?? '',
-      question: data['question'] as String? ?? '',
-      answer: data['answer'] as String? ?? '',
+      // Compatibilidade: artigos antigos só têm 'question'/'answer'
+      // (sem sufixo) — usados como valor inicial de *Pt se *Pt ainda
+      // não existir.
+      questionPt: data['questionPt'] as String? ?? data['question'] as String? ?? '',
+      questionEn: data['questionEn'] as String? ?? '',
+      answerPt: data['answerPt'] as String? ?? data['answer'] as String? ?? '',
+      answerEn: data['answerEn'] as String? ?? '',
       popular: data['popular'] as bool? ?? false,
       views: data['views'] as int? ?? 0,
       createdAt: (data['createdAt'] as dynamic)?.toDate(),
@@ -96,8 +141,10 @@ class FaqArticle {
   Map<String, dynamic> toMap() {
     return {
       'categoryId': categoryId,
-      'question': question,
-      'answer': answer,
+      'questionPt': questionPt,
+      'questionEn': questionEn,
+      'answerPt': answerPt,
+      'answerEn': answerEn,
       'popular': popular,
       'views': views,
       'createdAt': createdAt ?? FieldValue.serverTimestamp(),
@@ -108,8 +155,10 @@ class FaqArticle {
   FaqArticle copyWith({
     String? id,
     String? categoryId,
-    String? question,
-    String? answer,
+    String? questionPt,
+    String? questionEn,
+    String? answerPt,
+    String? answerEn,
     bool? popular,
     int? views,
     DateTime? createdAt,
@@ -118,8 +167,10 @@ class FaqArticle {
     return FaqArticle(
       id: id ?? this.id,
       categoryId: categoryId ?? this.categoryId,
-      question: question ?? this.question,
-      answer: answer ?? this.answer,
+      questionPt: questionPt ?? this.questionPt,
+      questionEn: questionEn ?? this.questionEn,
+      answerPt: answerPt ?? this.answerPt,
+      answerEn: answerEn ?? this.answerEn,
       popular: popular ?? this.popular,
       views: views ?? this.views,
       createdAt: createdAt ?? this.createdAt,
@@ -300,4 +351,3 @@ class HelpMessage {
     );
   }
 }
-

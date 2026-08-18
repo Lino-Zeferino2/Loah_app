@@ -108,7 +108,7 @@ class HelpCenterService {
     }).toList();
   }
 
-  /// Search articles by question or answer text.
+  /// Search articles by question or answer text, in both languages.
   Future<List<FaqArticle>> searchArticles(String query) async {
     if (query.trim().isEmpty) return [];
 
@@ -116,9 +116,14 @@ class HelpCenterService {
     final snap = await _articles.get();
     final results = snap.docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
-      final question = (data['question'] as String? ?? '').toLowerCase();
-      final answer = (data['answer'] as String? ?? '').toLowerCase();
-      return question.contains(lowerQuery) || answer.contains(lowerQuery);
+      final questionPt = (data['questionPt'] as String? ?? data['question'] as String? ?? '').toLowerCase();
+      final questionEn = (data['questionEn'] as String? ?? '').toLowerCase();
+      final answerPt = (data['answerPt'] as String? ?? data['answer'] as String? ?? '').toLowerCase();
+      final answerEn = (data['answerEn'] as String? ?? '').toLowerCase();
+      return questionPt.contains(lowerQuery) ||
+          questionEn.contains(lowerQuery) ||
+          answerPt.contains(lowerQuery) ||
+          answerEn.contains(lowerQuery);
     }).toList();
 
     return results.map((doc) {
@@ -244,4 +249,3 @@ class HelpCenterService {
     await _messages.doc(messageId).delete();
   }
 }
-
