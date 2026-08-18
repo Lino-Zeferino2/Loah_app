@@ -45,10 +45,26 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
     );
 
     _logoFade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.4, curve: Curves.easeOut)),
     );
-    _logoScale = Tween<double>(begin: 0.8, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.75, curve: Curves.easeOutBack)),
+    // CORRIGIDO: era Tween(begin: 0.8, end: 1) — crescimento pouco
+    // percetível. Agora a logo parte de bem pequena (0.3) e cresce até
+    // passar ligeiramente do tamanho final (1.08, "overshoot"), depois
+    // recua até 1.0 — dá o efeito de "pop" dramático/profissional,
+    // como as animações de abertura de apps grandes.
+    _logoScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.3, end: 1.08)
+            .chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 70,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.08, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 30,
+      ),
+    ]).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.75)),
     );
     _logoRotation = Tween<double>(begin: -0.3, end: 0.0).animate(
       CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.85, curve: Curves.easeOut)),
@@ -278,8 +294,14 @@ class _SplashScreenVistosoState extends State<SplashScreenVistoso>
                                     scale: _logoScale.value,
                                     child: Image.asset(
                                       'assets/images/logo.png',
-                                      width: 200,
-                                      height: 200,
+                                      // CORRIGIDO: era 200x200 — tamanho
+                                      // base pequeno fazia com que mesmo
+                                      // com escala 1.0 a logo ficasse
+                                      // discreta. Aumentado para 280,
+                                      // combinado com o crescimento mais
+                                      // dramático do _logoScale acima.
+                                      width: 280,
+                                      height: 280,
                                       fit: BoxFit.contain,
                                     ),
                                   ),
