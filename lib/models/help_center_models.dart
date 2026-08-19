@@ -191,26 +191,73 @@ enum HelpMessageStatus { pendente, emAndamento, resolvido }
 ///   - aboutUs:      Texto "Sobre Nós" exibido na tela AboutLoahScreen
 ///   - lastUpdatedBy:UID do admin que fez a última atualização
 ///   - updatedAt:    Timestamp da última atualização
+/// Represents the app's "About Loah" content stored in Firestore
+/// under a single document: appContent/aboutLoah.
+///
+/// CORRIGIDO: terms/privacyPolicy/aboutUs eram campos únicos (só
+/// português). Agora existem versões Pt/En de cada, com
+/// terms(locale)/privacyPolicy(locale)/aboutUs(locale) a devolver o
+/// texto certo — com fallback para PT se o EN ainda não tiver sido
+/// preenchido pelo admin, tal como em FaqCategory/FaqArticle.
 class AboutLoahContent {
-  final String terms;
-  final String privacyPolicy;
-  final String aboutUs;
+  final String termsPt;
+  final String termsEn;
+  final String privacyPolicyPt;
+  final String privacyPolicyEn;
+  final String aboutUsPt;
+  final String aboutUsEn;
   final String lastUpdatedBy;
   final DateTime? updatedAt;
 
   const AboutLoahContent({
-    this.terms = '',
-    this.privacyPolicy = '',
-    this.aboutUs = '',
+    this.termsPt = '',
+    this.termsEn = '',
+    this.privacyPolicyPt = '',
+    this.privacyPolicyEn = '',
+    this.aboutUsPt = '',
+    this.aboutUsEn = '',
     this.lastUpdatedBy = '',
     this.updatedAt,
   });
 
+  /// Devolve os Termos no idioma pedido. Se o EN ainda não foi
+  /// preenchido pelo admin, cai de volta para o PT em vez de mostrar
+  /// vazio.
+  String terms(String languageCode) {
+    if (languageCode == 'en' && termsEn.trim().isNotEmpty) return termsEn;
+    return termsPt;
+  }
+
+  /// Devolve a Política de Privacidade no idioma pedido, com o mesmo
+  /// fallback para PT.
+  String privacyPolicy(String languageCode) {
+    if (languageCode == 'en' && privacyPolicyEn.trim().isNotEmpty) {
+      return privacyPolicyEn;
+    }
+    return privacyPolicyPt;
+  }
+
+  /// Devolve o texto "Sobre Nós" no idioma pedido, com o mesmo
+  /// fallback para PT.
+  String aboutUs(String languageCode) {
+    if (languageCode == 'en' && aboutUsEn.trim().isNotEmpty) return aboutUsEn;
+    return aboutUsPt;
+  }
+
   factory AboutLoahContent.fromMap(Map<String, dynamic> data) {
     return AboutLoahContent(
-      terms: data['terms'] as String? ?? '',
-      privacyPolicy: data['privacyPolicy'] as String? ?? '',
-      aboutUs: data['aboutUs'] as String? ?? '',
+      // Compatibilidade: documentos antigos só têm 'terms'/'privacyPolicy'/
+      // 'aboutUs' (sem sufixo) — usados como valor inicial de *Pt se
+      // *Pt ainda não existir.
+      termsPt: data['termsPt'] as String? ?? data['terms'] as String? ?? '',
+      termsEn: data['termsEn'] as String? ?? '',
+      privacyPolicyPt: data['privacyPolicyPt'] as String? ??
+          data['privacyPolicy'] as String? ??
+          '',
+      privacyPolicyEn: data['privacyPolicyEn'] as String? ?? '',
+      aboutUsPt:
+          data['aboutUsPt'] as String? ?? data['aboutUs'] as String? ?? '',
+      aboutUsEn: data['aboutUsEn'] as String? ?? '',
       lastUpdatedBy: data['lastUpdatedBy'] as String? ?? '',
       updatedAt: (data['updatedAt'] as dynamic)?.toDate(),
     );
@@ -218,31 +265,39 @@ class AboutLoahContent {
 
   Map<String, dynamic> toMap() {
     return {
-      'terms': terms,
-      'privacyPolicy': privacyPolicy,
-      'aboutUs': aboutUs,
+      'termsPt': termsPt,
+      'termsEn': termsEn,
+      'privacyPolicyPt': privacyPolicyPt,
+      'privacyPolicyEn': privacyPolicyEn,
+      'aboutUsPt': aboutUsPt,
+      'aboutUsEn': aboutUsEn,
       'lastUpdatedBy': lastUpdatedBy,
       'updatedAt': updatedAt ?? FieldValue.serverTimestamp(),
     };
   }
 
   AboutLoahContent copyWith({
-    String? terms,
-    String? privacyPolicy,
-    String? aboutUs,
+    String? termsPt,
+    String? termsEn,
+    String? privacyPolicyPt,
+    String? privacyPolicyEn,
+    String? aboutUsPt,
+    String? aboutUsEn,
     String? lastUpdatedBy,
     DateTime? updatedAt,
   }) {
     return AboutLoahContent(
-      terms: terms ?? this.terms,
-      privacyPolicy: privacyPolicy ?? this.privacyPolicy,
-      aboutUs: aboutUs ?? this.aboutUs,
+      termsPt: termsPt ?? this.termsPt,
+      termsEn: termsEn ?? this.termsEn,
+      privacyPolicyPt: privacyPolicyPt ?? this.privacyPolicyPt,
+      privacyPolicyEn: privacyPolicyEn ?? this.privacyPolicyEn,
+      aboutUsPt: aboutUsPt ?? this.aboutUsPt,
+      aboutUsEn: aboutUsEn ?? this.aboutUsEn,
       lastUpdatedBy: lastUpdatedBy ?? this.lastUpdatedBy,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }
-
 /// Represents a message sent by a user asking for help.
 class HelpMessage {
   final String id;

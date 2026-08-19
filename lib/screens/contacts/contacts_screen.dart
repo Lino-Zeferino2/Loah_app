@@ -10,7 +10,6 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/call_utils.dart';
 import '../../models/contact_model.dart';
 import '../../widgets/loah_app_bar.dart';
-import '../../widgets/loah_avatar_action.dart';
 import '../../widgets/loah_drawer.dart';
 import 'add_contact_screen.dart';
 import 'contact_detail_screen.dart';

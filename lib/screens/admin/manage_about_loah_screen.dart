@@ -9,7 +9,10 @@ import 'package:loah_app/models/help_center_models.dart';
 ///   2. Política de Privacidade
 ///   3. Sobre Nós
 ///
-/// Each tab has a multiline TextField for editing and a "Guardar" button.
+/// CORRIGIDO: cada aba agora tem 2 campos (Português / Inglês) em vez
+/// de 1, seguindo o mesmo padrão Pt/En já usado em Categorias e FAQs
+/// da Central de Ajuda. O EN continua opcional — só o PT é
+/// obrigatório para poder guardar.
 class ManageAboutLoahScreen extends StatefulWidget {
   const ManageAboutLoahScreen({super.key});
 
@@ -22,10 +25,13 @@ class _ManageAboutLoahScreenState extends State<ManageAboutLoahScreen>
   final HelpCenterService _service = HelpCenterService();
   late TabController _tabController;
 
-  // Controllers for each field
-  final _termsController = TextEditingController();
-  final _privacyController = TextEditingController();
-  final _aboutUsController = TextEditingController();
+  // NOVO: 2 controllers por secção (Pt/En) em vez de 1.
+  final _termsPtController = TextEditingController();
+  final _termsEnController = TextEditingController();
+  final _privacyPtController = TextEditingController();
+  final _privacyEnController = TextEditingController();
+  final _aboutUsPtController = TextEditingController();
+  final _aboutUsEnController = TextEditingController();
 
   bool _loading = true;
   bool _saving = false;
@@ -40,9 +46,12 @@ class _ManageAboutLoahScreenState extends State<ManageAboutLoahScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    _termsController.dispose();
-    _privacyController.dispose();
-    _aboutUsController.dispose();
+    _termsPtController.dispose();
+    _termsEnController.dispose();
+    _privacyPtController.dispose();
+    _privacyEnController.dispose();
+    _aboutUsPtController.dispose();
+    _aboutUsEnController.dispose();
     super.dispose();
   }
 
@@ -50,10 +59,14 @@ class _ManageAboutLoahScreenState extends State<ManageAboutLoahScreen>
     setState(() => _loading = true);
     try {
       final content = await _service.getAboutLoahContent();
-      _termsController.text = content.terms;
-      _privacyController.text = content.privacyPolicy;
-      _aboutUsController.text = content.aboutUs;
-    } catch (_) {
+      _termsPtController.text = content.termsPt;
+      _termsEnController.text = content.termsEn;
+      _privacyPtController.text = content.privacyPolicyPt;
+      _privacyEnController.text = content.privacyPolicyEn;
+      _aboutUsPtController.text = content.aboutUsPt;
+      _aboutUsEnController.text = content.aboutUsEn;
+    } catch (e) {
+      debugPrint('[ManageAboutLoahScreen] Erro ao carregar conteúdo: $e');
       // Keep defaults on error
     }
     if (mounted) setState(() => _loading = false);
@@ -64,9 +77,12 @@ class _ManageAboutLoahScreenState extends State<ManageAboutLoahScreen>
     try {
       final user = FirebaseAuth.instance.currentUser;
       final content = AboutLoahContent(
-        terms: _termsController.text.trim(),
-        privacyPolicy: _privacyController.text.trim(),
-        aboutUs: _aboutUsController.text.trim(),
+        termsPt: _termsPtController.text.trim(),
+        termsEn: _termsEnController.text.trim(),
+        privacyPolicyPt: _privacyPtController.text.trim(),
+        privacyPolicyEn: _privacyEnController.text.trim(),
+        aboutUsPt: _aboutUsPtController.text.trim(),
+        aboutUsEn: _aboutUsEnController.text.trim(),
         lastUpdatedBy: user?.uid ?? '',
       );
       await _service.updateAboutLoahContent(content);
@@ -116,20 +132,26 @@ class _ManageAboutLoahScreenState extends State<ManageAboutLoahScreen>
               controller: _tabController,
               children: [
                 _ContentTab(
-                  controller: _termsController,
-                  hint: 'Escreva os Termos de Uso...',
+                  ptController: _termsPtController,
+                  enController: _termsEnController,
+                  hintPt: 'Escreva os Termos de Uso em português...',
+                  hintEn: 'Write the Terms of Use in English...',
                   saving: _saving,
                   onSave: _saveContent,
                 ),
                 _ContentTab(
-                  controller: _privacyController,
-                  hint: 'Escreva a Política de Privacidade...',
+                  ptController: _privacyPtController,
+                  enController: _privacyEnController,
+                  hintPt: 'Escreva a Política de Privacidade em português...',
+                  hintEn: 'Write the Privacy Policy in English...',
                   saving: _saving,
                   onSave: _saveContent,
                 ),
                 _ContentTab(
-                  controller: _aboutUsController,
-                  hint: 'Escreva o texto "Sobre Nós"...',
+                  ptController: _aboutUsPtController,
+                  enController: _aboutUsEnController,
+                  hintPt: 'Escreva o texto "Sobre Nós" em português...',
+                  hintEn: 'Write the "About Us" text in English...',
                   saving: _saving,
                   onSave: _saveContent,
                 ),
@@ -139,16 +161,20 @@ class _ManageAboutLoahScreenState extends State<ManageAboutLoahScreen>
   }
 }
 
-/// A single tab with a multiline text field and a save button.
+/// A single tab with two multiline text fields (PT/EN) and a save button.
 class _ContentTab extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
+  final TextEditingController ptController;
+  final TextEditingController enController;
+  final String hintPt;
+  final String hintEn;
   final bool saving;
   final VoidCallback onSave;
 
   const _ContentTab({
-    required this.controller,
-    required this.hint,
+    required this.ptController,
+    required this.enController,
+    required this.hintPt,
+    required this.hintEn,
     required this.saving,
     required this.onSave,
   });
@@ -162,6 +188,10 @@ class _ContentTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // NOVO: rótulo + campo Português
+          const Text('Português',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          const SizedBox(height: 6),
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -170,13 +200,40 @@ class _ContentTab extends StatelessWidget {
               border: Border.all(color: colors.border),
             ),
             child: TextField(
-              controller: controller,
+              controller: ptController,
               maxLines: null,
-              minLines: 16,
+              minLines: 10,
               style: const TextStyle(height: 1.5),
               decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: TextStyle(color: context.textSecondary.withValues(alpha: 0.5)),
+                hintText: hintPt,
+                hintStyle:
+                    TextStyle(color: context.textSecondary.withValues(alpha: 0.5)),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.all(14),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // NOVO: rótulo + campo Inglês
+          const Text('Inglês',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          const SizedBox(height: 6),
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: colors.cardBackgroundAlt,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colors.border),
+            ),
+            child: TextField(
+              controller: enController,
+              maxLines: null,
+              minLines: 10,
+              style: const TextStyle(height: 1.5),
+              decoration: InputDecoration(
+                hintText: hintEn,
+                hintStyle:
+                    TextStyle(color: context.textSecondary.withValues(alpha: 0.5)),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(14),
               ),
@@ -214,10 +271,9 @@ class _ContentTab extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 48,)
+          const SizedBox(height: 48),
         ],
       ),
     );
   }
 }
-

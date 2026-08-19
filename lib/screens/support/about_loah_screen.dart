@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/help_center_service.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
 import 'package:loah_app/models/help_center_models.dart';
-
+import 'package:loah_app/core/l10n/app_localizations.dart';
 class AboutLoahScreen extends StatefulWidget {
   const AboutLoahScreen({super.key});
 
@@ -30,7 +30,8 @@ class _AboutLoahScreenState extends State<AboutLoahScreen> {
           _loading = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[AboutLoahScreen] Erro ao carregar conteúdo: $e');
       if (mounted) {
         setState(() {
           _loading = false;
@@ -41,6 +42,10 @@ class _AboutLoahScreenState extends State<AboutLoahScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // NOVO: idioma atual do dispositivo/app, usado para escolher
+    // entre o texto Pt/En guardado no Firestore.
+    
+final languageCode = AppLocales.of(context).languageCode;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sobre Loah'),
@@ -51,8 +56,11 @@ class _AboutLoahScreenState extends State<AboutLoahScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
-                  _content?.aboutUs.isNotEmpty == true
-                      ? _content!.aboutUs
+                  // CORRIGIDO: era _content?.aboutUs (campo único).
+                  // Agora usa aboutUs(languageCode), que já trata do
+                  // fallback para PT se o EN estiver vazio.
+                  _content != null && _content!.aboutUs(languageCode).isNotEmpty
+                      ? _content!.aboutUs(languageCode)
                       : 'Loah é um aplicativo feito para te ajudar a organizar sua vida financeira e alcançar objetivos com mais clareza.',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
@@ -71,7 +79,7 @@ class _AboutLoahScreenState extends State<AboutLoahScreen> {
                         Text('• Finanças com visão clara'),
                         SizedBox(height: 8),
                         Text('• Tarefas para manter o progresso'),
-],
+                      ],
                     ),
                   ),
                 ),
@@ -103,4 +111,3 @@ class _AboutLoahScreenState extends State<AboutLoahScreen> {
         '${date.year}';
   }
 }
-

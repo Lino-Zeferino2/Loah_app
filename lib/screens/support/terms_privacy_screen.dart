@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/services/help_center_service.dart';
 import 'package:loah_app/core/theme/app_theme.dart';
 import 'package:loah_app/models/help_center_models.dart';
@@ -41,7 +42,13 @@ class _TermsPrivacyScreenState extends State<TermsPrivacyScreen>
           _loading = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      // CORRIGIDO: catch(_) engolia o erro silenciosamente. Se as
+      // Firestore Rules bloquearem leitura sem autenticação (o
+      // utilizador ainda não tem conta neste ecrã, no signup), o
+      // erro passava despercebido e o placeholder "ainda não
+      // definido" aparecia mesmo com dados no Firebase.
+      debugPrint('[TermsPrivacyScreen] Erro ao carregar conteúdo: $e');
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -49,6 +56,8 @@ class _TermsPrivacyScreenState extends State<TermsPrivacyScreen>
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    // NOVO: idioma atual do dispositivo/app.
+    final languageCode = AppLocales.of(context).languageCode;
 
     return Scaffold(
       appBar: AppBar(
@@ -72,14 +81,15 @@ class _TermsPrivacyScreenState extends State<TermsPrivacyScreen>
               controller: _tabController,
               children: [
                 _ContentTab(
-                  content: _content?.terms ?? '',
+                  // CORRIGIDO: era _content?.terms (campo único).
+                  content: _content?.terms(languageCode) ?? '',
                   placeholder: 'Os Termos e Condições ainda não foram definidos.',
                 ),
                 _ContentTab(
-                  content: _content?.privacyPolicy ?? '',
+                  // CORRIGIDO: era _content?.privacyPolicy (campo único).
+                  content: _content?.privacyPolicy(languageCode) ?? '',
                   placeholder: 'A Política de Privacidade ainda não foi definida.',
                 ),
-                
               ],
             ),
     );
@@ -120,7 +130,6 @@ class _ContentTab extends StatelessWidget {
                   fontSize: 15,
                 ),
               ),
-            
             ],
           ),
         ),
@@ -131,7 +140,7 @@ class _ContentTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.only(top:16,left: 16, right: 16, bottom: 52),
+        padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 52),
         decoration: BoxDecoration(
           color: colors.cardBackgroundAlt,
           borderRadius: BorderRadius.circular(12),
@@ -148,4 +157,3 @@ class _ContentTab extends StatelessWidget {
     );
   }
 }
-
