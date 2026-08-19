@@ -37,15 +37,26 @@ class ReportSummary {
     'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
   ];
 
-  /// Total account balance as of the end of [asOf]'s month (or right
+   /// Total account balance as of the end of [asOf]'s month (or right
   /// now, if [asOf] is the current month) — every account's
   /// initialBalance plus every transaction dated on/before [asOf].
+  ///
+  /// CORRIGIDO: antes somava o initialBalance de TODAS as contas
+  /// incondicionalmente — isso fazia o gráfico mostrar saldo em meses
+  /// anteriores à própria conta existir (o bug do valor fixo repetido).
+  /// Agora só conta contas já criadas até [asOf]. Contas sem createdAt
+  /// (registadas antes desta mudança) são tratadas como "sempre
+  /// existiram", para não fazer o saldo delas desaparecer do histórico
+  /// retroativamente.
   static double balanceAsOf(
     List<AccountModel> accounts,
     List<TransactionModel> transactions,
     DateTime asOf,
   ) {
-    final initial = accounts.fold<double>(0, (sum, a) => sum + a.initialBalance);
+    final relevantAccounts = accounts.where(
+      (a) => a.createdAt == null || !a.createdAt!.isAfter(asOf),
+    );
+    final initial = relevantAccounts.fold<double>(0, (sum, a) => sum + a.initialBalance);
     final net = transactions
         .where((t) => !t.date.isAfter(asOf))
         .fold<double>(0, (sum, t) => sum + (t.isIncome ? t.amount : -t.amount));

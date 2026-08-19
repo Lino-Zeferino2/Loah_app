@@ -70,9 +70,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final file = File('${dir.path}/loah_relatorio.csv');
       await file.writeAsString(csv);
 
+      // CORRIGIDO: no iOS (especialmente iPad), Share.shareXFiles exige
+      // sharePositionOrigin — sem isso, dá PlatformException. No Android
+      // esse parâmetro é ignorado, por isso funcionava lá sem ele.
+      final box = context.findRenderObject() as RenderBox?;
       await Share.shareXFiles(
         [XFile(file.path)],
         text: 'Relatório Financeiro Loah',
+        sharePositionOrigin: box != null
+            ? box.localToGlobal(Offset.zero) & box.size
+            : null,
       );
     } catch (e) {
       if (mounted) {
@@ -107,9 +114,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final file = File('${dir.path}/loah_relatorio.pdf');
       await file.writeAsBytes(pdfBytes);
 
+      // CORRIGIDO: mesma razão do _exportCsv acima.
+      final box = context.findRenderObject() as RenderBox?;
       await Share.shareXFiles(
         [XFile(file.path)],
         text: 'Relatório Financeiro Loah',
+        sharePositionOrigin: box != null
+            ? box.localToGlobal(Offset.zero) & box.size
+            : null,
       );
     } catch (e) {
       if (mounted) {
@@ -122,7 +134,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
       if (mounted) setState(() => _exporting = false);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;

@@ -124,15 +124,21 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     return grouped;
   }
 
-  Future<void> _exportCsv() async {
+Future<void> _exportCsv() async {
     try {
       final csv = CsvExport.transactionsToCsv(_transactions);
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/loah_transacoes.csv');
       await file.writeAsString(csv);
+
+      // CORRIGIDO: idem — sharePositionOrigin exigido no iOS.
+      final box = context.findRenderObject() as RenderBox?;
       await Share.shareXFiles(
         [XFile(file.path)],
         text: 'Transações Loah',
+        sharePositionOrigin: box != null
+            ? box.localToGlobal(Offset.zero) & box.size
+            : null,
       );
     } catch (e) {
       if (mounted) {
@@ -143,7 +149,6 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       }
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;

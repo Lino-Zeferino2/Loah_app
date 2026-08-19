@@ -101,24 +101,43 @@ class FinanceService {
             )
           : AccountType.corrente,
       initialBalance: (data['initialBalance'] as num?)?.toDouble() ?? 0,
+      // NOVO: já estava sendo gravado em _accountToMap, mas nunca lido
+      // de volta — por isso o AccountModel.createdAt ficava sempre
+      // null, mesmo para contas novas. Contas criadas antes desta
+      // correção continuam sem este campo (data['createdAt'] == null),
+      // o que é esperado e tratado como "sempre existiu" no relatório.
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] as Timestamp).toDate()
+          : null,
     );
   }
 
+  // CORRIGIDO: separei o toMap em dois casos. Antes, um único
+  // _accountToMap incluía 'createdAt': FieldValue.serverTimestamp() —
+  // isso significava que TODA EDIÇÃO de uma conta reescrevia a data de
+  // criação para "agora", quebrando silenciosamente a lógica de
+  // relatórios (uma conta editada passaria a "não existir" nos meses
+  // anteriores à edição, mesmo tendo sido criada há muito tempo).
   Map<String, dynamic> _accountToMap(AccountModel a) {
     return {
       'name': a.name,
       'type': a.type.name,
       'initialBalance': a.initialBalance,
-      'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
 
   Future<void> addAccount(AccountModel account) async {
-    await _accountsCollection.doc(account.id).set(_accountToMap(account));
+    // createdAt só é definido aqui, na criação — nunca mais é
+    // reescrito depois.
+    final data = _accountToMap(account);
+    data['createdAt'] = FieldValue.serverTimestamp();
+    await _accountsCollection.doc(account.id).set(data);
   }
 
   Future<void> updateAccount(AccountModel account) async {
+    // Sem 'createdAt' aqui — update() só altera os campos passados,
+    // preservando o createdAt já gravado no Firestore.
     final data = _accountToMap(account);
     data['updatedAt'] = FieldValue.serverTimestamp();
     await _accountsCollection.doc(account.id).update(data);

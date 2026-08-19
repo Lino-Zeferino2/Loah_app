@@ -13,19 +13,35 @@ class AccountModel {
   final AccountType type;
   final double initialBalance;
 
+  // NOVO: data em que a conta foi criada. Necessário para os
+  // relatórios de evolução de saldo não contarem o initialBalance
+  // desta conta em meses anteriores à sua criação — sem isto, o
+  // gráfico "inventa" saldo em meses onde a conta nem existia ainda.
+  // Nullable para não quebrar leitura de contas antigas já existentes
+  // no Firestore, criadas antes desta mudança (caem em null, tratado
+  // como "sempre existiu" no relatório — ver nota no report_summary).
+  final DateTime? createdAt;
+
   const AccountModel({
     required this.id,
     required this.name,
     required this.type,
     this.initialBalance = 0,
+    this.createdAt,
   });
 
-  AccountModel copyWith({String? name, AccountType? type, double? initialBalance}) {
+  AccountModel copyWith({
+    String? name,
+    AccountType? type,
+    double? initialBalance,
+    DateTime? createdAt,
+  }) {
     return AccountModel(
       id: id,
       name: name ?? this.name,
       type: type ?? this.type,
       initialBalance: initialBalance ?? this.initialBalance,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }
