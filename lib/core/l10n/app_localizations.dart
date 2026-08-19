@@ -872,7 +872,60 @@ class AppLocales {
       'pt': 'Investimentos',
       'en': 'Investments',
     },
-
+      // NOVO: categorias de despesa adicionadas
+    'txn_cat_educação': {
+      'pt': 'Educação',
+      'en': 'Education',
+    },
+    'txn_cat_assinaturas': {
+      'pt': 'Assinaturas',
+      'en': 'Subscriptions',
+    },
+    'txn_cat_seguros': {
+      'pt': 'Seguros',
+      'en': 'Insurance',
+    },
+    'txn_cat_impostos': {
+      'pt': 'Impostos',
+      'en': 'Taxes',
+    },
+    'txn_cat_dívidas': {
+      'pt': 'Dívidas',
+      'en': 'Debts',
+    },
+    'txn_cat_cuidados pessoais': {
+      'pt': 'Cuidados Pessoais',
+      'en': 'Personal Care',
+    },
+    'txn_cat_presentes': {
+      'pt': 'Presentes',
+      'en': 'Gifts',
+    },
+    'txn_cat_comunicação': {
+      'pt': 'Comunicação',
+      'en': 'Communication',
+    },
+    // NOVO: categorias de receita adicionadas
+    'txn_cat_reembolsos': {
+      'pt': 'Reembolsos',
+      'en': 'Refunds',
+    },
+    'txn_cat_bônus': {
+      'pt': 'Bônus',
+      'en': 'Bonus',
+    },
+    'txn_cat_aluguel': {
+      'pt': 'Aluguel',
+      'en': 'Rental Income',
+    },
+    'txn_cat_pensão': {
+      'pt': 'Pensão',
+      'en': 'Pension',
+    },
+    'txn_cat_vendas': {
+      'pt': 'Vendas',
+      'en': 'Sales',
+    },
     // ═══════ ADD TRANSACTION SCREEN ═══════
     'addTxn_editar': {
       'pt': 'Editar Transação',

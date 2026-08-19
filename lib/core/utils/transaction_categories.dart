@@ -8,8 +8,37 @@ import '../../models/transaction_model.dart';
 class TransactionCategories {
   TransactionCategories._();
 
-  static const expense = ['Alimentação', 'Moradia', 'Transporte', 'Compras', 'Saúde', 'Lazer', 'Outros'];
-  static const income = ['Salário', 'Freelance', 'Investimentos', 'Outros'];
+  // NOVO: listas ampliadas para cobrir os padrões de gasto/receita mais
+  // comuns, além das categorias originais.
+  static const expense = [
+    'Alimentação',
+    'Moradia',
+    'Transporte',
+    'Compras',
+    'Saúde',
+    'Lazer',
+    'Educação',
+    'Assinaturas',
+    'Seguros',
+    'Impostos',
+    'Dívidas',
+    'Cuidados Pessoais',
+    'Presentes',
+    'Comunicação',
+    'Outros',
+  ];
+
+  static const income = [
+    'Salário',
+    'Freelance',
+    'Investimentos',
+    'Reembolsos',
+    'Bônus',
+    'Aluguel',
+    'Pensão',
+    'Vendas',
+    'Outros',
+  ];
 
   static List<String> forType(TransactionType type) =>
       type == TransactionType.income ? income : expense;
@@ -21,9 +50,24 @@ class TransactionCategories {
         'Compras' => Icons.shopping_bag_outlined,
         'Saúde' => Icons.favorite_outline,
         'Lazer' => Icons.sports_esports_outlined,
+        // NOVO: ícones das categorias de despesa adicionadas.
+        'Educação' => Icons.school_outlined,
+        'Assinaturas' => Icons.subscriptions_outlined,
+        'Seguros' => Icons.shield_outlined,
+        'Impostos' => Icons.receipt_long_outlined,
+        'Dívidas' => Icons.credit_score_outlined,
+        'Cuidados Pessoais' => Icons.spa_outlined,
+        'Presentes' => Icons.card_giftcard_outlined,
+        'Comunicação' => Icons.phone_iphone_outlined,
         'Salário' => Icons.payments_outlined,
         'Freelance' => Icons.laptop_mac_outlined,
         'Investimentos' => Icons.trending_up,
+        // NOVO: ícones das categorias de receita adicionadas.
+        'Reembolsos' => Icons.replay_outlined,
+        'Bônus' => Icons.stars_outlined,
+        'Aluguel' => Icons.apartment_outlined,
+        'Pensão' => Icons.elderly_outlined,
+        'Vendas' => Icons.sell_outlined,
         _ => Icons.category_outlined,
       };
 
@@ -34,9 +78,24 @@ class TransactionCategories {
         'Compras' => Colors.purpleAccent,
         'Saúde' => Colors.teal,
         'Lazer' => Colors.pinkAccent,
+        // NOVO: cores das categorias de despesa adicionadas.
+        'Educação' => Colors.indigo,
+        'Assinaturas' => Colors.deepPurple,
+        'Seguros' => Colors.brown,
+        'Impostos' => Colors.grey,
+        'Dívidas' => Colors.deepOrange,
+        'Cuidados Pessoais' => Colors.pink,
+        'Presentes' => Colors.red,
+        'Comunicação' => Colors.lightBlue,
         'Salário' => Colors.blueAccent,
         'Freelance' => Colors.cyan,
         'Investimentos' => Colors.amber,
+        // NOVO: cores das categorias de receita adicionadas.
+        'Reembolsos' => Colors.lightGreen,
+        'Bônus' => Colors.amberAccent,
+        'Aluguel' => Colors.brown,
+        'Pensão' => Colors.blueGrey,
+        'Vendas' => Colors.deepPurpleAccent,
         _ => Colors.blueGrey,
       };
 }
