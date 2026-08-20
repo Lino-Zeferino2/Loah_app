@@ -33,7 +33,22 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     super.initState();
     _loadEverything();
   }
-
+  /// Devolve um nome de exibição seguro para o contacto: o nome
+  /// guardado, se existir e não estiver vazio; senão o primeiro
+  /// telefone; senão o primeiro email; senão um texto genérico.
+  /// CORRIGIDO: contact.displayName! rebentava (Null check operator
+  /// used on a null value) para contactos sem nome guardado — era
+  /// exatamente isso que causava a lista "em branco": a exceção parava
+  /// a construção da lista assim que encontrava o primeiro contacto
+  /// sem nome.
+  String _displayNameFor(device.Contact c) {
+    if (c.displayName != null && c.displayName!.trim().isNotEmpty) {
+      return c.displayName!;
+    }
+    if (c.phones.isNotEmpty) return c.phones.first.number;
+    if (c.emails.isNotEmpty) return c.emails.first.address;
+    return AppLocales.of(context).translate('importContacts_sem_nome');
+  }
   /// Remove tudo que não é dígito — usado para comparar números em
   /// formatos diferentes (com/sem espaço, código de país, etc.) sem
   /// falso-negativo por formatação.
@@ -114,7 +129,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     if (_query.isEmpty) return _deviceContacts;
     final q = _query.toLowerCase();
     return _deviceContacts
-        .where((c) => c.displayName!.toLowerCase().contains(q))
+        .where((c) => _displayNameFor(c).toLowerCase().contains(q))
         .toList();
   }
 
@@ -152,7 +167,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       final newContacts = toImport.map((c) {
         return ContactModel(
           id: _contactService.newContactId(),
-          name: c.displayName!,
+          name: _displayNameFor(c),
           email: c.emails.isNotEmpty ? c.emails.first.address : null,
           phone: c.phones.isNotEmpty ? c.phones.first.number : null,
           relationshipTag: 'Conhecido',
@@ -250,7 +265,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                                       ? null
                                       : (_) => _toggleSelection(contact.id!),
                                   title: Text(
-                                    contact.displayName!,
+                                    _displayNameFor(contact),
                                     style: TextStyle(
                                       color: alreadyImported ? context.textSecondary : null,
                                     ),
