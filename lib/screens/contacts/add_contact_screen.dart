@@ -48,7 +48,7 @@ static const _relationshipValues = [
   String _countryDialCode = '+351';
   String? _avatarPath;
   String? _nameError;
-
+  bool _isSaving = false; // NOVO
   @override
   void initState() {
     super.initState();
@@ -144,17 +144,14 @@ Future<void> _submit() async {
       return;
     }
 
+    setState(() => _isSaving = true); // NOVO
+
     final existing = widget.existingContact;
-    // O ID é gerado antes para podermos usar no caminho do Storage.
     final contactId = existing?.id ?? 'contact_${DateTime.now().microsecondsSinceEpoch}';
 
     try {
       final contactService = ContactService();
 
-      // ── Upload da foto selecionada (ficheiro local) para o Storage ──
-      // Se o utilizador escolheu uma imagem nova, `_avatarPath` aponta
-      // para um ficheiro local (ex.: /data/...). Se já existia uma URL
-      // (http/https) ou não há foto, mantém-se como está.
       String? avatarUrl = _avatarPath;
       final pickedFile = _avatarPath;
       if (pickedFile != null &&
@@ -165,8 +162,6 @@ Future<void> _submit() async {
           contactId: contactId,
         );
 
-        // Se o contacto já tinha uma foto antiga no Storage, apaga-a
-        // para não acumular ficheiros órfãos.
         if (existing?.avatarUrl != null &&
             existing!.avatarUrl!.startsWith('http')) {
           await contactService.deleteAvatar(existing.avatarUrl);
@@ -200,9 +195,13 @@ Future<void> _submit() async {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${AppLocales.of(context).translate('addContact_erro_salvar')}$e')),
       );
+    } finally {
+      // NOVO: garante que o loading desliga tanto no sucesso quanto no
+      // erro. Não faz setState se a tela já foi fechada (Navigator.pop
+      // no caminho de sucesso já desmontou o widget).
+      if (mounted) setState(() => _isSaving = false);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final loc = AppLocales.of(context);
@@ -212,13 +211,22 @@ Future<void> _submit() async {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? loc.translate('addContact_titulo_editar') : loc.translate('addContact_titulo_novo')),
-        actions: [
+               actions: [
           TextButton(
-            onPressed: _submit,
-            child: Text(
-              loc.translate('addContact_salvar'),
-              style: TextStyle(color: colors.accentBlue, fontWeight: FontWeight.w700),
-            ),
+            onPressed: _isSaving ? null : _submit,
+            child: _isSaving
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(colors.accentBlue),
+                    ),
+                  )
+                : Text(
+                    loc.translate('addContact_salvar'),
+                    style: TextStyle(color: colors.accentBlue, fontWeight: FontWeight.w700),
+                  ),
           ),
         ],
       ),
@@ -358,11 +366,20 @@ _SectionLabel(loc.translate('addContact_grau_label')),
             ),
             const SizedBox(height: 28),
 
-            SizedBox(
+                      SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _submit,
-                icon: const Icon(Icons.save_outlined, size: 18),
+                onPressed: _isSaving ? null : _submit,
+                icon: _isSaving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.save_outlined, size: 18),
                 label: Text(
                   isEditing ? loc.translate('addContact_salvar_alteracoes') : loc.translate('addContact_salvar_contato'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
@@ -374,8 +391,7 @@ _SectionLabel(loc.translate('addContact_grau_label')),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-            ),
-          ],
+            ),],
         ),
       ),
     );
