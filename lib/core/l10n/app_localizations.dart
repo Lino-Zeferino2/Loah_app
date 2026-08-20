@@ -2304,7 +2304,7 @@ class AppLocales {
       'en': 'Other',
     },
 
-// ═══════ RELATIONSHIP TAGS (Grau de Conexão) ═══════
+    // ═══════ RELATIONSHIP TAGS (Grau de Conexão) ═══════
     'rel_familiar': {
       'pt': 'Familiar',
       'en': 'Family',
@@ -2313,9 +2313,19 @@ class AppLocales {
       'pt': 'Amigo',
       'en': 'Friend',
     },
+    // NOVO
+    'rel_amiga': {
+      'pt': 'Amiga',
+      'en': 'Friend',
+    },
     'rel_namorada': {
       'pt': 'Namorada',
       'en': 'Girlfriend',
+    },
+    // NOVO
+    'rel_namorado': {
+      'pt': 'Namorado',
+      'en': 'Boyfriend',
     },
     'rel_pai': {
       'pt': 'Pai',
@@ -2329,10 +2339,16 @@ class AppLocales {
       'pt': 'Conhecido',
       'en': 'Acquaintance',
     },
+    // NOVO
+    'rel_conhecida': {
+      'pt': 'Conhecida',
+      'en': 'Acquaintance',
+    },
     'rel_colega': {
       'pt': 'Colega',
       'en': 'Colleague',
     },
+
 
 // ═══════ RELATIVE TIME ═══════
     'relative_ha': {
@@ -3048,6 +3064,223 @@ class AppLocales {
     'newItemModal_contato': {
       'pt': 'Contato',
       'en': 'Contact',
+    },
+        // ═══════ HELP CENTER SCREEN ═══════
+    'helpCenter_titulo': {
+      'pt': 'Central de Ajuda',
+      'en': 'Help Center',
+    },
+    'helpCenter_como_ajudar': {
+      'pt': 'Como podemos ajudar?',
+      'en': 'How can we help?',
+    },
+    'helpCenter_pesquisar_hint': {
+      'pt': 'Pesquisar artigos, guias...',
+      'en': 'Search articles, guides...',
+    },
+    'helpCenter_categorias': {
+      'pt': 'CATEGORIAS',
+      'en': 'CATEGORIES',
+    },
+    'helpCenter_artigos_populares': {
+      'pt': 'ARTIGOS POPULARES',
+      'en': 'POPULAR ARTICLES',
+    },
+    'helpCenter_todas_perguntas': {
+      'pt': 'TODAS AS PERGUNTAS',
+      'en': 'ALL QUESTIONS',
+    },
+    'helpCenter_precisa_ajuda': {
+      'pt': 'AINDA PRECISA DE AJUDA?',
+      'en': 'STILL NEED HELP?',
+    },
+    'helpCenter_resultados_pesquisa': {
+      'pt': 'RESULTADOS DA PESQUISA',
+      'en': 'SEARCH RESULTS',
+    },
+    'helpCenter_todas_chip': {
+      'pt': 'Todas',
+      'en': 'All',
+    },
+    'helpCenter_nenhum_artigo_busca': {
+      'pt': 'Nenhum artigo encontrado para "{query}"',
+      'en': 'No article found for "{query}"',
+    },
+    'helpCenter_fale_connosco': {
+      'pt': 'Fale connosco',
+      'en': 'Contact us',
+    },
+    'helpCenter_equipe_disponivel': {
+      'pt': 'Nossa equipe de suporte está disponível de Seg. a Sex., das 09h às 18h.',
+      'en': 'Our support team is available Mon–Fri, 9am to 6pm.',
+    },
+    'helpCenter_enviar_mensagem': {
+      'pt': 'Enviar Mensagem',
+      'en': 'Send Message',
+    },
+    'helpCenter_minhas_mensagens': {
+      'pt': 'As Minhas Mensagens',
+      'en': 'My Messages',
+    },
+    'helpCenter_respondemos_24h': {
+      'pt': 'Respondemos em até 24h',
+      'en': 'We respond within 24h',
+    },
+    'helpCenter_nenhum_artigo_categoria': {
+      'pt': 'Nenhum artigo nesta categoria ainda.',
+      'en': 'No articles in this category yet.',
+    },
+
+    // ═══════ SEND MESSAGE SCREEN ═══════
+    'sendMsg_titulo': {
+      'pt': 'Enviar Mensagem',
+      'en': 'Send Message',
+    },
+    'sendMsg_fale_connosco': {
+      'pt': 'Fale connosco',
+      'en': 'Contact us',
+    },
+    'sendMsg_subtitulo': {
+      'pt': 'Envie-nos uma mensagem e responderemos o mais breve possível.',
+      'en': "Send us a message and we'll respond as soon as possible.",
+    },
+    'sendMsg_categoria_label': {
+      'pt': 'Categoria',
+      'en': 'Category',
+    },
+    'sendMsg_cat_geral': {
+      'pt': 'Dúvida Geral',
+      'en': 'General Question',
+    },
+    'sendMsg_cat_contas': {
+      'pt': 'Problemas com Conta',
+      'en': 'Account Issues',
+    },
+    'sendMsg_cat_financas': {
+      'pt': 'Finanças',
+      'en': 'Finances',
+    },
+    'sendMsg_cat_metas': {
+      'pt': 'Metas & Tarefas',
+      'en': 'Goals & Tasks',
+    },
+    'sendMsg_cat_tecnico': {
+      'pt': 'Problema Técnico',
+      'en': 'Technical Issue',
+    },
+    'sendMsg_cat_sugestao': {
+      'pt': 'Sugestão',
+      'en': 'Suggestion',
+    },
+    'sendMsg_cat_outro': {
+      'pt': 'Outro',
+      'en': 'Other',
+    },
+    'sendMsg_assunto_label': {
+      'pt': 'Assunto',
+      'en': 'Subject',
+    },
+    'sendMsg_assunto_hint': {
+      'pt': 'Resumo do problema',
+      'en': 'Summary of the issue',
+    },
+    'sendMsg_mensagem_label': {
+      'pt': 'Mensagem',
+      'en': 'Message',
+    },
+    'sendMsg_mensagem_hint': {
+      'pt': 'Descreva o seu problema em detalhe...',
+      'en': 'Describe your issue in detail...',
+    },
+    'sendMsg_campo_obrigatorio': {
+      'pt': 'Campo obrigatório',
+      'en': 'Required field',
+    },
+    'sendMsg_enviar_btn': {
+      'pt': 'Enviar Mensagem',
+      'en': 'Send Message',
+    },
+    'sendMsg_enviando': {
+      'pt': 'A enviar...',
+      'en': 'Sending...',
+    },
+    'sendMsg_sessao_expirada': {
+      'pt': 'Sessão expirada. Faça login novamente.',
+      'en': 'Session expired. Please log in again.',
+    },
+    'sendMsg_sucesso': {
+      'pt': 'Mensagem enviada com sucesso! Entraremos em contacto em breve.',
+      'en': "Message sent successfully! We'll be in touch soon.",
+    },
+    'sendMsg_erro': {
+      'pt': 'Erro ao enviar mensagem: ',
+      'en': 'Error sending message: ',
+    },
+
+    // ═══════ MY MESSAGES SCREEN ═══════
+    'myMsgs_titulo': {
+      'pt': 'As Minhas Mensagens',
+      'en': 'My Messages',
+    },
+    'myMsgs_vazio_titulo': {
+      'pt': 'Nenhuma mensagem enviada.',
+      'en': 'No messages sent.',
+    },
+    'myMsgs_vazio_sub': {
+      'pt': 'As suas mensagens ao suporte aparecerão aqui.',
+      'en': 'Your support messages will appear here.',
+    },
+    'myMsgs_status_pendente': {
+      'pt': 'Pendente',
+      'en': 'Pending',
+    },
+    'myMsgs_status_andamento': {
+      'pt': 'Andamento',
+      'en': 'In Progress',
+    },
+    'myMsgs_status_resolvido': {
+      'pt': 'Resolvido',
+      'en': 'Resolved',
+    },
+    'myMsgs_respondida': {
+      'pt': 'Respondida',
+      'en': 'Replied',
+    },
+    'myMsgs_minha_mensagem': {
+      'pt': 'A Minha Mensagem',
+      'en': 'My Message',
+    },
+    'myMsgs_resposta_suporte': {
+      'pt': 'Resposta do Suporte',
+      'en': 'Support Reply',
+    },
+    'myMsgs_meu_seguimento': {
+      'pt': 'O Meu Seguimento',
+      'en': 'My Follow-up',
+    },
+    'myMsgs_responder_label': {
+      'pt': 'Responder',
+      'en': 'Reply',
+    },
+    'myMsgs_escrever_resposta': {
+      'pt': 'Escrever resposta...',
+      'en': 'Write a reply...',
+    },
+    'myMsgs_enviar_resposta': {
+      'pt': 'Enviar Resposta',
+      'en': 'Send Reply',
+    },
+    'myMsgs_enviando': {
+      'pt': 'A enviar...',
+      'en': 'Sending...',
+    },
+    'myMsgs_sucesso': {
+      'pt': 'Resposta enviada com sucesso!',
+      'en': 'Reply sent successfully!',
+    },
+    'myMsgs_erro': {
+      'pt': 'Erro ao enviar: ',
+      'en': 'Error sending: ',
     },
 
 };

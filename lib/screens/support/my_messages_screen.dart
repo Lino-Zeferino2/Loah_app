@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/help_center_service.dart';
 import 'package:loah_app/models/help_center_models.dart';
+import '../../core/l10n/app_localizations.dart';
 
 /// Screen where users can view their own support messages,
 /// see admin replies, and send follow-up messages.
@@ -60,6 +61,7 @@ class _MyMessagesScreenState extends State<MyMessagesScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final loc = AppLocales.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -70,7 +72,7 @@ class _MyMessagesScreenState extends State<MyMessagesScreen> {
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: Text(
-          'As Minhas Mensagens',
+          loc.translate('myMsgs_titulo'),
           style: theme.textTheme.titleMedium?.copyWith(
             color: scheme.primary,
             fontWeight: FontWeight.w900,
@@ -82,7 +84,7 @@ class _MyMessagesScreenState extends State<MyMessagesScreen> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _messages.isEmpty
-                ? _buildEmptyState(theme, scheme)
+                ? _buildEmptyState(theme, scheme, loc)
                 : RefreshIndicator(
                     onRefresh: _loadMessages,
                     child: ListView.builder(
@@ -101,7 +103,7 @@ class _MyMessagesScreenState extends State<MyMessagesScreen> {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme, ColorScheme scheme) {
+  Widget _buildEmptyState(ThemeData theme, ColorScheme scheme, AppLocales loc) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -110,12 +112,12 @@ class _MyMessagesScreenState extends State<MyMessagesScreen> {
               size: 64, color: scheme.onSurface.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           Text(
-            'Nenhuma mensagem enviada.',
+            loc.translate('myMsgs_vazio_titulo'),
             style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.6)),
           ),
           const SizedBox(height: 8),
           Text(
-            'As suas mensagens ao suporte aparecerão aqui.',
+            loc.translate('myMsgs_vazio_sub'),
             style: TextStyle(
               color: scheme.onSurface.withValues(alpha: 0.4),
               fontSize: 13,
@@ -133,14 +135,14 @@ class _MessageListTile extends StatelessWidget {
 
   const _MessageListTile({required this.message, required this.onTap});
 
-  String _statusLabel(HelpMessageStatus status) {
+  String _statusLabel(HelpMessageStatus status, AppLocales loc) {
     switch (status) {
       case HelpMessageStatus.pendente:
-        return 'Pendente';
+        return loc.translate('myMsgs_status_pendente');
       case HelpMessageStatus.emAndamento:
-        return 'Andamento';
+        return loc.translate('myMsgs_status_andamento');
       case HelpMessageStatus.resolvido:
-        return 'Resolvido';
+        return loc.translate('myMsgs_status_resolvido');
     }
   }
 
@@ -166,6 +168,7 @@ class _MessageListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final loc = AppLocales.of(context);
     final border = scheme.onSurface.withValues(alpha: 0.10);
     final hasReply =
         message.adminReply != null && message.adminReply!.isNotEmpty;
@@ -189,6 +192,7 @@ class _MessageListTile extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
+                      // Não traduzido: é o assunto escrito pelo utilizador.
                       message.subject,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w700,
@@ -206,7 +210,7 @@ class _MessageListTile extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      _statusLabel(message.status),
+                      _statusLabel(message.status, loc),
                       style: TextStyle(
                         color: _statusColor(message.status),
                         fontSize: 10,
@@ -218,6 +222,7 @@ class _MessageListTile extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
+                // Não traduzido: é a mensagem escrita pelo utilizador.
                 message.message,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -243,7 +248,7 @@ class _MessageListTile extends StatelessWidget {
                         color: scheme.primary.withValues(alpha: 0.6)),
                     const SizedBox(width: 2),
                     Text(
-                      'Respondida',
+                      loc.translate('myMsgs_respondida'),
                       style: TextStyle(
                         color: scheme.primary.withValues(alpha: 0.6),
                         fontSize: 11,
@@ -294,6 +299,7 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
   }
 
   Future<void> _sendFollowUp() async {
+    final loc = AppLocales.of(context);
     final text = _replyController.text.trim();
     if (text.isEmpty || _isSending) return;
 
@@ -303,8 +309,8 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
       widget.onFollowUpSent();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Resposta enviada com sucesso!'),
+          SnackBar(
+            content: Text(loc.translate('myMsgs_sucesso')),
             backgroundColor: Colors.green,
           ),
         );
@@ -314,7 +320,7 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao enviar: $e'),
+            content: Text('${loc.translate('myMsgs_erro')}$e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -366,6 +372,8 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
             ),
             const SizedBox(height: 6),
             Text(
+              // Não traduzido: bolhas mostram texto escrito por
+              // utilizador ou admin, no idioma em que foi escrito.
               text,
               style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
             ),
@@ -379,6 +387,7 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final loc = AppLocales.of(context);
     final msg = widget.message;
     final hasAdminReply = msg.adminReply != null && msg.adminReply!.isNotEmpty;
     final hasFollowUp = msg.userFollowUp != null && msg.userFollowUp!.isNotEmpty;
@@ -392,6 +401,7 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: Text(
+          // Não traduzido: assunto escrito pelo utilizador.
           msg.subject,
           style: theme.textTheme.titleMedium?.copyWith(
             color: scheme.primary,
@@ -408,7 +418,14 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              msg.status.name.toUpperCase(),
+              switch (msg.status) {
+                HelpMessageStatus.pendente =>
+                  loc.translate('myMsgs_status_pendente').toUpperCase(),
+                HelpMessageStatus.emAndamento =>
+                  loc.translate('myMsgs_status_andamento').toUpperCase(),
+                HelpMessageStatus.resolvido =>
+                  loc.translate('myMsgs_status_resolvido').toUpperCase(),
+              },
               style: TextStyle(
                 color: scheme.primary,
                 fontSize: 10,
@@ -427,7 +444,7 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
               // User's original message
               _buildMessageBubble(
                 text: msg.message,
-                label: 'A Minha Mensagem',
+                label: loc.translate('myMsgs_minha_mensagem'),
                 color: scheme.primary,
                 icon: Icons.person_outline_rounded,
                 alignment: Alignment.centerLeft,
@@ -437,7 +454,7 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
               if (hasAdminReply)
                 _buildMessageBubble(
                   text: msg.adminReply!,
-                  label: 'Resposta do Suporte',
+                  label: loc.translate('myMsgs_resposta_suporte'),
                   color: Colors.green,
                   icon: Icons.support_agent_outlined,
                   alignment: Alignment.centerRight,
@@ -447,7 +464,7 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
               if (hasFollowUp)
                 _buildMessageBubble(
                   text: msg.userFollowUp!,
-                  label: 'O Meu Seguimento',
+                  label: loc.translate('myMsgs_meu_seguimento'),
                   color: scheme.primary,
                   icon: Icons.reply_rounded,
                   alignment: Alignment.centerLeft,
@@ -459,7 +476,7 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
 
               // Reply field
               Text(
-                'Responder',
+                loc.translate('myMsgs_responder_label'),
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -469,7 +486,7 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
                 controller: _replyController,
                 maxLines: 4,
                 decoration: InputDecoration(
-                  hintText: 'Escrever resposta...',
+                  hintText: loc.translate('myMsgs_escrever_resposta'),
                   filled: true,
                   fillColor: scheme.surface,
                   border: OutlineInputBorder(
@@ -506,7 +523,11 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
                           ),
                         )
                       : const Icon(Icons.send_rounded, size: 18),
-                  label: Text(_isSending ? 'A enviar...' : 'Enviar Resposta'),
+                  label: Text(
+                    _isSending
+                        ? loc.translate('myMsgs_enviando')
+                        : loc.translate('myMsgs_enviar_resposta'),
+                  ),
                   style: FilledButton.styleFrom(
                     backgroundColor: scheme.primary,
                     foregroundColor: scheme.onPrimary,
@@ -524,4 +545,3 @@ class _MessageDetailScreenState extends State<_MessageDetailScreen> {
     );
   }
 }
- 

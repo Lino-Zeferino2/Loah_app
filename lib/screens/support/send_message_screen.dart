@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:loah_app/core/services/help_center_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/models/help_center_models.dart';
+import '../../core/l10n/app_localizations.dart';
 
 /// Screen where users can send a support message to the admin team.
 class SendMessageScreen extends StatefulWidget {
@@ -21,15 +22,18 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
   bool _isSending = false;
   String _selectedCategory = 'geral';
 
-  final _categories = [
-    ('geral', 'Dúvida Geral'),
-    ('contas', 'Problemas com Conta'),
-    ('financas', 'Finanças'),
-    ('metas', 'Metas & Tarefas'),
-    ('tecnico', 'Problema Técnico'),
-    ('sugestao', 'Sugestão'),
-    ('outro', 'Outro'),
-  ];
+  // CORRIGIDO: os rótulos de categoria agora vêm de AppLocales em vez
+  // de estarem hardcoded em português — só o "value" ('geral',
+  // 'contas', etc.) fica fixo, pois é o que é gravado no Firestore.
+  List<(String, String)> _categories(AppLocales loc) => [
+        ('geral', loc.translate('sendMsg_cat_geral')),
+        ('contas', loc.translate('sendMsg_cat_contas')),
+        ('financas', loc.translate('sendMsg_cat_financas')),
+        ('metas', loc.translate('sendMsg_cat_metas')),
+        ('tecnico', loc.translate('sendMsg_cat_tecnico')),
+        ('sugestao', loc.translate('sendMsg_cat_sugestao')),
+        ('outro', loc.translate('sendMsg_cat_outro')),
+      ];
 
   @override
   void dispose() {
@@ -39,6 +43,7 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
   }
 
   Future<void> _submit() async {
+    final loc = AppLocales.of(context);
     if (!_formKey.currentState!.validate()) return;
     if (_isSending) return;
 
@@ -49,7 +54,7 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
       if (user == null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sessão expirada. Faça login novamente.')),
+          SnackBar(content: Text(loc.translate('sendMsg_sessao_expirada'))),
         );
         return;
       }
@@ -66,6 +71,8 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
         }
       } catch (_) {}
 
+      // Não traduzimos subject/message: é conteúdo escrito pelo
+      // próprio utilizador, no idioma que ele escolher usar.
       final message = HelpMessage(
         id: '',
         userId: user.uid,
@@ -80,8 +87,8 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mensagem enviada com sucesso! Entraremos em contacto em breve.'),
+        SnackBar(
+          content: Text(loc.translate('sendMsg_sucesso')),
           backgroundColor: Colors.green,
         ),
       );
@@ -90,7 +97,7 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao enviar mensagem: $e'),
+          content: Text('${loc.translate('sendMsg_erro')}$e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -103,6 +110,7 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final loc = AppLocales.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -113,7 +121,7 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: Text(
-          'Enviar Mensagem',
+          loc.translate('sendMsg_titulo'),
           style: theme.textTheme.titleMedium?.copyWith(
             color: scheme.primary,
             fontWeight: FontWeight.w900,
@@ -130,7 +138,7 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Fale connosco',
+                  loc.translate('sendMsg_fale_connosco'),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: scheme.primary,
@@ -139,7 +147,7 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Envie-nos uma mensagem e responderemos o mais breve possível.',
+                  loc.translate('sendMsg_subtitulo'),
                   style: TextStyle(
                     color: scheme.onSurface.withValues(alpha: 0.65),
                     height: 1.35,
@@ -151,7 +159,7 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
                 DropdownButtonFormField<String>(
                   initialValue: _selectedCategory,
                   decoration: InputDecoration(
-                    labelText: 'Categoria',
+                    labelText: loc.translate('sendMsg_categoria_label'),
                     filled: true,
                     fillColor: scheme.surface,
                     border: OutlineInputBorder(
@@ -173,7 +181,7 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 14),
                   ),
-                  items: _categories
+                  items: _categories(loc)
                       .map((c) => DropdownMenuItem(
                             value: c.$1,
                             child: Text(c.$2),
@@ -189,8 +197,8 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
                 TextFormField(
                   controller: _subjectController,
                   decoration: InputDecoration(
-                    labelText: 'Assunto',
-                    hintText: 'Resumo do problema',
+                    labelText: loc.translate('sendMsg_assunto_label'),
+                    hintText: loc.translate('sendMsg_assunto_hint'),
                     filled: true,
                     fillColor: scheme.surface,
                     border: OutlineInputBorder(
@@ -212,8 +220,9 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 14),
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Campo obrigatório' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? loc.translate('sendMsg_campo_obrigatorio')
+                      : null,
                 ),
                 const SizedBox(height: 16),
 
@@ -222,8 +231,8 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
                   controller: _messageController,
                   maxLines: 6,
                   decoration: InputDecoration(
-                    labelText: 'Mensagem',
-                    hintText: 'Descreva o seu problema em detalhe...',
+                    labelText: loc.translate('sendMsg_mensagem_label'),
+                    hintText: loc.translate('sendMsg_mensagem_hint'),
                     filled: true,
                     fillColor: scheme.surface,
                     border: OutlineInputBorder(
@@ -244,8 +253,9 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
                     ),
                     contentPadding: const EdgeInsets.all(14),
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Campo obrigatório' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? loc.translate('sendMsg_campo_obrigatorio')
+                      : null,
                 ),
                 const SizedBox(height: 24),
 
@@ -265,7 +275,9 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
                           )
                         : const Icon(Icons.send_rounded, size: 18),
                     label: Text(
-                      _isSending ? 'A enviar...' : 'Enviar Mensagem',
+                      _isSending
+                          ? loc.translate('sendMsg_enviando')
+                          : loc.translate('sendMsg_enviar_btn'),
                     ),
                     style: FilledButton.styleFrom(
                       backgroundColor: scheme.primary,
@@ -285,4 +297,3 @@ class _SendMessageScreenState extends State<SendMessageScreen> {
     );
   }
 }
-

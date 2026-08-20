@@ -30,10 +30,13 @@ class _AddContactScreenState extends State<AddContactScreen> {
 static const _relationshipValues = [
     'Familiar',
     'Amigo',
+    'Amiga',
+    'Namorado',
     'Namorada',
     'Pai',
     'Mãe',
     'Conhecido',
+    'Conhecida',
     'Colega',
   ];
 

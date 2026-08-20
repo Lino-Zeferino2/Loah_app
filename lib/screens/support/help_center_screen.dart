@@ -92,10 +92,6 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     });
   }
 
-  // CORRIGIDO: recebe langCode como parâmetro em vez de tentar ler uma
-  // variável que não existe neste escopo (este é um método da classe
-  // State, não um widget separado — não tinha acesso ao langCode do
-  // build() sem que fosse passado explicitamente).
   Widget _buildFilterChip(
       String label, bool selected, VoidCallback onTap) {
     final theme = Theme.of(context);
@@ -128,9 +124,6 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     );
   }
 
-  // CORRIGIDO: agora recebe e repassa langCode para _CategoryArticlesScreen
-  // — antes não passava nada, e essa tela usava uma variável langCode
-  // inexistente no seu próprio escopo.
   void _openCategoryArticles(FaqCategory category, String langCode) async {
     final articles = await _service.getArticlesByCategory(category.id);
     if (!mounted) return;
@@ -159,7 +152,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final langCode = AppLocales.of(context).languageCode;
+    final loc = AppLocales.of(context);
+    final langCode = loc.languageCode;
 
     return Scaffold(
       appBar: AppBar(
@@ -170,7 +164,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: Text(
-          'Help Center',
+          loc.translate('helpCenter_titulo'),
           style: theme.textTheme.titleMedium?.copyWith(
             color: scheme.primary,
             fontWeight: FontWeight.w900,
@@ -203,7 +197,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                       children: [
                         Center(
                           child: Text(
-                            'Como podemos ajudar?',
+                            loc.translate('helpCenter_como_ajudar'),
                             textAlign: TextAlign.center,
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w800,
@@ -221,13 +215,11 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                         else ...[
                           // Categories
                           if (_categories.isNotEmpty) ...[
-                            const _SectionLabel(text: 'CATEGORIAS'),
+                            _SectionLabel(
+                                text: loc.translate('helpCenter_categorias')),
                             const SizedBox(height: 12),
                             _CategoryGrid(
                               categories: _categories,
-                              // CORRIGIDO: onCategoryTap agora repassa
-                              // langCode, já que _openCategoryArticles
-                              // passou a exigi-lo.
                               onCategoryTap: (cat) =>
                                   _openCategoryArticles(cat, langCode),
                               langCode: langCode,
@@ -237,15 +229,13 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
 
                           // Popular Articles
                           if (_popularArticles.isNotEmpty) ...[
-                            const _SectionLabel(text: 'ARTIGOS POPULARES'),
+                            _SectionLabel(
+                                text: loc
+                                    .translate('helpCenter_artigos_populares')),
                             const SizedBox(height: 12),
                             _PopularArticlesList(
                               articles: _popularArticles,
                               onArticleTap: _openArticleDetail,
-                              // CORRIGIDO: langCode agora é passado como
-                              // parâmetro — antes a classe não o recebia
-                              // e usava uma variável inexistente dentro
-                              // do próprio build().
                               langCode: langCode,
                             ),
                             const SizedBox(height: 24),
@@ -253,7 +243,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
 
                           // All Articles with category filter
                           if (_allArticles.isNotEmpty) ...[
-                            const _SectionLabel(text: 'TODAS AS PERGUNTAS'),
+                            _SectionLabel(
+                                text: loc
+                                    .translate('helpCenter_todas_perguntas')),
                             const SizedBox(height: 12),
                             // Category filter chips
                             SizedBox(
@@ -262,7 +254,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                                 scrollDirection: Axis.horizontal,
                                 children: [
                                   _buildFilterChip(
-                                    'Todas',
+                                    loc.translate('helpCenter_todas_chip'),
                                     _selectedCategoryId == null,
                                     () => setState(() => _selectedCategoryId = null),
                                   ),
@@ -270,9 +262,6 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                                   ..._categories.map((cat) => Padding(
                                         padding: const EdgeInsets.only(right: 8),
                                         child: _buildFilterChip(
-                                          // CORRIGIDO: era cat.name (campo
-                                          // que não existe mais) — agora
-                                          // cat.name(langCode).
                                           cat.name(langCode),
                                           _selectedCategoryId == cat.id,
                                           () => setState(
@@ -295,7 +284,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                           ],
 
                           // Contact / Send message
-                          const _SectionLabel(text: 'AINDA PRECISA DE AJUDA?'),
+                          _SectionLabel(
+                              text: loc.translate('helpCenter_precisa_ajuda')),
                           const SizedBox(height: 12),
                           _HelpContactSection(
                             onSendMessage: () {
@@ -317,9 +307,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     );
   }
 
-  // CORRIGIDO: recebe langCode como parâmetro (chamado a partir do
-  // build(), que já tem essa variável).
   Widget _buildSearchResults(String langCode) {
+    final loc = AppLocales.of(context);
+
     if (_searchResults.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 32),
@@ -334,7 +324,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                       .withValues(alpha: 0.3)),
               const SizedBox(height: 12),
               Text(
-                'Nenhum artigo encontrado para "${_searchController.text}"',
+                loc
+                    .translate('helpCenter_nenhum_artigo_busca')
+                    .replaceAll('{query}', _searchController.text),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     color: Theme.of(context)
@@ -351,7 +343,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionLabel(text: 'RESULTADOS DA PESQUISA'),
+        _SectionLabel(text: loc.translate('helpCenter_resultados_pesquisa')),
         const SizedBox(height: 12),
         ..._searchResults.map((article) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -397,11 +389,12 @@ class _HelpSearchField extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final border = scheme.onSurface.withValues(alpha: 0.14);
+    final loc = AppLocales.of(context);
 
     return TextField(
       controller: controller,
       decoration: InputDecoration(
-        hintText: 'Pesquisar artigos, guias...',
+        hintText: loc.translate('helpCenter_pesquisar_hint'),
         prefixIcon: const Icon(Icons.search_rounded),
         filled: true,
         fillColor: scheme.surface,
@@ -653,6 +646,7 @@ class _HelpContactSection extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final border = scheme.onSurface.withValues(alpha: 0.10);
+    final loc = AppLocales.of(context);
 
     return Container(
       width: double.infinity,
@@ -666,14 +660,14 @@ class _HelpContactSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Fale connosco',
+            loc.translate('helpCenter_fale_connosco'),
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w900,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            'Nossa equipe de suporte está disponível de Seg. a Sex., das 09h às 18h.',
+            loc.translate('helpCenter_equipe_disponivel'),
             style: theme.textTheme.bodySmall?.copyWith(
               color: scheme.onSurface.withValues(alpha: 0.65),
               height: 1.35,
@@ -685,7 +679,7 @@ class _HelpContactSection extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: onSendMessage,
               icon: const Icon(Icons.send_rounded, size: 18),
-              label: const Text('Enviar Mensagem'),
+              label: Text(loc.translate('helpCenter_enviar_mensagem')),
               style: FilledButton.styleFrom(
                 backgroundColor: scheme.primary,
                 foregroundColor: scheme.onPrimary,
@@ -708,7 +702,7 @@ class _HelpContactSection extends StatelessWidget {
                 );
               },
               icon: const Icon(Icons.history_rounded, size: 18),
-              label: const Text('As Minhas Mensagens'),
+              label: Text(loc.translate('helpCenter_minhas_mensagens')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: scheme.primary,
                 side: BorderSide(color: scheme.primary.withValues(alpha: 0.4)),
@@ -732,7 +726,7 @@ class _HelpContactSection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Respondemos em até 24h',
+                loc.translate('helpCenter_respondemos_24h'),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: scheme.primary,
                   fontWeight: FontWeight.w700,
@@ -789,6 +783,7 @@ class _CategoryArticlesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final loc = AppLocales.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -805,8 +800,6 @@ class _CategoryArticlesScreen extends StatelessWidget {
                 size: 20, color: scheme.primary),
             const SizedBox(width: 8),
             Text(
-              // CORRIGIDO: category.name(langCode) — langCode agora
-              // existe como campo da classe.
               category.name(langCode),
               style: theme.textTheme.titleMedium?.copyWith(
                 color: scheme.primary,
@@ -827,7 +820,7 @@ class _CategoryArticlesScreen extends StatelessWidget {
                         color: scheme.onSurface.withValues(alpha: 0.3)),
                     const SizedBox(height: 16),
                     Text(
-                      'Nenhum artigo nesta categoria ainda.',
+                      loc.translate('helpCenter_nenhum_artigo_categoria'),
                       style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.6)),
                     ),
                   ],
@@ -878,8 +871,6 @@ class _CategoryArticlesScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    // CORRIGIDO: era article.question
-                                    // (campo que não existe mais).
                                     article.question(langCode),
                                     style: theme.textTheme.bodyMedium
                                         ?.copyWith(
@@ -890,7 +881,6 @@ class _CategoryArticlesScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    // CORRIGIDO: era article.answer.
                                     article.answer(langCode),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
