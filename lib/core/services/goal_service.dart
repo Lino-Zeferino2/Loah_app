@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/goal_model.dart';
@@ -20,6 +22,31 @@ class GoalService {
     final uid = _userId;
     if (uid == null) return null;
     return _firestore.collection('users').doc(uid).collection('goals');
+  }
+
+  // NOVO: upload da foto da meta para o Firebase Storage — sem isto,
+  // o caminho local do image_picker (tmp/...) era gravado direto no
+  // Firestore, e deixava de existir entre sessões da app, causando
+  // crash toda vez que a Dashboard tentava desenhar a imagem.
+  Future<String> uploadGoalImage(File file, {required String goalId}) async {
+    final uid = _userId;
+    if (uid == null) throw Exception('Utilizador não autenticado');
+    final ref = FirebaseStorage.instance
+        .ref('users/$uid/goalImages/$goalId.jpg');
+    await ref.putFile(file);
+    return ref.getDownloadURL();
+  }
+
+  // NOVO: apaga a foto antiga do Storage quando a meta troca de foto
+  // ou remove a foto — evita acumular ficheiros órfãos.
+  Future<void> deleteGoalImage(String? imageUrl) async {
+    if (imageUrl == null || !imageUrl.startsWith('http')) return;
+    try {
+      await FirebaseStorage.instance.refFromURL(imageUrl).delete();
+    } catch (_) {
+      // Ignora erros de limpeza (ex: já apagado, ou URL inválido) —
+      // não deve impedir o resto da operação.
+    }
   }
 
   /// Retorna um [Stream] de [QuerySnapshot] para ser usado com

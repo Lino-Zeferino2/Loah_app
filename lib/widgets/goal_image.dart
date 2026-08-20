@@ -1,12 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 
-/// Renders a goal's cover image regardless of source: a full URL
-/// (`https://...`, used by our seeded mock data) or a local file path
-/// (`/data/...`, produced by the device's image picker on the Add Goal
-/// form). Once Firebase Storage is wired up, locally-picked images get
-/// uploaded and this becomes mostly a "just picked, not uploaded yet"
-/// preview case — the widget itself won't need to change.
+/// Renders an image from either a network URL (http/https) or a local
+/// file path, picking the right ImageProvider automatically.
+///
+/// IMPORTANTE: sempre com errorBuilder — um caminho local (ex: vindo
+/// do image_picker) pode deixar de existir entre sessões da app (o
+/// iOS limpa a pasta temporária), e sem tratamento de erro isso
+/// derruba a app inteira com PathNotFoundException sempre que a
+/// imagem for desenhada. Com o errorBuilder, mostra um placeholder
+/// silencioso em vez de crashar.
 class GoalImage extends StatelessWidget {
   final String path;
   final BoxFit fit;
@@ -17,6 +20,42 @@ class GoalImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _isNetwork ? Image.network(path, fit: fit) : Image.file(File(path), fit: fit);
+    if (_isNetwork) {
+      return Image.network(
+        path,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) => _Placeholder(),
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        },
+      );
+    }
+
+    return Image.file(
+      File(path),
+      fit: fit,
+      errorBuilder: (context, error, stackTrace) => _Placeholder(),
+    );
+  }
+}
+
+class _Placeholder extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      color: scheme.surfaceContainerHighest,
+      child: Icon(
+        Icons.image_not_supported_outlined,
+        color: scheme.onSurface.withValues(alpha: 0.3),
+      ),
+    );
   }
 }

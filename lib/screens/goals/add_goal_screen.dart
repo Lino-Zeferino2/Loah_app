@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/l10n/app_localizations.dart';
@@ -146,8 +148,7 @@ Future<void> _pickImage() async {
     if (raw.isEmpty) return null;
     return double.tryParse(raw);
   }
-
-Future<void> _submit() async {
+  Future<void> _submit() async {
     final title = _titleController.text.trim();
     if (title.isEmpty) {
       setState(() => _titleError = AppLocales.of(context).translate('addGoal_nome_erro'));
@@ -159,6 +160,7 @@ Future<void> _submit() async {
     final targetValue = _parseTargetValue();
     final hasManualValue = targetValue != null && targetValue > 0;
     final existing = widget.existingGoal;
+    final goalId = existing?.id ?? 'goal_${DateTime.now().microsecondsSinceEpoch}';
 
     final double? current = hasManualValue
         ? (existing?.progressMode == GoalProgressMode.manualValue
@@ -166,23 +168,47 @@ Future<void> _submit() async {
             : 0.0)
         : null;
 
-    final goal = GoalModel(
-      id: existing?.id ?? 'goal_${DateTime.now().microsecondsSinceEpoch}',
-      title: title,
-      category: _category,
-      term: _term,
-      progressMode: hasManualValue ? GoalProgressMode.manualValue : GoalProgressMode.taskChecklist,
-      current: current,
-      target: hasManualValue ? targetValue : null,
-      description: _descriptionController.text.trim().isEmpty
-          ? null
-          : _descriptionController.text.trim(),
-      targetDate: _targetDate,
-      imageAsset: _imagePath,
-      progressColor: _categoryColors[_category] ?? Colors.blue,
-    );
-
     try {
+      // NOVO: se _imagePath é um caminho local (não começa com http),
+      // faz upload ao Storage antes de gravar — sem isto, gravava-se
+      // o caminho temporário do image_picker diretamente, que deixa
+      // de existir entre sessões da app.
+      String? finalImageUrl = _imagePath;
+      if (_imagePath != null &&
+          !_imagePath!.startsWith('http://') &&
+          !_imagePath!.startsWith('https://')) {
+        finalImageUrl = await _goalService.uploadGoalImage(
+          File(_imagePath!),
+          goalId: goalId,
+        );
+
+        // Se a meta já tinha uma foto antiga diferente, apaga-a do
+        // Storage para não acumular ficheiros órfãos.
+        if (existing?.imageAsset != null &&
+            existing!.imageAsset != finalImageUrl) {
+          await _goalService.deleteGoalImage(existing.imageAsset);
+        }
+      } else if (_imagePath == null && existing?.imageAsset != null) {
+        // Utilizador removeu a foto (botão "x") — apaga do Storage.
+        await _goalService.deleteGoalImage(existing!.imageAsset);
+      }
+
+      final goal = GoalModel(
+        id: goalId,
+        title: title,
+        category: _category,
+        term: _term,
+        progressMode: hasManualValue ? GoalProgressMode.manualValue : GoalProgressMode.taskChecklist,
+        current: current,
+        target: hasManualValue ? targetValue : null,
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        targetDate: _targetDate,
+        imageAsset: finalImageUrl,
+        progressColor: _categoryColors[_category] ?? Colors.blue,
+      );
+
       if (existing != null) {
         await _goalService.updateGoal(goal);
       } else {
