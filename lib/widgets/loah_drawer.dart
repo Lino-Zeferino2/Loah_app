@@ -207,6 +207,25 @@ class _LoahDrawerState extends State<LoahDrawer> {
     );
   }
 
+  /// Grava o idioma escolhido no perfil do utilizador no Firestore —
+  /// necessário para o backend (ex: Cloud Functions de push
+  /// notification) saber em que idioma enviar as notificações. Falha
+  /// silenciosamente: se o utilizador estiver offline, a app continua
+  /// a funcionar normalmente, só a preferência remota não atualiza já
+  /// (fica desatualizada até à próxima troca de idioma com rede).
+  Future<void> _saveLocalePreference(String languageCode) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .set({'locale': languageCode}, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('[LoahDrawer] Erro ao salvar idioma: $e');
+    }
+  }
+
   /// Abre um bottom sheet para o utilizador selecionar o idioma.
   void _showLanguagePicker(BuildContext context) {
     final localeController = LocaleController.of(context);
@@ -241,6 +260,9 @@ class _LoahDrawerState extends State<LoahDrawer> {
                   Navigator.of(ctx).pop();
                   if (currentLocale != 'pt') {
                     localeController.onLocaleChanged(const Locale('pt'));
+                    // NOVO: grava a preferência no Firestore, para o
+                    // backend saber em que idioma enviar pushes.
+                    _saveLocalePreference('pt');
                   }
                 },
               ),
@@ -254,6 +276,8 @@ class _LoahDrawerState extends State<LoahDrawer> {
                   Navigator.of(ctx).pop();
                   if (currentLocale != 'en') {
                     localeController.onLocaleChanged(const Locale('en'));
+                    // NOVO
+                    _saveLocalePreference('en');
                   }
                 },
               ),
@@ -745,4 +769,3 @@ SizedBox(
     );
   }
 }
-

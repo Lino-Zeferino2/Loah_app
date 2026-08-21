@@ -235,11 +235,10 @@ class HelpCenterService {
     });
   }
 
-  /// Add admin reply to a message.
+    /// Add admin reply to a message.
   ///
-  /// NOVO: além de guardar a resposta, cria uma AppNotification na
-  /// coleção do utilizador que enviou a mensagem, para ele saber que
-  /// foi respondido sem ter de reabrir "As Minhas Mensagens" às cegas.
+  /// CORRIGIDO: notificação criada com titleKey/messageKey/params em
+  /// vez de texto final — o cliente traduz na hora com AppLocales.
   Future<void> replyToMessage(String messageId, String reply) async {
     final snap = await _messages.doc(messageId).get();
     final data = snap.data() as Map<String, dynamic>?;
@@ -257,6 +256,7 @@ class HelpCenterService {
     final now = DateTime.now();
     final notificationId =
         'notif_help_reply_${messageId}_${now.millisecondsSinceEpoch}';
+    final hasSubject = subject.isNotEmpty;
 
     await _firestore
         .collection('users')
@@ -266,16 +266,20 @@ class HelpCenterService {
         .set({
       'category': 'system',
       'title': 'Central de Ajuda',
-      'message': subject.isNotEmpty
+      'message': hasSubject
           ? 'A sua mensagem "$subject" foi respondida pelo suporte.'
           : 'A sua mensagem foi respondida pelo suporte.',
       'timestamp': Timestamp.fromDate(now),
       'relatedId': messageId,
       'isRead': false,
+      'titleKey': 'notif_title_central_ajuda',
+      'messageKey': hasSubject
+          ? 'notif_msg_support_replied_subject'
+          : 'notif_msg_support_replied_generic',
+      'params': hasSubject ? {'subject': subject} : null,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
-
   /// Delete a message.
   Future<void> deleteMessage(String messageId) async {
     await _messages.doc(messageId).delete();

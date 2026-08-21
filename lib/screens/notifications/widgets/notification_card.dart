@@ -10,10 +10,10 @@ import '../../../widgets/labeled_progress_bar.dart';
 /// [actions] provides — the screen builds those per-category, since
 /// they need real callbacks (log a call, mark a bill paid...).
 ///
-/// NOTA: notification.title/notification.message não são traduzidos
-/// aqui — vêm já prontos do Firestore, gerados no momento da criação
-/// da notificação (client scheduler / Cloud Functions). Apenas o
-/// rótulo de tempo relativo ("Agora", "2h atrás"...) usa AppLocales.
+/// CORRIGIDO: title/message agora são montados dinamicamente a partir
+/// de titleKey/messageKey/params quando presentes, usando AppLocales.
+/// Notificações antigas (sem essas chaves) continuam a mostrar
+/// title/message tal como estavam gravados.
 class NotificationCard extends StatelessWidget {
   final AppNotification notification;
   final VoidCallback? onTap;
@@ -45,8 +45,6 @@ class NotificationCard extends StatelessWidget {
         NotificationCategory.system => Icons.check_circle_outline,
       };
 
-  // CORRIGIDO: recebe loc como parâmetro para traduzir o tempo
-  // relativo ("Agora", "5 min", "2h atrás", "Ontem", "3d atrás").
   String _relativeLabel(AppLocales loc) {
     final diff = DateTime.now().difference(notification.timestamp);
     if (diff.inMinutes < 1) return loc.translate('notif_agora');
@@ -58,6 +56,31 @@ class NotificationCard extends StatelessWidget {
     }
     if (diff.inDays == 1) return loc.translate('notif_ontem');
     return loc.translate('notif_dias_atras').replaceAll('{n}', '${diff.inDays}');
+  }
+
+  /// NOVO: monta o título traduzido a partir de titleKey, com
+  /// fallback para o title gravado (notificações antigas).
+  String _displayTitle(AppLocales loc) {
+    final key = notification.titleKey;
+    if (key == null || key.isEmpty) return notification.title;
+    return loc.translate(key);
+  }
+
+  /// NOVO: monta a mensagem traduzida a partir de messageKey +
+  /// params, substituindo cada {placeholder} pelo valor correspondente.
+  /// Fallback para message gravado (notificações antigas).
+  String _displayMessage(AppLocales loc) {
+    final key = notification.messageKey;
+    if (key == null || key.isEmpty) return notification.message;
+
+    var text = loc.translate(key);
+    final params = notification.params;
+    if (params != null) {
+      params.forEach((paramKey, value) {
+        text = text.replaceAll('{$paramKey}', value);
+      });
+    }
+    return text;
   }
 
   @override
@@ -124,8 +147,7 @@ class NotificationCard extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              // Não traduzido: gerado no Firestore.
-                              notification.title,
+                              _displayTitle(loc),
                               style: TextStyle(
                                 color: color,
                                 fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
@@ -142,8 +164,7 @@ class NotificationCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        // Não traduzido: gerado no Firestore.
-                        notification.message,
+                        _displayMessage(loc),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: isUnread ? null : context.textSecondary.withValues(alpha: 0.7),
                         ),

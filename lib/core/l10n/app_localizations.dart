@@ -3408,6 +3408,91 @@ class AppLocales {
       'pt': 'Erro ao enviar: ',
       'en': 'Error sending: ',
     },
+        // ═══════ NOTIFICATION MESSAGE TEMPLATES ═══════
+    'notif_msg_contact_overdue_days': {
+      'pt': 'Você não fala com {name} há {days} dias. Que tal ligar para {firstName}?',
+      'en': "You haven't talked to {name} in {days} days. How about calling {firstName}?",
+    },
+    'notif_msg_contact_overdue_long': {
+      'pt': 'Você não fala com {name} há muito tempo. Que tal ligar para {firstName}?',
+      'en': "You haven't talked to {name} in a long time. How about calling {firstName}?",
+    },
+    'notif_msg_task_upcoming_soon': {
+      'pt': "Tarefa '{title}' vence em menos de 1 hora.",
+      'en': "Task '{title}' is due in less than 1 hour.",
+    },
+    'notif_msg_task_upcoming_hours': {
+      'pt': "Tarefa '{title}' vence em {hours} horas.",
+      'en': "Task '{title}' is due in {hours} hours.",
+    },
+    'notif_msg_task_overdue_today': {
+      'pt': "Tarefa '{title}' venceu hoje e ainda não foi concluída.",
+      'en': "Task '{title}' was due today and hasn't been completed yet.",
+    },
+    'notif_msg_task_overdue_1day': {
+      'pt': "Tarefa '{title}' venceu há 1 dia e ainda não foi concluída.",
+      'en': "Task '{title}' was due 1 day ago and hasn't been completed yet.",
+    },
+    'notif_msg_task_overdue_days': {
+      'pt': "Tarefa '{title}' venceu há {days} dias e ainda não foi concluída.",
+      'en': "Task '{title}' was due {days} days ago and hasn't been completed yet.",
+    },
+    'notif_msg_goal_milestone': {
+      'pt': "Sua meta '{title}' atingiu {pct}% de conclusão!",
+      'en': "Your goal '{title}' reached {pct}% completion!",
+    },
+    'notif_msg_goal_completed': {
+      'pt': "Parabéns! Você concluiu a meta '{title}'! 🎉",
+      'en': "Congratulations! You completed the goal '{title}'! 🎉",
+    },
+    'notif_msg_recurring_today': {
+      'pt': "Lembrete: pagamento de '{title}' vence hoje.",
+      'en': "Reminder: payment for '{title}' is due today.",
+    },
+    'notif_msg_recurring_tomorrow': {
+      'pt': "Lembrete: pagamento de '{title}' vence amanhã.",
+      'en': "Reminder: payment for '{title}' is due tomorrow.",
+    },
+    'notif_msg_recurring_days': {
+      'pt': "Lembrete: pagamento de '{title}' vence em {days} dias.",
+      'en': "Reminder: payment for '{title}' is due in {days} days.",
+    },
+    'notif_msg_budget_over': {
+      'pt': 'Você ultrapassou o orçamento de {category} este mês. Gastou {spent} de {limit}.',
+      'en': 'You went over the {category} budget this month. You spent {spent} of {limit}.',
+    },
+    'notif_msg_budget_warn': {
+      'pt': 'Está perto do limite do orçamento de {category} este mês ({pct}% usado).',
+      'en': "You're close to the {category} budget limit this month ({pct}% used).",
+    },
+    'notif_msg_balance_negative': {
+      'pt': "A conta '{name}' está com saldo negativo: {amount}.",
+      'en': "Account '{name}' has a negative balance: {amount}.",
+    },
+    'notif_msg_balance_low': {
+      'pt': "A conta '{name}' está com saldo baixo: {amount}.",
+      'en': "Account '{name}' has a low balance: {amount}.",
+    },
+    'notif_msg_stale_asset': {
+      'pt': "O valor de '{name}' não é atualizado há {days} dias. Vale a pena confirmar se ainda está correto.",
+      'en': "The value of '{name}' hasn't been updated in {days} days. It may be worth confirming it's still accurate.",
+    },
+    'notif_msg_all_tasks_done': {
+      'pt': 'Você completou todas as tarefas diárias. Bom trabalho!',
+      'en': "You've completed all your daily tasks. Great job!",
+    },
+    'notif_msg_support_replied_subject': {
+      'pt': 'A sua mensagem "{subject}" foi respondida pelo suporte.',
+      'en': 'Your message "{subject}" has been answered by support.',
+    },
+    'notif_msg_support_replied_generic': {
+      'pt': 'A sua mensagem foi respondida pelo suporte.',
+      'en': 'Your message has been answered by support.',
+    },
+    'notif_title_central_ajuda': {
+      'pt': 'Central de Ajuda',
+      'en': 'Help Center',
+    },
 
 };
 

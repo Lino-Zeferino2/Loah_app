@@ -14,16 +14,15 @@ import 'notification_repository.dart';
 /// Client-side notification scheduler that runs periodically to check
 /// for noteworthy events and writes them to Firestore as notifications.
 ///
-/// AMPLIADO com:
-///   - Marcos de meta completos (25/50/75/90/100%)
-///   - Tarefas vencidas (além de "a vencer")
-///   - Antecedência de tarefa configurável (NotificationPreferences)
-///   - Aviso preventivo de orçamento (80%) além do aviso de estouro
-///   - Respeita as preferências de notificação do utilizador
+/// CORRIGIDO: todas as notificações agora gravam titleKey/messageKey/
+/// params em vez de texto final em português — o NotificationCard
+/// monta a frase certa na hora, no idioma atual da app. title/message
+/// continuam preenchidos com o texto em português como fallback (por
+/// segurança e para não quebrar leituras antigas).
 ///
 /// IMPORTANTE: isto só corre enquanto a app está aberta. Para entrega
-/// real com a app fechada (background/terminated), é necessário um
-/// job equivalente correndo em Cloud Functions com Cloud Scheduler.
+/// real com a app fechada (background/terminated), o equivalente
+/// server-side já existe em Cloud Functions (index.js).
 class NotificationScheduler {
   static final NotificationScheduler _instance = NotificationScheduler._internal();
   factory NotificationScheduler() => _instance;
@@ -34,10 +33,8 @@ class NotificationScheduler {
       NotificationPreferencesService();
   Timer? _periodicTimer;
 
-  /// Whether a check is currently running.
   bool _isRunning = false;
 
-  /// Start periodic checks every [interval] minutes.
   void startPeriodicChecks({int intervalMinutes = 30}) {
     _periodicTimer?.cancel();
     _periodicTimer = Timer.periodic(
@@ -46,14 +43,11 @@ class NotificationScheduler {
     );
   }
 
-  /// Stop periodic checks.
   void stopPeriodicChecks() {
     _periodicTimer?.cancel();
     _periodicTimer = null;
   }
 
-  /// Run all notification checks immediately, respecting the user's
-  /// notification preferences.
   Future<void> runAllChecks() async {
     if (_isRunning) return;
     _isRunning = true;
@@ -68,6 +62,8 @@ class NotificationScheduler {
         if (prefs.goalsEnabled) _checkGoalProgress(),
         if (prefs.financeEnabled) _checkRecurringBills(),
         if (prefs.financeEnabled) _checkOverBudget(),
+        if (prefs.financeEnabled) _checkLowAccountBalance(),
+        if (prefs.financeEnabled) _checkStaleAssets(),
       ]);
     } catch (e) {
       debugPrint('[NotificationScheduler] Error running checks: $e');
@@ -78,8 +74,6 @@ class NotificationScheduler {
 
   // ─── Contact checks ───────────────────────────────────────────────
 
-  /// Creates notifications for contacts that are overdue (no interaction
-  /// within the desired frequency).
   Future<void> _checkOverdueContacts() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -97,10 +91,8 @@ class NotificationScheduler {
       final now = DateTime.now();
       final weekAnchor = DateTime.utc(now.year, 1, 1)
           .add(Duration(days: (contact.desiredContactFrequencyDays ?? 7) * (now.weekday - 1)));
-      final periodKey =
-          '${now.year}_${weekAnchor.month}_${weekAnchor.day}';
-      final notificationId =
-          'notif_contact_${contact.id}_$periodKey';
+      final periodKey = '${now.year}_${weekAnchor.month}_${weekAnchor.day}';
+      final notificationId = 'notif_contact_${contact.id}_$periodKey';
 
       final idCheck = await FirebaseFirestore.instance
           .collection('users')
@@ -109,7 +101,6 @@ class NotificationScheduler {
           .where('id', isEqualTo: notificationId)
           .limit(1)
           .get();
-
       if (idCheck.docs.isNotEmpty) continue;
 
       final pendingCheck = await FirebaseFirestore.instance
@@ -120,20 +111,29 @@ class NotificationScheduler {
           .where('isRead', isEqualTo: false)
           .limit(1)
           .get();
-
       if (pendingCheck.docs.isNotEmpty) continue;
 
-      final daysLabel = contact.daysSinceLastContact >= 999
-          ? 'há muito tempo'
-          : 'há ${contact.daysSinceLastContact} dias';
+      final isLong = contact.daysSinceLastContact >= 999;
+      final firstName = contact.name.split(' ').first;
+
       final notification = AppNotification(
         id: notificationId,
         category: NotificationCategory.contacts,
         title: 'Contatos',
-        message: 'Você não fala com ${contact.name} $daysLabel. '
-            'Que tal ligar para ${contact.name.split(' ').first}?',
+        message: isLong
+            ? 'Você não fala com ${contact.name} há muito tempo. Que tal ligar para $firstName?'
+            : 'Você não fala com ${contact.name} há ${contact.daysSinceLastContact} dias. Que tal ligar para $firstName?',
         timestamp: now,
         relatedId: contact.id,
+        titleKey: 'notif_cat_contatos',
+        messageKey: isLong
+            ? 'notif_msg_contact_overdue_long'
+            : 'notif_msg_contact_overdue_days',
+        params: {
+          'name': contact.name,
+          'firstName': firstName,
+          if (!isLong) 'days': '${contact.daysSinceLastContact}',
+        },
       );
 
       await _repository.addNotification(notification);
@@ -142,7 +142,6 @@ class NotificationScheduler {
 
   // ─── Task checks ──────────────────────────────────────────────────
 
-  /// Creates notifications for tasks due within [leadHours] hours.
   Future<void> _checkUpcomingTasks(int leadHours) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -169,10 +168,11 @@ class NotificationScheduler {
           .where('isRead', isEqualTo: false)
           .limit(1)
           .get();
-
       if (existingSnapshot.docs.isNotEmpty) continue;
 
-      final label = diff.inHours < 1 ? 'em menos de 1 hora' : 'em ${diff.inHours} horas';
+      final isSoon = diff.inHours < 1;
+      final label = isSoon ? 'em menos de 1 hora' : 'em ${diff.inHours} horas';
+
       final notification = AppNotification(
         id: 'notif_task_${task.id}_${now.millisecondsSinceEpoch}',
         category: NotificationCategory.tasks,
@@ -180,15 +180,18 @@ class NotificationScheduler {
         message: "Tarefa '${task.title}' vence $label.",
         timestamp: now,
         relatedId: task.id,
+        titleKey: 'notif_cat_tarefas',
+        messageKey: isSoon ? 'notif_msg_task_upcoming_soon' : 'notif_msg_task_upcoming_hours',
+        params: {
+          'title': task.title,
+          if (!isSoon) 'hours': '${diff.inHours}',
+        },
       );
 
       await _repository.addNotification(notification);
     }
   }
 
-  /// NOVO: cria notificações para tarefas já vencidas e ainda não
-  /// concluídas. Re-notifica uma vez por dia enquanto continuar em
-  /// atraso, para não deixar a tarefa cair no esquecimento.
   Future<void> _checkOverdueTasks() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -215,13 +218,13 @@ class NotificationScheduler {
           .where('id', isEqualTo: notificationId)
           .limit(1)
           .get();
-
       if (existing.docs.isNotEmpty) continue;
 
       final daysLate = now.difference(task.dueDate!).inDays;
-      final label = daysLate <= 0
-          ? 'hoje'
-          : (daysLate == 1 ? 'há 1 dia' : 'há $daysLate dias');
+      final messageKey = daysLate <= 0
+          ? 'notif_msg_task_overdue_today'
+          : (daysLate == 1 ? 'notif_msg_task_overdue_1day' : 'notif_msg_task_overdue_days');
+      final label = daysLate <= 0 ? 'hoje' : (daysLate == 1 ? 'há 1 dia' : 'há $daysLate dias');
 
       final notification = AppNotification(
         id: notificationId,
@@ -230,6 +233,12 @@ class NotificationScheduler {
         message: "Tarefa '${task.title}' venceu $label e ainda não foi concluída.",
         timestamp: now,
         relatedId: task.id,
+        titleKey: 'notif_cat_tarefas',
+        messageKey: messageKey,
+        params: {
+          'title': task.title,
+          if (daysLate > 1) 'days': '$daysLate',
+        },
       );
 
       await _repository.addNotification(notification);
@@ -238,8 +247,6 @@ class NotificationScheduler {
 
   // ─── Goal progress checks ─────────────────────────────────────────
 
-  /// AMPLIADO: marcos em 25%, 50%, 75%, 90% e 100% (conclusão),
-  /// em vez de apenas 50% e 75%.
   Future<void> _checkGoalProgress() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -282,10 +289,10 @@ class NotificationScheduler {
           .where('id', isEqualTo: notificationId)
           .limit(1)
           .get();
-
       if (existingSnapshot.docs.isNotEmpty) continue;
 
-      final message = bucket == '100'
+      final isCompleted = bucket == '100';
+      final message = isCompleted
           ? "Parabéns! Você concluiu a meta '${goal.title}'! 🎉"
           : "Sua meta '${goal.title}' atingiu $bucket% de conclusão!";
 
@@ -297,6 +304,12 @@ class NotificationScheduler {
         timestamp: now,
         relatedId: goal.id,
         progress: progress > 1.0 ? 1.0 : progress,
+        titleKey: 'notif_cat_metas',
+        messageKey: isCompleted ? 'notif_msg_goal_completed' : 'notif_msg_goal_milestone',
+        params: {
+          'title': goal.title,
+          if (!isCompleted) 'pct': bucket,
+        },
       );
 
       await _repository.addNotification(notification);
@@ -305,8 +318,6 @@ class NotificationScheduler {
 
   // ─── Recurring bills checks ───────────────────────────────────────
 
-  /// Creates notifications for recurring transactions due within the
-  /// next 3 days.
   Future<void> _checkRecurringBills() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -339,10 +350,13 @@ class NotificationScheduler {
           .where('id', isEqualTo: notificationId)
           .limit(1)
           .get();
-
       if (existingSnapshot.docs.isNotEmpty) continue;
 
+      final messageKey = daysUntil == 0
+          ? 'notif_msg_recurring_today'
+          : (daysUntil == 1 ? 'notif_msg_recurring_tomorrow' : 'notif_msg_recurring_days');
       final when = daysUntil == 0 ? 'hoje' : (daysUntil == 1 ? 'amanhã' : 'em $daysUntil dias');
+
       final notification = AppNotification(
         id: notificationId,
         category: NotificationCategory.finance,
@@ -350,6 +364,12 @@ class NotificationScheduler {
         message: "Lembrete: pagamento de '${recurring.title}' vence $when.",
         timestamp: now,
         relatedId: recurring.id,
+        titleKey: 'notif_cat_financas',
+        messageKey: messageKey,
+        params: {
+          'title': recurring.title,
+          if (daysUntil > 1) 'days': '$daysUntil',
+        },
       );
 
       await _repository.addNotification(notification);
@@ -358,8 +378,6 @@ class NotificationScheduler {
 
   // ─── Budget checks ─────────────────────────────────────────────────
 
-  /// AMPLIADO: aviso preventivo aos 80% do limite (categoria "warn"),
-  /// além do aviso de estouro já existente aos 100%+ (categoria "over").
   Future<void> _checkOverBudget() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -419,11 +437,17 @@ class NotificationScheduler {
                 'Gastou R\$${spent.toStringAsFixed(2)} de R\$${monthlyLimit.toStringAsFixed(2)}.',
             timestamp: now,
             relatedId: doc.id,
+            titleKey: 'notif_cat_financas',
+            messageKey: 'notif_msg_budget_over',
+            params: {
+              'category': category,
+              'spent': 'R\$${spent.toStringAsFixed(2)}',
+              'limit': 'R\$${monthlyLimit.toStringAsFixed(2)}',
+            },
           );
           await _repository.addNotification(notification);
         }
       } else if (ratio >= 0.8) {
-        // NOVO: aviso preventivo antes de chegar a estourar.
         final notificationId = 'notif_budget_warn_${doc.id}_${now.year}_${now.month}';
         final existingSnapshot = await FirebaseFirestore.instance
             .collection('users')
@@ -434,14 +458,21 @@ class NotificationScheduler {
             .get();
 
         if (existingSnapshot.docs.isEmpty) {
+          final pct = (ratio * 100).round();
           final notification = AppNotification(
             id: notificationId,
             category: NotificationCategory.finance,
             title: 'Finanças',
             message: 'Está perto do limite do orçamento de $category este mês '
-                '(${(ratio * 100).round()}% usado).',
+                '($pct% usado).',
             timestamp: now,
             relatedId: doc.id,
+            titleKey: 'notif_cat_financas',
+            messageKey: 'notif_msg_budget_warn',
+            params: {
+              'category': category,
+              'pct': '$pct',
+            },
           );
           await _repository.addNotification(notification);
         }
@@ -449,10 +480,145 @@ class NotificationScheduler {
     }
   }
 
+  /// Cria notificações quando o saldo calculado de uma conta fica
+  /// negativo ou muito baixo. Saldo = initialBalance + soma das
+  /// transações ligadas a essa conta.
+  Future<void> _checkLowAccountBalance() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    const lowBalanceThreshold = 50.0;
+    final now = DateTime.now();
+
+    final accountsSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('accounts')
+        .get();
+
+    final transactionsSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('transactions')
+        .get();
+
+    final balanceDeltaByAccount = <String, double>{};
+    for (final doc in transactionsSnapshot.docs) {
+      final data = doc.data();
+      final accountId = data['accountId'] as String?;
+      if (accountId == null) continue;
+      final amount = (data['amount'] as num?)?.toDouble() ?? 0;
+      final isIncome = data['type'] == 'income';
+      balanceDeltaByAccount[accountId] =
+          (balanceDeltaByAccount[accountId] ?? 0) + (isIncome ? amount : -amount);
+    }
+
+    for (final doc in accountsSnapshot.docs) {
+      final data = doc.data();
+      final initialBalance = (data['initialBalance'] as num?)?.toDouble() ?? 0;
+      final delta = balanceDeltaByAccount[doc.id] ?? 0;
+      final currentBalance = initialBalance + delta;
+
+      if (currentBalance >= lowBalanceThreshold) continue;
+
+      final name = data['name'] as String? ?? '';
+      final isNegative = currentBalance < 0;
+
+      final dayKey = '${now.year}_${now.month}_${now.day}';
+      final notificationId = 'notif_low_balance_${doc.id}_$dayKey';
+
+      final existing = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('notifications')
+          .where('id', isEqualTo: notificationId)
+          .limit(1)
+          .get();
+      if (existing.docs.isNotEmpty) continue;
+
+      final amountLabel = 'R\$${currentBalance.toStringAsFixed(2)}';
+      final message = isNegative
+          ? "A conta '$name' está com saldo negativo: $amountLabel."
+          : "A conta '$name' está com saldo baixo: $amountLabel.";
+
+      final notification = AppNotification(
+        id: notificationId,
+        category: NotificationCategory.finance,
+        title: 'Finanças',
+        message: message,
+        timestamp: now,
+        relatedId: doc.id,
+        titleKey: 'notif_cat_financas',
+        messageKey: isNegative ? 'notif_msg_balance_negative' : 'notif_msg_balance_low',
+        params: {
+          'name': name,
+          'amount': amountLabel,
+        },
+      );
+
+      await _repository.addNotification(notification);
+    }
+  }
+
+  /// Avisa quando um ativo não é atualizado há 30+ dias.
+  Future<void> _checkStaleAssets() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    const staleDaysThreshold = 30;
+    final now = DateTime.now();
+
+    final assetsSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('assets')
+        .get();
+
+    for (final doc in assetsSnapshot.docs) {
+      final data = doc.data();
+      final updatedAt = data['updatedAt'] != null
+          ? (data['updatedAt'] as Timestamp).toDate()
+          : null;
+      if (updatedAt == null) continue;
+
+      final daysSinceUpdate = now.difference(updatedAt).inDays;
+      if (daysSinceUpdate < staleDaysThreshold) continue;
+
+      final bucket = daysSinceUpdate ~/ 30;
+      final notificationId = 'notif_stale_asset_${doc.id}_$bucket';
+
+      final existing = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('notifications')
+          .where('id', isEqualTo: notificationId)
+          .limit(1)
+          .get();
+      if (existing.docs.isNotEmpty) continue;
+
+      final name = data['name'] as String? ?? '';
+      final notification = AppNotification(
+        id: notificationId,
+        category: NotificationCategory.finance,
+        title: 'Finanças',
+        message: "O valor de '$name' não é atualizado há $daysSinceUpdate dias. "
+            "Vale a pena confirmar se ainda está correto.",
+        timestamp: now,
+        relatedId: doc.id,
+        titleKey: 'notif_cat_financas',
+        messageKey: 'notif_msg_stale_asset',
+        params: {
+          'name': name,
+          'days': '$daysSinceUpdate',
+        },
+      );
+
+      await _repository.addNotification(notification);
+    }
+  }
+
   // ─── Helper: create notification for "all tasks done" ─────────────
 
-  /// Creates a "system" notification when all standalone tasks for the
-  /// day are completed.
   Future<void> checkAllTasksDone() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -482,7 +648,6 @@ class NotificationScheduler {
         .where('isRead', isEqualTo: false)
         .limit(1)
         .get();
-
     if (existingSnapshot.docs.isNotEmpty) return;
 
     final notification = AppNotification(
@@ -491,6 +656,8 @@ class NotificationScheduler {
       title: 'Tarefas',
       message: 'Você completou todas as tarefas diárias. Bom trabalho!',
       timestamp: DateTime.now(),
+      titleKey: 'notif_cat_tarefas',
+      messageKey: 'notif_msg_all_tasks_done',
     );
 
     await _repository.addNotification(notification);

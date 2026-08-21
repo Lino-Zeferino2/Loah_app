@@ -1,3 +1,4 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -29,6 +30,14 @@ class UserService {
       'dialCode': dialCode,
       'role': 'user', // Padrão: usuário normal. Para tornar admin, alterar manualmente no Firestore.
 
+      // NOVO: idioma do dispositivo no momento do cadastro — cobre o
+      // utilizador que nunca abre o seletor de idioma manualmente
+      // (drawer → _showLanguagePicker só grava se ele trocar de
+      // idioma ativamente). Sem isto, getUserLocale cairia sempre no
+      // fallback 'pt' para quem usa o telemóvel em inglês mas nunca
+      // mexeu no seletor.
+      'locale': PlatformDispatcher.instance.locale.languageCode,
+
       // ── Subscrição (preparado para planos pagos futuros) ──
       'subscriptionTier': 'free',        // 'free' | 'premium' — string para suportar múltiplos tiers no futuro (ex: tier de IA)
       'subscriptionExpiresAt': null,     // preenchido quando houver subscrição ativa
@@ -38,6 +47,7 @@ class UserService {
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
+
   /// Atualiza o nome de exibição do usuário no Firebase Auth.
   Future<void> updateDisplayName(String displayName) async {
     final user = FirebaseAuth.instance.currentUser;
