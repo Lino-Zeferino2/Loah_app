@@ -236,11 +236,43 @@ class HelpCenterService {
   }
 
   /// Add admin reply to a message.
+  ///
+  /// NOVO: além de guardar a resposta, cria uma AppNotification na
+  /// coleção do utilizador que enviou a mensagem, para ele saber que
+  /// foi respondido sem ter de reabrir "As Minhas Mensagens" às cegas.
   Future<void> replyToMessage(String messageId, String reply) async {
+    final snap = await _messages.doc(messageId).get();
+    final data = snap.data() as Map<String, dynamic>?;
+    final userId = data?['userId'] as String?;
+    final subject = data?['subject'] as String? ?? '';
+
     await _messages.doc(messageId).update({
       'adminReply': reply,
       'adminReplyAt': FieldValue.serverTimestamp(),
       'status': HelpMessageStatus.resolvido.name,
+    });
+
+    if (userId == null || userId.isEmpty) return;
+
+    final now = DateTime.now();
+    final notificationId =
+        'notif_help_reply_${messageId}_${now.millisecondsSinceEpoch}';
+
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('notifications')
+        .doc(notificationId)
+        .set({
+      'category': 'system',
+      'title': 'Central de Ajuda',
+      'message': subject.isNotEmpty
+          ? 'A sua mensagem "$subject" foi respondida pelo suporte.'
+          : 'A sua mensagem foi respondida pelo suporte.',
+      'timestamp': Timestamp.fromDate(now),
+      'relatedId': messageId,
+      'isRead': false,
+      'createdAt': FieldValue.serverTimestamp(),
     });
   }
 

@@ -8,26 +8,30 @@ import '../../models/goal_model.dart';
 import '../../models/task_model.dart';
 import '../../models/recurring_transaction_model.dart';
 import '../../models/transaction_model.dart';
+import 'notification_preferences_service.dart';
 import 'notification_repository.dart';
 
 /// Client-side notification scheduler that runs periodically to check
 /// for noteworthy events and writes them to Firestore as notifications.
 ///
-/// This replaces the old [NotificationGenerator] (which generated
-/// notifications ephemerally from mock data). Now notifications
-/// persist in Firestore and trigger real FCM push notifications
-/// via Cloud Functions.
+/// AMPLIADO com:
+///   - Marcos de meta completos (25/50/75/90/100%)
+///   - Tarefas vencidas (além de "a vencer")
+///   - Antecedência de tarefa configurável (NotificationPreferences)
+///   - Aviso preventivo de orçamento (80%) além do aviso de estouro
+///   - Respeita as preferências de notificação do utilizador
 ///
-/// The scheduler runs:
-/// - On app startup
-/// - Every 30 minutes while the app is active
-/// - When specific data changes (on task completion, contact interaction, etc.)
+/// IMPORTANTE: isto só corre enquanto a app está aberta. Para entrega
+/// real com a app fechada (background/terminated), é necessário um
+/// job equivalente correndo em Cloud Functions com Cloud Scheduler.
 class NotificationScheduler {
   static final NotificationScheduler _instance = NotificationScheduler._internal();
   factory NotificationScheduler() => _instance;
   NotificationScheduler._internal();
 
   final NotificationRepository _repository = NotificationRepository();
+  final NotificationPreferencesService _preferencesService =
+      NotificationPreferencesService();
   Timer? _periodicTimer;
 
   /// Whether a check is currently running.
@@ -48,18 +52,22 @@ class NotificationScheduler {
     _periodicTimer = null;
   }
 
-  /// Run all notification checks immediately.
+  /// Run all notification checks immediately, respecting the user's
+  /// notification preferences.
   Future<void> runAllChecks() async {
     if (_isRunning) return;
     _isRunning = true;
 
     try {
+      final prefs = await _preferencesService.getPreferences();
+
       await Future.wait([
-        _checkOverdueContacts(),
-        _checkUpcomingTasks(),
-        _checkGoalProgress(),
-        _checkRecurringBills(),
-        _checkOverBudget(),
+        if (prefs.contactsEnabled) _checkOverdueContacts(),
+        if (prefs.tasksEnabled) _checkUpcomingTasks(prefs.taskReminderLeadHours),
+        if (prefs.tasksEnabled) _checkOverdueTasks(),
+        if (prefs.goalsEnabled) _checkGoalProgress(),
+        if (prefs.financeEnabled) _checkRecurringBills(),
+        if (prefs.financeEnabled) _checkOverBudget(),
       ]);
     } catch (e) {
       debugPrint('[NotificationScheduler] Error running checks: $e');
@@ -86,9 +94,6 @@ class NotificationScheduler {
       final contact = _contactFromDoc(doc);
       if (!contact.isOverdue) continue;
 
-      // Build a deterministic weekly notification ID so we only fire
-      // once per week (or per frequency period) per contact — matching
-      // the server-side convention.
       final now = DateTime.now();
       final weekAnchor = DateTime.utc(now.year, 1, 1)
           .add(Duration(days: (contact.desiredContactFrequencyDays ?? 7) * (now.weekday - 1)));
@@ -97,8 +102,6 @@ class NotificationScheduler {
       final notificationId =
           'notif_contact_${contact.id}_$periodKey';
 
-      // Check if we already sent this notification for this period
-      // Check by ID (deterministic weekly key) first, then by pending
       final idCheck = await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
@@ -109,7 +112,6 @@ class NotificationScheduler {
 
       if (idCheck.docs.isNotEmpty) continue;
 
-      // Also check if there's any unread notification for this contact
       final pendingCheck = await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
@@ -140,8 +142,8 @@ class NotificationScheduler {
 
   // ─── Task checks ──────────────────────────────────────────────────
 
-  /// Creates notifications for tasks due within the next 24 hours.
-  Future<void> _checkUpcomingTasks() async {
+  /// Creates notifications for tasks due within [leadHours] hours.
+  Future<void> _checkUpcomingTasks(int leadHours) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
@@ -157,9 +159,8 @@ class NotificationScheduler {
       if (task.isDone || task.dueDate == null) continue;
 
       final diff = task.dueDate!.difference(now);
-      if (diff.inHours < 0 || diff.inHours > 24) continue;
+      if (diff.inHours < 0 || diff.inHours > leadHours) continue;
 
-      // Check if already notified
       final existingSnapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
@@ -185,10 +186,60 @@ class NotificationScheduler {
     }
   }
 
+  /// NOVO: cria notificações para tarefas já vencidas e ainda não
+  /// concluídas. Re-notifica uma vez por dia enquanto continuar em
+  /// atraso, para não deixar a tarefa cair no esquecimento.
+  Future<void> _checkOverdueTasks() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final now = DateTime.now();
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('tasks')
+        .get();
+
+    for (final doc in snapshot.docs) {
+      final task = _taskFromDoc(doc);
+      if (task.isDone || task.dueDate == null) continue;
+      if (!task.dueDate!.isBefore(now)) continue;
+
+      final dayKey = '${now.year}_${now.month}_${now.day}';
+      final notificationId = 'notif_task_overdue_${task.id}_$dayKey';
+
+      final existing = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('notifications')
+          .where('id', isEqualTo: notificationId)
+          .limit(1)
+          .get();
+
+      if (existing.docs.isNotEmpty) continue;
+
+      final daysLate = now.difference(task.dueDate!).inDays;
+      final label = daysLate <= 0
+          ? 'hoje'
+          : (daysLate == 1 ? 'há 1 dia' : 'há $daysLate dias');
+
+      final notification = AppNotification(
+        id: notificationId,
+        category: NotificationCategory.tasks,
+        title: 'Tarefas',
+        message: "Tarefa '${task.title}' venceu $label e ainda não foi concluída.",
+        timestamp: now,
+        relatedId: task.id,
+      );
+
+      await _repository.addNotification(notification);
+    }
+  }
+
   // ─── Goal progress checks ─────────────────────────────────────────
 
-  /// Creates notifications for goals that have reached meaningful
-  /// progress milestones (50%, 75%, 100%).
+  /// AMPLIADO: marcos em 25%, 50%, 75%, 90% e 100% (conclusão),
+  /// em vez de apenas 50% e 75%.
   Future<void> _checkGoalProgress() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -200,47 +251,52 @@ class NotificationScheduler {
         .collection('goals')
         .get();
 
-    // Fetch all tasks for goal progress calculation
-    final tasksSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('tasks')
-        .get();
-    tasksSnapshot.docs.map((doc) => _taskFromDoc(doc)).toList();
+    const milestoneThresholds = [1.0, 0.9, 0.75, 0.5, 0.25];
+    const milestoneKeys = ['100', '90', '75', '50', '25'];
 
     for (final doc in snapshot.docs) {
       final goal = _goalFromDoc(doc);
-      // We need to compute progress — for manualValue goals, use current/target
-      // For a simplified check, we just look at manualValue percentage
       if (goal.progressMode != GoalProgressMode.manualValue ||
           goal.target == null ||
           goal.target! <= 0) {
         continue;
       }
 
-      final progress = (goal.current ?? 0) / goal.target!;
-      if (progress < 0.5 || progress >= 1.0) continue;
+      final rawProgress = (goal.current ?? 0) / goal.target!;
+      final progress = rawProgress.clamp(0.0, 1.5);
 
-      // Check if already notified for this milestone range (50-74% or 75-99%)
-      final milestoneBucket = progress < 0.75 ? '50' : '75';
+      String? bucket;
+      for (var i = 0; i < milestoneThresholds.length; i++) {
+        if (progress >= milestoneThresholds[i]) {
+          bucket = milestoneKeys[i];
+          break;
+        }
+      }
+      if (bucket == null) continue;
+
+      final notificationId = 'notif_goal_${goal.id}_$bucket';
       final existingSnapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .collection('notifications')
-          .where('id', isEqualTo: 'notif_goal_${goal.id}_$milestoneBucket')
+          .where('id', isEqualTo: notificationId)
           .limit(1)
           .get();
 
       if (existingSnapshot.docs.isNotEmpty) continue;
 
+      final message = bucket == '100'
+          ? "Parabéns! Você concluiu a meta '${goal.title}'! 🎉"
+          : "Sua meta '${goal.title}' atingiu $bucket% de conclusão!";
+
       final notification = AppNotification(
-        id: 'notif_goal_${goal.id}_$milestoneBucket',
+        id: notificationId,
         category: NotificationCategory.goals,
         title: 'Metas',
-        message: "Sua meta '${goal.title}' atingiu ${(progress * 100).round()}% de conclusão!",
+        message: message,
         timestamp: now,
         relatedId: goal.id,
-        progress: progress,
+        progress: progress > 1.0 ? 1.0 : progress,
       );
 
       await _repository.addNotification(notification);
@@ -276,7 +332,6 @@ class NotificationScheduler {
       final notificationId =
           'notif_recurring_${recurring.id}_${dueThisMonth.year}_${dueThisMonth.month}';
 
-      // Check if already notified
       final existingSnapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
@@ -301,9 +356,10 @@ class NotificationScheduler {
     }
   }
 
-  // ─── Budget overrun checks ────────────────────────────────────────
+  // ─── Budget checks ─────────────────────────────────────────────────
 
-  /// Creates notifications when a budget has been exceeded for the month.
+  /// AMPLIADO: aviso preventivo aos 80% do limite (categoria "warn"),
+  /// além do aviso de estouro já existente aos 100%+ (categoria "over").
   Future<void> _checkOverBudget() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -312,14 +368,12 @@ class NotificationScheduler {
     final startOfMonth = DateTime(now.year, now.month, 1);
     final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
 
-    // Fetch budgets
     final budgetsSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
         .collection('budgets')
         .get();
 
-    // Fetch this month's transactions for expense calculation
     final transactionsSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
@@ -329,7 +383,6 @@ class NotificationScheduler {
         .where('type', isEqualTo: 'expense')
         .get();
 
-    // Group expenses by category
     final categoryExpenses = <String, double>{};
     for (final doc in transactionsSnapshot.docs) {
       final data = doc.data();
@@ -344,31 +397,55 @@ class NotificationScheduler {
       final monthlyLimit = (data['monthlyLimit'] as num?)?.toDouble() ?? 0;
       final spent = categoryExpenses[category] ?? 0;
 
-      if (spent <= monthlyLimit) continue;
+      if (monthlyLimit <= 0) continue;
+      final ratio = spent / monthlyLimit;
 
-      // Check if already notified this month
-      final notificationId = 'notif_budget_${doc.id}_${now.year}_${now.month}';
-      final existingSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('notifications')
-          .where('id', isEqualTo: notificationId)
-          .limit(1)
-          .get();
+      if (ratio >= 1.0) {
+        final notificationId = 'notif_budget_over_${doc.id}_${now.year}_${now.month}';
+        final existingSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('notifications')
+            .where('id', isEqualTo: notificationId)
+            .limit(1)
+            .get();
 
-      if (existingSnapshot.docs.isNotEmpty) continue;
+        if (existingSnapshot.docs.isEmpty) {
+          final notification = AppNotification(
+            id: notificationId,
+            category: NotificationCategory.finance,
+            title: 'Finanças',
+            message: 'Você ultrapassou o orçamento de $category este mês. '
+                'Gastou R\$${spent.toStringAsFixed(2)} de R\$${monthlyLimit.toStringAsFixed(2)}.',
+            timestamp: now,
+            relatedId: doc.id,
+          );
+          await _repository.addNotification(notification);
+        }
+      } else if (ratio >= 0.8) {
+        // NOVO: aviso preventivo antes de chegar a estourar.
+        final notificationId = 'notif_budget_warn_${doc.id}_${now.year}_${now.month}';
+        final existingSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('notifications')
+            .where('id', isEqualTo: notificationId)
+            .limit(1)
+            .get();
 
-      final notification = AppNotification(
-        id: notificationId,
-        category: NotificationCategory.finance,
-        title: 'Finanças',
-        message: 'Você ultrapassou o orçamento de $category este mês. '
-            'Gastou R\$${spent.toStringAsFixed(2)} de R\$${monthlyLimit.toStringAsFixed(2)}.',
-        timestamp: now,
-        relatedId: doc.id,
-      );
-
-      await _repository.addNotification(notification);
+        if (existingSnapshot.docs.isEmpty) {
+          final notification = AppNotification(
+            id: notificationId,
+            category: NotificationCategory.finance,
+            title: 'Finanças',
+            message: 'Está perto do limite do orçamento de $category este mês '
+                '(${(ratio * 100).round()}% usado).',
+            timestamp: now,
+            relatedId: doc.id,
+          );
+          await _repository.addNotification(notification);
+        }
+      }
     }
   }
 
@@ -379,6 +456,9 @@ class NotificationScheduler {
   Future<void> checkAllTasksDone() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
+
+    final prefs = await _preferencesService.getPreferences();
+    if (!prefs.systemEnabled) return;
 
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
@@ -534,4 +614,3 @@ class NotificationScheduler {
     );
   }
 }
-

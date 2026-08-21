@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/screens/notifications/widgets/notification_card.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/services/contact_service.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/services/notification_repository.dart';
@@ -23,6 +24,12 @@ import '../tasks/task_detail_screen.dart';
 ///
 /// They arrive on the device via FCM push, and are also persisted
 /// so the feed always shows the complete history.
+///
+/// NOTA: o title/message de cada notificação é gerado no momento da
+/// criação (NotificationScheduler / Cloud Functions) e gravado como
+/// texto já pronto no Firestore — não é traduzido aqui neste ecrã.
+/// Apenas os textos fixos da interface (filtros, categorias, tempo
+/// relativo, diálogos) usam AppLocales.
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -66,19 +73,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   /// Clear all notifications (delete them from Firestore).
   Future<void> _clearAll() async {
+    final loc = AppLocales.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Limpar notificações'),
-        content: const Text('Tem certeza que deseja limpar todas as notificações?'),
+        title: Text(loc.translate('notif_limpar_titulo')),
+        content: Text(loc.translate('notif_limpar_msg')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
+            child: Text(loc.translate('notif_cancelar')),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Limpar'),
+            child: Text(loc.translate('notif_limpar_confirmar')),
           ),
         ],
       ),
@@ -125,13 +133,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   /// Returns a human-readable label for each category.
-  String _categoryLabel(NotificationCategory cat) {
+  String _categoryLabel(NotificationCategory cat, AppLocales loc) {
     return switch (cat) {
-      NotificationCategory.contacts => 'Contactos',
-      NotificationCategory.tasks => 'Tarefas',
-      NotificationCategory.goals => 'Metas',
-      NotificationCategory.finance => 'Finanças',
-      NotificationCategory.system => 'Sistema',
+      NotificationCategory.contacts => loc.translate('notif_cat_contatos'),
+      NotificationCategory.tasks => loc.translate('notif_cat_tarefas'),
+      NotificationCategory.goals => loc.translate('notif_cat_metas'),
+      NotificationCategory.finance => loc.translate('notif_cat_financas'),
+      NotificationCategory.system => loc.translate('notif_cat_sistema'),
     };
   }
 
@@ -139,6 +147,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   /// notification, based on its category.
   ({VoidCallback? onTap, List<Widget> actions}) _behaviorFor(AppNotification n) {
     final colors = context.loahColors;
+    final loc = AppLocales.of(context);
 
     switch (n.category) {
       case NotificationCategory.contacts:
@@ -159,7 +168,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 minimumSize: Size.zero,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
               ),
-              child: const Text('Ok', style: TextStyle(fontSize: 12.5)),
+              child: Text(loc.translate('notif_ok'), style: const TextStyle(fontSize: 12.5)),
             ),
           ],
         );
@@ -201,7 +210,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   minimumSize: Size.zero,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
                 ),
-                child: const Text('Pagar', style: TextStyle(fontSize: 12.5)),
+                child: Text(loc.translate('notif_pagar'), style: const TextStyle(fontSize: 12.5)),
               ),
             ],
           );
@@ -222,9 +231,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    final loc = AppLocales.of(context);
 
     return Scaffold(
-      appBar: const LoahAppBarSimple(title: 'Notificações'),
+      appBar: LoahAppBarSimple(title: loc.translate('notif_titulo')),
       body: SafeArea(
         child: StreamBuilder<QuerySnapshot>(
           stream: _repository.getNotificationsStream(),
@@ -232,7 +242,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             if (snapshot.hasError) {
               return Center(
                 child: Text(
-                  'Erro ao carregar notificações: ${snapshot.error}',
+                  '${loc.translate('notif_erro_carregar')}${snapshot.error}',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               );
@@ -246,7 +256,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             if (docs.isEmpty) {
               return Center(
                 child: Text(
-                  'Nenhuma notificação por aqui — tudo em dia!',
+                  loc.translate('notif_vazio'),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               );
@@ -287,7 +297,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     child: Row(
                       children: [
                         _FilterChip(
-                          label: 'Todas',
+                          label: loc.translate('notif_todas'),
                           selected: !_showUnreadOnly && _selectedCategory == null,
                           onTap: () => setState(() {
                             _showUnreadOnly = false;
@@ -296,7 +306,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
-                          label: 'Não lidas',
+                          label: loc.translate('notif_nao_lidas'),
                           selected: _showUnreadOnly && _selectedCategory == null,
                           count: all.where((n) => !n.isRead).length,
                           onTap: () => setState(() {
@@ -307,7 +317,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         const SizedBox(width: 8),
                         for (final cat in _allCategories) ...[
                           _FilterChip(
-                            label: _categoryLabel(cat),
+                            label: _categoryLabel(cat, loc),
                             selected: _selectedCategory == cat && !_showUnreadOnly,
                             onTap: () => setState(() {
                               _selectedCategory = cat;
@@ -328,8 +338,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             padding: const EdgeInsets.all(32),
                             child: Text(
                               _showUnreadOnly
-                                  ? 'Nenhuma notificação não lida.'
-                                  : 'Nenhuma notificação por aqui — tudo em dia!',
+                                  ? loc.translate('notif_vazio_nao_lidas')
+                                  : loc.translate('notif_vazio'),
                               textAlign: TextAlign.center,
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
@@ -343,7 +353,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    'RECENTES',
+                                    loc.translate('notif_recentes'),
                                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                           letterSpacing: 0.6,
                                           color: context.textSecondary,
@@ -354,7 +364,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       onPressed: _clearAll,
                                       icon: Icon(Icons.clear_all, size: 16, color: colors.accentBlue),
                                       label: Text(
-                                        'Limpar tudo',
+                                        loc.translate('notif_limpar_tudo'),
                                         style: TextStyle(color: colors.accentBlue, fontSize: 12.5),
                                       ),
                                     ),
@@ -369,7 +379,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             ],
                             if (older.isNotEmpty) ...[
                               Text(
-                                'ANTERIORES',
+                                loc.translate('notif_anteriores'),
                                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                       letterSpacing: 0.6,
                                       color: context.textSecondary,
@@ -461,4 +471,3 @@ class _FilterChip extends StatelessWidget {
     );
   }
 }
-

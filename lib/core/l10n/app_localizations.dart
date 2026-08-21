@@ -284,7 +284,133 @@ class AppLocales {
       'pt': 'Notificações',
       'en': 'Notifications',
     },
-
+        // ═══════ NOTIFICATION PREFERENCES SCREEN ═══════
+    'notifPrefs_titulo': {
+      'pt': 'Preferências de Notificações',
+      'en': 'Notification Preferences',
+    },
+    'notifPrefs_categorias_titulo': {
+      'pt': 'CATEGORIAS',
+      'en': 'CATEGORIES',
+    },
+    'notifPrefs_antecedencia_titulo': {
+      'pt': 'ANTECEDÊNCIA DE TAREFAS',
+      'en': 'TASK LEAD TIME',
+    },
+    'notifPrefs_antecedencia_desc': {
+      'pt': 'Avisar-me com quanto tempo de antecedência sobre tarefas a vencer.',
+      'en': 'How far in advance to remind me about upcoming tasks.',
+    },
+    'notifPrefs_horas_label': {
+      'pt': '{n}h antes',
+      'en': '{n}h before',
+    },
+    'notifPrefs_dias_label': {
+      'pt': '{n}d antes',
+      'en': '{n}d before',
+    },
+    // ═══════ NOTIFICATIONS SCREEN ═══════
+    'notif_titulo': {
+      'pt': 'Notificações',
+      'en': 'Notifications',
+    },
+    'notif_todas': {
+      'pt': 'Todas',
+      'en': 'All',
+    },
+    'notif_nao_lidas': {
+      'pt': 'Não lidas',
+      'en': 'Unread',
+    },
+    'notif_cat_contatos': {
+      'pt': 'Contactos',
+      'en': 'Contacts',
+    },
+    'notif_cat_tarefas': {
+      'pt': 'Tarefas',
+      'en': 'Tasks',
+    },
+    'notif_cat_metas': {
+      'pt': 'Metas',
+      'en': 'Goals',
+    },
+    'notif_cat_financas': {
+      'pt': 'Finanças',
+      'en': 'Finances',
+    },
+    'notif_cat_sistema': {
+      'pt': 'Sistema',
+      'en': 'System',
+    },
+    'notif_recentes': {
+      'pt': 'RECENTES',
+      'en': 'RECENT',
+    },
+    'notif_anteriores': {
+      'pt': 'ANTERIORES',
+      'en': 'EARLIER',
+    },
+    'notif_limpar_tudo': {
+      'pt': 'Limpar tudo',
+      'en': 'Clear all',
+    },
+    'notif_vazio': {
+      'pt': 'Nenhuma notificação por aqui — tudo em dia!',
+      'en': 'No notifications here — all caught up!',
+    },
+    'notif_vazio_nao_lidas': {
+      'pt': 'Nenhuma notificação não lida.',
+      'en': 'No unread notifications.',
+    },
+    'notif_erro_carregar': {
+      'pt': 'Erro ao carregar notificações: ',
+      'en': 'Error loading notifications: ',
+    },
+    'notif_ok': {
+      'pt': 'Ok',
+      'en': 'Ok',
+    },
+    'notif_pagar': {
+      'pt': 'Pagar',
+      'en': 'Pay',
+    },
+    'notif_limpar_titulo': {
+      'pt': 'Limpar notificações',
+      'en': 'Clear notifications',
+    },
+    'notif_limpar_msg': {
+      'pt': 'Tem certeza que deseja limpar todas as notificações?',
+      'en': 'Are you sure you want to clear all notifications?',
+    },
+    'notif_limpar_confirmar': {
+      'pt': 'Limpar',
+      'en': 'Clear',
+    },
+    'notif_cancelar': {
+      'pt': 'Cancelar',
+      'en': 'Cancel',
+    },
+    // ─── Relative time (notification card) ───
+    'notif_agora': {
+      'pt': 'Agora',
+      'en': 'Now',
+    },
+    'notif_min_atras': {
+      'pt': '{n} min',
+      'en': '{n} min',
+    },
+    'notif_h_atras': {
+      'pt': '{n}h atrás',
+      'en': '{n}h ago',
+    },
+    'notif_ontem': {
+      'pt': 'Ontem',
+      'en': 'Yesterday',
+    },
+    'notif_dias_atras': {
+      'pt': '{n}d atrás',
+      'en': '{n}d ago',
+    },
     // ═══════ LOGIN / AUTH ═══════
     'auth_entrar': {
       'pt': 'Entrar',

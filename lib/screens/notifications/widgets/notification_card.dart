@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/app_notification.dart';
 import '../../../widgets/labeled_progress_bar.dart';
@@ -8,6 +9,11 @@ import '../../../widgets/labeled_progress_bar.dart';
 /// an optional progress bar (goals), and whatever action buttons
 /// [actions] provides — the screen builds those per-category, since
 /// they need real callbacks (log a call, mark a bill paid...).
+///
+/// NOTA: notification.title/notification.message não são traduzidos
+/// aqui — vêm já prontos do Firestore, gerados no momento da criação
+/// da notificação (client scheduler / Cloud Functions). Apenas o
+/// rótulo de tempo relativo ("Agora", "2h atrás"...) usa AppLocales.
 class NotificationCard extends StatelessWidget {
   final AppNotification notification;
   final VoidCallback? onTap;
@@ -39,19 +45,26 @@ class NotificationCard extends StatelessWidget {
         NotificationCategory.system => Icons.check_circle_outline,
       };
 
-  String _relativeLabel() {
+  // CORRIGIDO: recebe loc como parâmetro para traduzir o tempo
+  // relativo ("Agora", "5 min", "2h atrás", "Ontem", "3d atrás").
+  String _relativeLabel(AppLocales loc) {
     final diff = DateTime.now().difference(notification.timestamp);
-    if (diff.inMinutes < 1) return 'Agora';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} min';
-    if (diff.inHours < 24) return '${diff.inHours}h atrás';
-    if (diff.inDays == 1) return 'Ontem';
-    return '${diff.inDays}d atrás';
+    if (diff.inMinutes < 1) return loc.translate('notif_agora');
+    if (diff.inMinutes < 60) {
+      return loc.translate('notif_min_atras').replaceAll('{n}', '${diff.inMinutes}');
+    }
+    if (diff.inHours < 24) {
+      return loc.translate('notif_h_atras').replaceAll('{n}', '${diff.inHours}');
+    }
+    if (diff.inDays == 1) return loc.translate('notif_ontem');
+    return loc.translate('notif_dias_atras').replaceAll('{n}', '${diff.inDays}');
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
     final color = _categoryColor(context);
+    final loc = AppLocales.of(context);
 
     final isUnread = !notification.isRead;
 
@@ -111,6 +124,7 @@ class NotificationCard extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
+                              // Não traduzido: gerado no Firestore.
                               notification.title,
                               style: TextStyle(
                                 color: color,
@@ -119,7 +133,7 @@ class NotificationCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            _relativeLabel(),
+                            _relativeLabel(loc),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: isUnread ? context.textSecondary : context.textSecondary.withValues(alpha: 0.6),
                             ),
@@ -128,6 +142,7 @@ class NotificationCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
+                        // Não traduzido: gerado no Firestore.
                         notification.message,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: isUnread ? null : context.textSecondary.withValues(alpha: 0.7),
