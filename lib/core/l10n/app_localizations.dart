@@ -2333,6 +2333,10 @@ class AppLocales {
       'pt': 'Já se passaram',
       'en': 'It has been',
     },
+  'contactDetail_atrasado_prefix_nunca': {
+      'pt': 'Ainda não registaste nenhum contacto com',
+      'en': "You haven't logged any contact with",
+    },
     'contactDetail_atrasado_dias': {
       'pt': 'dias desde o último contato. Que tal ligar pra',
       'en': 'days since the last contact. How about calling',

@@ -463,8 +463,14 @@ try {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        '${loc.translate('contactDetail_atrasado_prefix')} ${contact.daysSinceLastContact} ${loc.translate('contactDetail_atrasado_dias')} '
-                        '${loc.translate('contactDetail_atrasado_meio')} ${contact.name.split(' ').first}?',
+                        // CORRIGIDO: antes mostrava sempre a contagem de dias
+                        // (incluindo o valor sentinela 999 para "nunca
+                        // contactado"), o que não faz sentido para um contacto
+                        // recém-criado. Agora distingue os dois casos.
+                        contact.lastContactedAt == null
+                            ? '${loc.translate('contactDetail_atrasado_prefix_nunca')} ${contact.name.split(' ').first}?'
+                            : '${loc.translate('contactDetail_atrasado_prefix')} ${contact.daysSinceLastContact} ${loc.translate('contactDetail_atrasado_dias')} '
+                              '${loc.translate('contactDetail_atrasado_meio')} ${contact.name.split(' ').first}?',
                         style: TextStyle(color: colors.negative, fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                     ),
