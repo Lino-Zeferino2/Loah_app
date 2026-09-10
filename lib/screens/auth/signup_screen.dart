@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:loah_app/core/constants/app_breakpoints.dart';
 import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
@@ -327,6 +328,343 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  /// Conteúdo do formulário, partilhado entre mobile e desktop. Igual ao
+  /// original, exceto que passou de bloco inline no build() para método,
+  /// para não duplicar ~250 linhas entre as duas variantes de layout.
+  Widget _buildFormContent(
+    BuildContext context, {
+    required ThemeData theme,
+    required ColorScheme scheme,
+    required AppLocales loc,
+    required Color textSecondary,
+    required Color border,
+    required Color cardBackground,
+  }) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 0),
+          WaveCardHeader(
+            backgroundColor: scheme.primary,
+            lineColor: Colors.white,
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 12),
+                Text(
+                  loc.translate('signup_titulo'),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  loc.translate('signup_subtitulo'),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _FieldLabel(text: loc.translate('signup_nome_label'), color: textSecondary),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _nameController,
+            enabled: !_submitting,
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.next,
+            decoration: _fieldDecoration(
+              hint: loc.translate('signup_nome_hint'),
+              icon: Icons.person_outline_rounded,
+              scheme: scheme,
+              border: border,
+              fillColor: cardBackground,
+            ),
+            validator: (v) => _validateName(v, loc),
+          ),
+          const SizedBox(height: 16),
+          _FieldLabel(text: loc.translate('signup_email_label'), color: textSecondary),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _emailController,
+            enabled: !_submitting,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            decoration: _fieldDecoration(
+              hint: loc.translate('signup_email_hint'),
+              icon: Icons.mail_outline_rounded,
+              scheme: scheme,
+              border: border,
+              fillColor: cardBackground,
+            ),
+            validator: (v) => _validateEmail(v, loc),
+          ),
+          const SizedBox(height: 16),
+          _FieldLabel(text: loc.translate('signup_telefone_label'), color: textSecondary),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              SizedBox(
+                width: 128,
+                child: InkWell(
+                  onTap: _onPickDialCode,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: cardBackground,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: border),
+                    ),
+                    child: Row(
+                      children: [
+                        // CORRIGIDO: era um Icon(Icons.flag_outlined)
+                        // fixo — agora mostra a bandeira real do
+                        // país selecionado, tal como no
+                        // add_contact_screen.
+                        Text(_countryFlag, style: const TextStyle(fontSize: 18)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _dialCode,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_drop_down_rounded),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextFormField(
+                  controller: _phoneNumberController,
+                  enabled: !_submitting,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  decoration: _fieldDecoration(
+                    hint: loc.translate('signup_telefone_hint'),
+                    icon: Icons.phone_android_outlined,
+                    scheme: scheme,
+                    border: border,
+                    fillColor: cardBackground,
+                  ),
+                  validator: (v) => _validatePhone(v, loc),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _FieldLabel(text: loc.translate('signup_senha_label'), color: textSecondary),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _passwordController,
+            enabled: !_submitting,
+            obscureText: _obscurePassword,
+            textInputAction: TextInputAction.next,
+            decoration: _fieldDecoration(
+              hint: loc.translate('signup_senha_hint'),
+              icon: Icons.lock_outline_rounded,
+              scheme: scheme,
+              border: border,
+              fillColor: cardBackground,
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
+                onPressed: () => setState(
+                  () => _obscurePassword = !_obscurePassword,
+                ),
+              ),
+            ),
+            validator: (v) => _validatePassword(v, loc),
+            onFieldSubmitted: (_) {
+              FocusScope.of(context).nextFocus();
+            },
+          ),
+          const SizedBox(height: 16),
+          _FieldLabel(text: loc.translate('signup_confirmar_senha_label'), color: textSecondary),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _confirmPasswordController,
+            enabled: !_submitting,
+            obscureText: _obscureConfirmPassword,
+            textInputAction: TextInputAction.done,
+            decoration: _fieldDecoration(
+              hint: loc.translate('signup_confirmar_senha_hint'),
+              icon: Icons.lock_outline_rounded,
+              scheme: scheme,
+              border: border,
+              fillColor: cardBackground,
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscureConfirmPassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
+                onPressed: () => setState(
+                  () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                ),
+              ),
+            ),
+            validator: (v) => _validateConfirmPassword(v, loc),
+            onFieldSubmitted: (_) => _onSubmit(),
+          ),
+          const SizedBox(height: 16),
+          _TermsCheckbox(
+            value: _acceptedTerms,
+            showError: _showTermsError,
+            scheme: scheme,
+            textSecondary: textSecondary,
+            loc: loc,
+            onChanged: (v) {
+              setState(() {
+                _acceptedTerms = v ?? false;
+                if (_acceptedTerms) _showTermsError = false;
+              });
+            },
+            onTermsTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const TermsPrivacyScreen(),
+                ),
+              );
+            },
+            onPrivacyTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const TermsPrivacyScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 22),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _submitting ? null : _onSubmit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: scheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: _submitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          loc.translate('signup_criar_conta'),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward_rounded, size: 20),
+                      ],
+                    ),
+            ),
+          ),
+          const SizedBox(height: 22),
+          // Divisor + botão social: só existe sentido
+          // mostrá-los no Android (onde o Google ainda está
+          // ativo). No iOS, sem nenhum botão social, o
+          // divisor ficaria sozinho — por isso ambos entram
+          // na mesma condição.
+          if (defaultTargetPlatform == TargetPlatform.android) ...[
+            Row(
+              children: [
+                Expanded(child: Divider(thickness: 1, height: 1, color: border)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    loc.translate('signup_ou_cadastre_com'),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: textSecondary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ),
+                Expanded(child: Divider(thickness: 1, height: 1, color: border)),
+              ],
+            ),
+            const SizedBox(height: 18),
+            _SocialButton(
+              icon: Icons.g_mobiledata_rounded,
+              label: 'Google',
+              scheme: scheme,
+              border: border,
+              onTap: _submitting ? null : _handleGoogleSignUp,
+            ),
+            const SizedBox(height: 28),
+          ],
+          const SizedBox(height: 28),
+          Center(
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              alignment: WrapAlignment.center,
+              spacing: 6,
+              children: [
+                Text(
+                  loc.translate('signup_ja_tem_conta'),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    loc.translate('signup_entrar'),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -340,332 +678,35 @@ class _SignupScreenState extends State<SignupScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
+
+            final formContent = _buildFormContent(
+              context,
+              theme: theme,
+              scheme: scheme,
+              loc: loc,
+              textSecondary: textSecondary,
+              border: border,
+              cardBackground: cardBackground,
+            );
+
+            if (isDesktop) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 56),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: formContent,
+                  ),
+                ),
+              );
+            }
+
             final horizontalPadding = constraints.maxWidth < 420 ? 18.0 : 28.0;
 
             return SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 0),
-                    WaveCardHeader(
-                      backgroundColor: scheme.primary,
-                      lineColor: Colors.white,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.max,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 12),
-                          Text(
-                            loc.translate('signup_titulo'),
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.4,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            loc.translate('signup_subtitulo'),
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.85),
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _FieldLabel(text: loc.translate('signup_nome_label'), color: textSecondary),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _nameController,
-                      enabled: !_submitting,
-                      textCapitalization: TextCapitalization.words,
-                      textInputAction: TextInputAction.next,
-                      decoration: _fieldDecoration(
-                        hint: loc.translate('signup_nome_hint'),
-                        icon: Icons.person_outline_rounded,
-                        scheme: scheme,
-                        border: border,
-                        fillColor: cardBackground,
-                      ),
-                      validator: (v) => _validateName(v, loc),
-                    ),
-                    const SizedBox(height: 16),
-                    _FieldLabel(text: loc.translate('signup_email_label'), color: textSecondary),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _emailController,
-                      enabled: !_submitting,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      decoration: _fieldDecoration(
-                        hint: loc.translate('signup_email_hint'),
-                        icon: Icons.mail_outline_rounded,
-                        scheme: scheme,
-                        border: border,
-                        fillColor: cardBackground,
-                      ),
-                      validator: (v) => _validateEmail(v, loc),
-                    ),
-                    const SizedBox(height: 16),
-                    _FieldLabel(text: loc.translate('signup_telefone_label'), color: textSecondary),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 128,
-                          child: InkWell(
-                            onTap: _onPickDialCode,
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                              decoration: BoxDecoration(
-                                color: cardBackground,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: border),
-                              ),
-                              child: Row(
-                                children: [
-                                  // CORRIGIDO: era um Icon(Icons.flag_outlined)
-                                  // fixo — agora mostra a bandeira real do
-                                  // país selecionado, tal como no
-                                  // add_contact_screen.
-                                  Text(_countryFlag, style: const TextStyle(fontSize: 18)),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      _dialCode,
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(Icons.arrow_drop_down_rounded),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _phoneNumberController,
-                            enabled: !_submitting,
-                            keyboardType: TextInputType.phone,
-                            textInputAction: TextInputAction.next,
-                            decoration: _fieldDecoration(
-                              hint: loc.translate('signup_telefone_hint'),
-                              icon: Icons.phone_android_outlined,
-                              scheme: scheme,
-                              border: border,
-                              fillColor: cardBackground,
-                            ),
-                            validator: (v) => _validatePhone(v, loc),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _FieldLabel(text: loc.translate('signup_senha_label'), color: textSecondary),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _passwordController,
-                      enabled: !_submitting,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.next,
-                      decoration: _fieldDecoration(
-                        hint: loc.translate('signup_senha_hint'),
-                        icon: Icons.lock_outline_rounded,
-                        scheme: scheme,
-                        border: border,
-                        fillColor: cardBackground,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                          onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword,
-                          ),
-                        ),
-                      ),
-                      validator: (v) => _validatePassword(v, loc),
-                      onFieldSubmitted: (_) {
-                        FocusScope.of(context).nextFocus();
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _FieldLabel(text: loc.translate('signup_confirmar_senha_label'), color: textSecondary),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _confirmPasswordController,
-                      enabled: !_submitting,
-                      obscureText: _obscureConfirmPassword,
-                      textInputAction: TextInputAction.done,
-                      decoration: _fieldDecoration(
-                        hint: loc.translate('signup_confirmar_senha_hint'),
-                        icon: Icons.lock_outline_rounded,
-                        scheme: scheme,
-                        border: border,
-                        fillColor: cardBackground,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureConfirmPassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                          onPressed: () => setState(
-                            () => _obscureConfirmPassword = !_obscureConfirmPassword,
-                          ),
-                        ),
-                      ),
-                      validator: (v) => _validateConfirmPassword(v, loc),
-                      onFieldSubmitted: (_) => _onSubmit(),
-                    ),
-                    const SizedBox(height: 16),
-                    _TermsCheckbox(
-                      value: _acceptedTerms,
-                      showError: _showTermsError,
-                      scheme: scheme,
-                      textSecondary: textSecondary,
-                      loc: loc,
-                      onChanged: (v) {
-                        setState(() {
-                          _acceptedTerms = v ?? false;
-                          if (_acceptedTerms) _showTermsError = false;
-                        });
-                      },
-                      onTermsTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const TermsPrivacyScreen(),
-                          ),
-                        );
-                      },
-                      onPrivacyTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const TermsPrivacyScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 22),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _submitting ? null : _onSubmit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: scheme.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: _submitting
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    loc.translate('signup_criar_conta'),
-                                    style: theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Icon(Icons.arrow_forward_rounded, size: 20),
-                                ],
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    // Divisor + botão social: só existe sentido
-                    // mostrá-los no Android (onde o Google ainda está
-                    // ativo). No iOS, sem nenhum botão social, o
-                    // divisor ficaria sozinho — por isso ambos entram
-                    // na mesma condição.
-                    if (defaultTargetPlatform == TargetPlatform.android) ...[
-                      Row(
-                        children: [
-                          Expanded(child: Divider(thickness: 1, height: 1, color: border)),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(
-                              loc.translate('signup_ou_cadastre_com'),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: textSecondary,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.6,
-                              ),
-                            ),
-                          ),
-                          Expanded(child: Divider(thickness: 1, height: 1, color: border)),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      _SocialButton(
-                        icon: Icons.g_mobiledata_rounded,
-                        label: 'Google',
-                        scheme: scheme,
-                        border: border,
-                        onTap: _submitting ? null : _handleGoogleSignUp,
-                      ),
-                      const SizedBox(height: 28),
-                    ],
-                    const SizedBox(height: 28),
-                    Center(
-                      child: Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        alignment: WrapAlignment.center,
-                        spacing: 6,
-                        children: [
-                          Text(
-                            loc.translate('signup_ja_tem_conta'),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: scheme.onSurface,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).maybePop(),
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(
-                              loc.translate('signup_entrar'),
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: scheme.primary,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
+              child: formContent,
             );
           },
         ),

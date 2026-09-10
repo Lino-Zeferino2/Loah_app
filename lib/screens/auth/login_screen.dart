@@ -1,10 +1,11 @@
-// ignore_for_file: duplicate_ignore, use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:loah_app/core/constants/app_breakpoints.dart';
 import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/services/auth_service.dart';
 import 'package:loah_app/core/services/user_service.dart';
@@ -50,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-String? _validateEmail(String? value, AppLocales loc) {
+  String? _validateEmail(String? value, AppLocales loc) {
     final v = value?.trim() ?? '';
     if (v.isEmpty) return loc.translate('auth_email_obrigatorio');
     if (!_emailRegex.hasMatch(v)) return loc.translate('auth_email_invalido');
@@ -65,98 +66,97 @@ String? _validateEmail(String? value, AppLocales loc) {
   }
 
   Future<void> _onSubmit() async {
-  final form = _formKey.currentState;
-  if (form == null) return;
-  if (!form.validate()) return;
+    final form = _formKey.currentState;
+    if (form == null) return;
+    if (!form.validate()) return;
 
-  setState(() => _submitting = true);
+    setState(() => _submitting = true);
 
-  try {
-    final userCredential = await _authService.signInWithEmail(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
+    try {
+      final userCredential = await _authService.signInWithEmail(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    final uid = userCredential.user?.uid;
-    if (uid != null) {
-      final userDoc = await _userService.getUserProfile(uid);
-      if (userDoc.exists) {
-        final userData = userDoc.data() as Map<String, dynamic>;
-        if (userData['blocked'] == true) {
-          await _authService.signOut();
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('A sua conta foi bloqueada. Contacte o administrador.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          setState(() => _submitting = false);
-          return;
+      final uid = userCredential.user?.uid;
+      if (uid != null) {
+        final userDoc = await _userService.getUserProfile(uid);
+        if (userDoc.exists) {
+          final userData = userDoc.data() as Map<String, dynamic>;
+          if (userData['blocked'] == true) {
+            await _authService.signOut();
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('A sua conta foi bloqueada. Contacte o administrador.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            setState(() => _submitting = false);
+            return;
+          }
         }
       }
-    }
 
-    // Recarrega o usuário para garantir que emailVerified está atualizado
-    // — o valor em memória pode estar desatualizado numa sessão antiga.
-    await userCredential.user?.reload();
-    final refreshedUser = _authService.currentUser;
+      // Recarrega o usuário para garantir que emailVerified está atualizado
+      // — o valor em memória pode estar desatualizado numa sessão antiga.
+      await userCredential.user?.reload();
+      final refreshedUser = _authService.currentUser;
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    // Reativa a rede do Firestore que foi desligada no logout
-    await FirebaseFirestore.instance.enableNetwork();
+      // Reativa a rede do Firestore que foi desligada no logout
+      await FirebaseFirestore.instance.enableNetwork();
 
-    if (refreshedUser != null && !refreshedUser.emailVerified) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => EmailVerificationScreen(
-            email: refreshedUser.email ?? '',
+      if (refreshedUser != null && !refreshedUser.emailVerified) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => EmailVerificationScreen(
+              email: refreshedUser.email ?? '',
+            ),
           ),
-        ),
+          (route) => false,
+        );
+        return;
+      }
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const RootShell()),
         (route) => false,
       );
-      return;
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'Usuario nao encontrado';
+          break;
+        case 'wrong-password':
+          message = 'Senha incorreta';
+          break;
+        case 'invalid-email':
+          message = 'Email invalido';
+          break;
+        case 'invalid-credential':
+          message = 'Email ou senha incorretos';
+          break;
+        default:
+          message = 'Erro ao entrar: ${e.message}';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro inesperado: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const RootShell()),
-      (route) => false,
-    );
-  } on FirebaseAuthException catch (e) {
-    if (!mounted) return;
-    String message;
-    switch (e.code) {
-      case 'user-not-found':
-        message = 'Usuario nao encontrado';
-        break;
-      case 'wrong-password':
-        message = 'Senha incorreta';
-        break;
-      case 'invalid-email':
-        message = 'Email invalido';
-        break;
-      case 'invalid-credential':
-        message = 'Email ou senha incorretos';
-        break;
-      default:
-        message = 'Erro ao entrar: ${e.message}';
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  } catch (e) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Erro inesperado: $e')),
-    );
-  } finally {
-    if (mounted) setState(() => _submitting = false);
   }
-}
-
 
   Future<void> _handleGoogleLogin() async {
     try {
@@ -229,82 +229,263 @@ String? _validateEmail(String? value, AppLocales loc) {
   // bloco `else if (defaultTargetPlatform == TargetPlatform.iOS)` no
   // Row de botões sociais.
   //
-  // Future<void> _handleAppleLogin() async {
-  //   if (defaultTargetPlatform == TargetPlatform.android) {
-  //     if (!mounted) return;
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('O login com Apple está disponível apenas para iOS'),
-  //         duration: Duration(seconds: 3),
-  //       ),
-  //     );
-  //     return;
-  //   }
-  //
-  //   try {
-  //     final userCredential = await _authService.signInWithApple();
-  //     if (!mounted) return;
-  //     final user = userCredential.user;
-  //     if (user != null) {
-  //       final doc = await _userService.getUserProfile(user.uid);
-  //       if (!doc.exists) {
-  //         await _userService.createUserProfile(
-  //           uid: user.uid,
-  //           name: user.displayName ?? 'Usuario Apple',
-  //           email: user.email ?? '',
-  //         );
-  //       } else {
-  //         final userData = doc.data() as Map<String, dynamic>;
-  //         if (userData['blocked'] == true) {
-  //           await _authService.signOut();
-  //           if (!mounted) return;
-  //           ScaffoldMessenger.of(context).showSnackBar(
-  //             const SnackBar(
-  //               content: Text('A sua conta foi bloqueada. Contacte o administrador.'),
-  //               backgroundColor: Colors.red,
-  //             ),
-  //           );
-  //           return;
-  //         }
-  //       }
-  //       if (!mounted) return;
-  //       await FirebaseFirestore.instance.enableNetwork();
-  //       Navigator.of(context).pushAndRemoveUntil(
-  //         MaterialPageRoute(builder: (_) => const RootShell()),
-  //         (route) => false,
-  //       );
-  //     }
-  //   } on FirebaseAuthException catch (e) {
-  //     if (!mounted) return;
-  //     if (e.code != 'canceled') {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(content: Text('Erro Apple: ${e.message}')),
-  //       );
-  //     }
-  //   } on FirebaseException catch (e) {
-  //     if (!mounted) return;
-  //     String message;
-  //     if (e.code == 'permission-denied') {
-  //       message = 'Erro de permissao ao acessar seus dados. '
-  //           'As regras de seguranca do Firestore podem nao ter sido '
-  //           'implantadas ainda. Contate o administrador.';
-  //     } else {
-  //       message = 'Erro no Firestore: ${e.message}';
-  //     }
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text(message)),
-  //     );
-  //   } catch (e) {
-  //     if (!mounted) return;
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Erro inesperado: $e')),
-  //     );
-  //   }
-  // }
+  // Future<void> _handleAppleLogin() async { ... } — inalterado, omitido aqui.
+
+  /// Conteúdo do formulário, partilhado entre mobile e desktop. Não inclui
+  /// scroll, padding externo, nem o Spacer de preenchimento — cada
+  /// variante do build() decide como envolver isto.
+  Widget _buildFormContent(
+    BuildContext context, {
+    required ThemeData theme,
+    required ColorScheme scheme,
+    required Color textSecondary,
+    required Color border,
+    required Color cardBackground,
+    required AppLocales loc,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        WaveCardHeader(
+          backgroundColor: scheme.primary,
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 12),
+              Text(
+                loc.translate('auth_bem_vindo_volta'),
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                loc.translate('auth_login_subtitle'),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _FieldLabel(text: loc.translate('auth_email_label'), color: textSecondary),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _emailController,
+                enabled: !_submitting,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  hintText: loc.translate('auth_email_hint'),
+                  prefixIcon: const Icon(Icons.mail_outline_rounded),
+                  filled: true,
+                  fillColor: cardBackground,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: scheme.primary),
+                  ),
+                ),
+                validator: (value) => _validateEmail(value, loc),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _FieldLabel(text: loc.translate('auth_senha_label'), color: textSecondary),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const PasswordRecoveryScreen()),
+                      );
+                    },
+                    child: Text(
+                      loc.translate('auth_esqueci_senha'),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _passwordController,
+                enabled: !_submitting,
+                obscureText: _obscure,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  hintText: '*******',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscure
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                  ),
+                  filled: true,
+                  fillColor: cardBackground,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: scheme.primary),
+                  ),
+                ),
+                validator: (value) => _validatePassword(value, loc),
+                onFieldSubmitted: (_) => _onSubmit(),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submitting ? null : _onSubmit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: scheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: _submitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              loc.translate('auth_entrar_btn'),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.arrow_forward_rounded, size: 20),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              // Divisor + botão social: só existe sentido
+              // mostrá-los no Android (onde o Google ainda
+              // está ativo). No iOS, sem nenhum botão
+              // social, o divisor ficaria sozinho — por
+              // isso ambos entram na mesma condição.
+              if (defaultTargetPlatform == TargetPlatform.android) ...[
+                Row(
+                  children: [
+                    Expanded(child: Divider(thickness: 1, height: 1, color: border)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        loc.translate('auth_ou_continue_com'),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: textSecondary,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Divider(thickness: 1, height: 1, color: border)),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                _SocialButton(
+                  icon: const FaIcon(FontAwesomeIcons.google, size: 16),
+                  label: 'Google',
+                  onTap: _submitting ? null : _handleGoogleLogin,
+                ),
+                const SizedBox(height: 28),
+              ],
+              const SizedBox(height: 28),
+              Center(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  alignment: WrapAlignment.center,
+                  spacing: 6,
+                  children: [
+                    Text(
+                      loc.translate('auth_nao_tem_conta'),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const SignupScreen()),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        loc.translate('auth_cadastre_se'),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: scheme.primary,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-final theme = Theme.of(context);
+    final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final textSecondary = scheme.onSurface.withValues(alpha: 0.65);
     final border = scheme.onSurface.withValues(alpha: 0.14);
@@ -315,6 +496,30 @@ final theme = Theme.of(context);
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
+
+            final formContent = _buildFormContent(
+              context,
+              theme: theme,
+              scheme: scheme,
+              textSecondary: textSecondary,
+              border: border,
+              cardBackground: cardBackground,
+              loc: loc,
+            );
+
+            if (isDesktop) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 56),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: formContent,
+                  ),
+                ),
+              );
+            }
+
             final horizontalPadding = constraints.maxWidth < 420 ? 18.0 : 28.0;
 
             return SingleChildScrollView(
@@ -325,239 +530,7 @@ final theme = Theme.of(context);
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      WaveCardHeader(
-                        backgroundColor: scheme.primary,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.max,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const SizedBox(height: 12),
-Text(
-                              loc.translate('auth_bem_vindo_volta'),
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.4,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              loc.translate('auth_login_subtitle'),
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-_FieldLabel(text: loc.translate('auth_email_label'), color: textSecondary),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _emailController,
-                              enabled: !_submitting,
-                              keyboardType: TextInputType.emailAddress,
-                              textInputAction: TextInputAction.next,
-                              decoration: InputDecoration(
-hintText: loc.translate('auth_email_hint'),
-                                prefixIcon: const Icon(Icons.mail_outline_rounded),
-                                filled: true,
-                                fillColor: cardBackground,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(color: border),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(color: border),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(color: scheme.primary),
-                                ),
-                              ),
-validator: (value) => _validateEmail(value, loc),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-_FieldLabel(text: loc.translate('auth_senha_label'), color: textSecondary),
-                                TextButton(
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size.zero,
-                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(builder: (_) => const PasswordRecoveryScreen()),
-                                    );
-                                  },
-child: Text(
-                                    loc.translate('auth_esqueci_senha'),
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: scheme.primary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _passwordController,
-                              enabled: !_submitting,
-                              obscureText: _obscure,
-                              textInputAction: TextInputAction.done,
-                              decoration: InputDecoration(
-                                hintText: '*******',
-                                prefixIcon: const Icon(Icons.lock_outline_rounded),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscure
-                                        ? Icons.visibility_outlined
-                                        : Icons.visibility_off_outlined,
-                                  ),
-                                  onPressed: () => setState(() => _obscure = !_obscure),
-                                ),
-                                filled: true,
-                                fillColor: cardBackground,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(color: border),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(color: border),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(color: scheme.primary),
-                                ),
-                              ),
-validator: (value) => _validatePassword(value, loc),
-                              onFieldSubmitted: (_) => _onSubmit(),
-                            ),
-                            const SizedBox(height: 24),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: _submitting ? null : _onSubmit,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: scheme.primary,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: _submitting
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
-                                      )
-                                    : Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-Text(
-                                            loc.translate('auth_entrar_btn'),
-                                            style: theme.textTheme.titleMedium?.copyWith(
-                                              fontWeight: FontWeight.w800,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          const Icon(Icons.arrow_forward_rounded, size: 20),
-                                        ],
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                            // Divisor + botão social: só existe sentido
-                            // mostrá-los no Android (onde o Google ainda
-                            // está ativo). No iOS, sem nenhum botão
-                            // social, o divisor ficaria sozinho — por
-                            // isso ambos entram na mesma condição.
-                            if (defaultTargetPlatform == TargetPlatform.android) ...[
-                              Row(
-                                children: [
-                                  Expanded(child: Divider(thickness: 1, height: 1, color: border)),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-child: Text(
-                                      loc.translate('auth_ou_continue_com'),
-                                      style: theme.textTheme.labelSmall?.copyWith(
-                                        color: textSecondary,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.6,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(child: Divider(thickness: 1, height: 1, color: border)),
-                                ],
-                              ),
-                              const SizedBox(height: 18),
-                              _SocialButton(
-                                icon: const FaIcon(FontAwesomeIcons.google, size: 16),
-                                label: 'Google',
-                                onTap: _submitting ? null : _handleGoogleLogin,
-                              ),
-                              const SizedBox(height: 28),
-                            ],
-                            const SizedBox(height: 28),
-                            const SizedBox(height: 28),
-                            Center(
-                              child: Wrap(
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                alignment: WrapAlignment.center,
-                                spacing: 6,
-                                children: [
-Text(
-                                    loc.translate('auth_nao_tem_conta'),
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: scheme.onSurface,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(builder: (_) => const SignupScreen()),
-                                      );
-                                    },
-                                    style: TextButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: Size.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    ),
-child: Text(
-                                      loc.translate('auth_cadastre_se'),
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        color: scheme.primary,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      formContent,
                       const Spacer(),
                       const SizedBox(height: 18),
                     ],
