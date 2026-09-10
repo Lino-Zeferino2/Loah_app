@@ -24,6 +24,19 @@ class ContactListTile extends StatelessWidget {
     this.onMessage,
   });
 
+  /// CORRIGIDO: proteção contra crash de renderização no Flutter Web.
+  /// Se `contact.initials` vier vazio ou contiver caracteres de
+  /// substituição Unicode (dados corrompidos/mal codificados), o
+  /// CanvasKit lança uma assertion fatal ao tentar desenhar o texto
+  /// numa caixa pequena (o avatar 44x44). Isto é só uma rede de
+  /// segurança visual — a origem real (o getter `initials` no
+  /// ContactModel) continua por corrigir.
+  String get _safeInitials {
+    final raw = contact.initials.trim();
+    if (raw.isEmpty || raw.contains('\uFFFD')) return '?';
+    return raw;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
@@ -47,7 +60,7 @@ class ContactListTile extends StatelessWidget {
                     color: avatarColor.withValues(alpha: 0.18),
                     child: contact.avatarUrl == null
                         ? Center(
-                            child: Text(contact.initials,
+                            child: Text(_safeInitials,
                                 style: TextStyle(fontWeight: FontWeight.w700, color: avatarColor)),
                           )
                         : GoalImage(path: contact.avatarUrl!),
@@ -94,7 +107,7 @@ class ContactListTile extends StatelessWidget {
                       color: colors.cardBackgroundAlt,
                       borderRadius: BorderRadius.circular(100),
                     ),
-child: Text(
+                    child: Text(
                       AppLocales.of(context).translateRelationshipTag(contact.relationshipTag),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

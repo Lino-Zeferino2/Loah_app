@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
 import 'package:loah_app/screens/contacts/import_contacts_screen.dart';
+import '../../core/constants/app_breakpoints.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/navigation/navigation_controller.dart';
@@ -23,6 +24,12 @@ import 'widgets/favorite_contact_avatar.dart';
 /// grouped alphabetically underneath.
 ///
 /// Reads contacts from Firestore via [ContactService] stream.
+///
+/// Layout: a lista permanece vertical em ambos os tamanhos — o
+/// ContactListTile é uma linha densa (avatar, nome, tag, 3 ações) que
+/// não se presta a um grid estreito sem redesenho. Em desktop, só a
+/// largura máxima centrada aumenta ligeiramente (520 → 640) para dar
+/// mais respiro horizontal.
 class ContactsScreen extends StatefulWidget {
   const ContactsScreen({super.key});
 
@@ -234,7 +241,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   ],
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 4),
-child: ContactListTile(
+                child: ContactListTile(
                     contact: grouped[letter]![i],
                     avatarColor: _palette[i % _palette.length],
                     onTap: () {
@@ -271,19 +278,20 @@ child: ContactListTile(
     return true;
   }
 
-
   Future<void> _addContact() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const AddContactScreen()),
     );
     // The Firestore stream will automatically update the list.
   }
-Future<void> _openImportContacts() async {
+
+  Future<void> _openImportContacts() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const ImportContactsScreen()),
     );
     // The Firestore stream will automatically update the list.
   }
+
   Future<void> _openFilters() async {
     // Build available relationships from current stream data
     final snapshot = await _contactService.getContactsStream().first;
@@ -313,58 +321,65 @@ Future<void> _openImportContacts() async {
 
     return Scaffold(
       drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
-    appBar: LoahAppBar(
-  title: AppLocales.of(context).translate('contacts_titulo'),
-  actions: [
-    PopupMenuButton<void>(
-      icon: const Icon(Icons.more_vert),
-      onSelected: (_) {},
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          onTap: _openImportContacts,
-          child: Row(
-            children: [
-              const Icon(Icons.contact_page_outlined, size: 20),
-              const SizedBox(width: 10),
-              Text(AppLocales.of(context).translate('importContacts_titulo')),
+      appBar: LoahAppBar(
+        title: AppLocales.of(context).translate('contacts_titulo'),
+        actions: [
+          PopupMenuButton<void>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (_) {},
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                onTap: _openImportContacts,
+                child: Row(
+                  children: [
+                    const Icon(Icons.contact_page_outlined, size: 20),
+                    const SizedBox(width: 10),
+                    Text(AppLocales.of(context).translate('importContacts_titulo')),
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
-      ],
-    ),
-  ],
-),
-body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Column(
-              children: [
-                // Search bar fixa no topo (fora do ListView para manter o foco)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: ContactSearchBar(
-                    controller: _searchController,
-                    onChanged: (v) => setState(() => _query = v),
-                    onFilterTap: _openFilters,
-                    hasActiveFilters: _filters.isActive,
-                  ),
+        ],
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
+            final maxWidth = isDesktop ? 640.0 : 520.0;
+
+            return Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: Column(
+                  children: [
+                    // Search bar fixa no topo (fora do ListView para manter o foco)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: ContactSearchBar(
+                        controller: _searchController,
+                        onChanged: (v) => setState(() => _query = v),
+                        onFilterTap: _openFilters,
+                        hasActiveFilters: _filters.isActive,
+                      ),
+                    ),
+                    // Resultados da lista
+                    Expanded(
+                      child: StreamBuilder<QuerySnapshot>(
+                        stream: _contactService.getContactsStream(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          return _buildContactListContent(snapshot);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                // Resultados da lista
-                Expanded(
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: _contactService.getContactsStream(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      return _buildContactListContent(snapshot);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
       floatingActionButton: FloatingActionButton(

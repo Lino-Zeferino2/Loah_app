@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_breakpoints.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/services/contact_service.dart';
 import '../../core/theme/app_theme.dart';
@@ -13,6 +14,9 @@ import 'add_contact_screen.dart';
 /// it's been too long since the last touchpoint, quick buttons to log
 /// a new interaction, the full interaction history, and a favorite
 /// toggle with confirmation dialog.
+///
+/// Layout: mobile mantém a lista vertical original. Desktop centra o
+/// mesmo conteúdo numa coluna de largura máxima (700px).
 class ContactDetailScreen extends StatefulWidget {
   final ContactModel contact;
 
@@ -26,6 +30,14 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   late ContactModel _contact = widget.contact;
 
   final ContactService _contactService = ContactService();
+
+  /// CORRIGIDO: mesma proteção contra crash de fontes do ContactListTile
+  /// — ver comentário lá para o porquê.
+  String get _safeInitials {
+    final raw = _contact.initials.trim();
+    if (raw.isEmpty || raw.contains('\uFFFD')) return '?';
+    return raw;
+  }
 
   /// Alterna o estado de favorito com confirmação por AlertDialog.
   Future<void> _toggleFavorite() async {
@@ -134,7 +146,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     );
     if (confirm != true) return;
 
-try {
+    try {
       // Apaga também a foto de perfil do Storage (se existir) para
       // não deixar ficheiros órfãos depois de remover o contacto.
       if (_contact.avatarUrl != null) {
@@ -344,12 +356,289 @@ try {
     await _logInteraction(InteractionType.call);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final loc = AppLocales.of(context);
+  /// Conteúdo principal, partilhado entre mobile e desktop.
+  List<Widget> _buildContentChildren(BuildContext context, AppLocales loc) {
     final colors = context.loahColors;
     final contact = _contact;
     final sortedInteractions = [...contact.interactions]..sort((a, b) => b.date.compareTo(a.date));
+
+    return [
+      LoahCard(
+        child: Column(
+          children: [
+            ClipOval(
+              child: Container(
+                width: 84,
+                height: 84,
+                color: colors.cardBackgroundAlt,
+                child: contact.avatarUrl == null
+                    ? Center(
+                        child: Text(
+                          _safeInitials,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 24),
+                        ),
+                      )
+                    : GoalImage(path: contact.avatarUrl!),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              contact.name,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: colors.accentBlue.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Text(
+                loc.translateRelationshipTag(contact.relationshipTag),
+                style: TextStyle(color: colors.accentBlue, fontWeight: FontWeight.w600),
+              ),
+            ),
+            if (contact.email != null || contact.phone != null) ...[
+              const SizedBox(height: 12),
+              if (contact.email != null)
+                Text(contact.email!, style: Theme.of(context).textTheme.bodyMedium),
+              if (contact.phone != null)
+                Text(contact.phone!, style: Theme.of(context).textTheme.bodyMedium),
+            ],
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _editContact,
+                icon: const Icon(Icons.edit_outlined, size: 16),
+                label: Text(loc.translate('contactDetail_editar_contato')),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _deleteContact,
+                icon: Icon(Icons.delete_outline, size: 16, color: colors.negative),
+                label: Text(loc.translate('contactDetail_remover_contato_btn'), style: TextStyle(color: colors.negative)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  side: BorderSide(color: colors.negative.withValues(alpha: 0.4)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 16),
+
+      if (contact.isOverdue)
+        Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: colors.negative.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: colors.negative.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.notifications_active_outlined, color: colors.negative, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  // CORRIGIDO: antes mostrava sempre a contagem de dias
+                  // (incluindo o valor sentinela 999 para "nunca
+                  // contactado"), o que não faz sentido para um contacto
+                  // recém-criado. Agora distingue os dois casos.
+                  contact.lastContactedAt == null
+                      ? '${loc.translate('contactDetail_atrasado_prefix_nunca')} ${contact.name.split(' ').first}?'
+                      : '${loc.translate('contactDetail_atrasado_prefix')} ${contact.daysSinceLastContact} ${loc.translate('contactDetail_atrasado_dias')} '
+                        '${loc.translate('contactDetail_atrasado_meio')} ${contact.name.split(' ').first}?',
+                  style: TextStyle(color: colors.negative, fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+      LoahCard(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(loc.translate('contactDetail_ultimo_contato'), style: Theme.of(context).textTheme.labelSmall),
+                Text(
+                  contact.lastContactedAt == null
+                      ? loc.translate('contactDetail_nenhum_ainda')
+                      : _relativeLabel(contact.lastContactedAt!),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            GestureDetector(
+              onTap: _pickFrequency,
+              child: Row(
+                children: [
+                  Text(
+                    _frequencyLabel(contact.desiredContactFrequencyDays),
+                    style: TextStyle(color: colors.accentBlue, fontWeight: FontWeight.w600),
+                  ),
+                  Icon(Icons.chevron_right, size: 18, color: colors.accentBlue),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 16),
+
+      Text(
+        loc.translate('contactDetail_registrar_contato'),
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+      ),
+      const SizedBox(height: 10),
+      Row(
+        children: [
+          Expanded(
+            child: _QuickLogButton(
+              icon: Icons.call_outlined,
+              label: loc.translate('contactDetail_ligacao'),
+              onTap: _onCallButtonPressed,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _QuickLogButton(
+              icon: Icons.chat_bubble_outline,
+              label: loc.translate('contactDetail_mensagem'),
+              onTap: () async {
+                if (_contact.phone != null) {
+                  final interagiu = await showMessageOptions(
+                    context,
+                    _contact.phone!,
+                    contactName: _contact.name.split(' ').first,
+                  );
+                  if (!mounted || !interagiu) return;
+                  await _logInteraction(InteractionType.message);
+                } else {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(loc.translate('contactDetail_sem_telefone'))),
+                  );
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _QuickLogButton(
+              icon: Icons.more_horiz,
+              label: loc.translate('contactDetail_outro'),
+              onTap: _showOtherInteractionSheet,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 20),
+
+      Text(
+        loc.translate('contactDetail_historico'),
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+      ),
+      const SizedBox(height: 10),
+      if (sortedInteractions.isEmpty)
+        Text(
+          loc.translate('contactDetail_sem_interacoes'),
+          style: Theme.of(context).textTheme.bodySmall,
+        )
+      else
+        for (final interaction in sortedInteractions)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Dismissible(
+              key: ValueKey('${interaction.date.millisecondsSinceEpoch}-${interaction.type.name}-${sortedInteractions.indexOf(interaction)}'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade400,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.delete_outline, color: Colors.white, size: 22),
+              ),
+              confirmDismiss: (direction) async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(loc.translate('contactDetail_remover_interacao_titulo')),
+                    content: Text(loc.translate('contactDetail_remover_interacao_msg')),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: Text(loc.translate('contactDetail_cancelar')),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: Text(loc.translate('contactDetail_remover')),
+                      ),
+                    ],
+                  ),
+                );
+                return confirm ?? false;
+              },
+              onDismissed: (direction) {
+                final originalIndex = _contact.interactions.indexOf(interaction);
+                if (originalIndex != -1) {
+                  _deleteInteraction(originalIndex);
+                }
+              },
+              child: LoahCard(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                child: Row(
+                  children: [
+                    Icon(
+                      _interactionIcon(interaction.type, note: interaction.note),
+                      size: 18,
+                      color: colors.accentBlue,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        interaction.type == InteractionType.other && interaction.note != null
+                            ? interaction.note!
+                            : loc.translate('interaction_${interaction.type.name}'),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    Text(
+                      _relativeLabel(interaction.date),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
+    final contact = _contact;
 
     return Scaffold(
       appBar: LoahAppBarSimple(
@@ -368,279 +657,28 @@ try {
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            LoahCard(
-              child: Column(
-                children: [
-                  ClipOval(
-                    child: Container(
-                      width: 84,
-                      height: 84,
-                      color: colors.cardBackgroundAlt,
-                      child: contact.avatarUrl == null
-                          ? Center(
-                              child: Text(
-                                contact.initials,
-                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 24),
-                              ),
-                            )
-                          : GoalImage(path: contact.avatarUrl!),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    contact.name,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.only(top: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: colors.accentBlue.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: Text(
-                      loc.translateRelationshipTag(contact.relationshipTag),
-                      style: TextStyle(color: colors.accentBlue, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  if (contact.email != null || contact.phone != null) ...[
-                    const SizedBox(height: 12),
-                    if (contact.email != null)
-                      Text(contact.email!, style: Theme.of(context).textTheme.bodyMedium),
-                    if (contact.phone != null)
-                      Text(contact.phone!, style: Theme.of(context).textTheme.bodyMedium),
-                  ],
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: _editContact,
-                      icon: const Icon(Icons.edit_outlined, size: 16),
-                      label: Text(loc.translate('contactDetail_editar_contato')),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: _deleteContact,
-                      icon: Icon(Icons.delete_outline, size: 16, color: colors.negative),
-                      label: Text(loc.translate('contactDetail_remover_contato_btn'), style: TextStyle(color: colors.negative)),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        side: BorderSide(color: colors.negative.withValues(alpha: 0.4)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
+            final children = _buildContentChildren(context, loc);
 
-            if (contact.isOverdue)
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: colors.negative.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: colors.negative.withValues(alpha: 0.3)),
+            if (isDesktop) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 700),
+                    child: Column(children: children),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.notifications_active_outlined, color: colors.negative, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        // CORRIGIDO: antes mostrava sempre a contagem de dias
-                        // (incluindo o valor sentinela 999 para "nunca
-                        // contactado"), o que não faz sentido para um contacto
-                        // recém-criado. Agora distingue os dois casos.
-                        contact.lastContactedAt == null
-                            ? '${loc.translate('contactDetail_atrasado_prefix_nunca')} ${contact.name.split(' ').first}?'
-                            : '${loc.translate('contactDetail_atrasado_prefix')} ${contact.daysSinceLastContact} ${loc.translate('contactDetail_atrasado_dias')} '
-                              '${loc.translate('contactDetail_atrasado_meio')} ${contact.name.split(' ').first}?',
-                        style: TextStyle(color: colors.negative, fontWeight: FontWeight.w600, fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              );
+            }
 
-            LoahCard(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(loc.translate('contactDetail_ultimo_contato'), style: Theme.of(context).textTheme.labelSmall),
-                      Text(
-                        contact.lastContactedAt == null
-                            ? loc.translate('contactDetail_nenhum_ainda')
-                            : _relativeLabel(contact.lastContactedAt!),
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ],
-                  ),
-                  GestureDetector(
-                    onTap: _pickFrequency,
-                    child: Row(
-                      children: [
-                        Text(
-                          _frequencyLabel(contact.desiredContactFrequencyDays),
-                          style: TextStyle(color: colors.accentBlue, fontWeight: FontWeight.w600),
-                        ),
-                        Icon(Icons.chevron_right, size: 18, color: colors.accentBlue),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            Text(
-              loc.translate('contactDetail_registrar_contato'),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _QuickLogButton(
-                    icon: Icons.call_outlined,
-                    label: loc.translate('contactDetail_ligacao'),
-                    onTap: _onCallButtonPressed,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _QuickLogButton(
-                    icon: Icons.chat_bubble_outline,
-                    label: loc.translate('contactDetail_mensagem'),
-                    onTap: () async {
-                      if (_contact.phone != null) {
-                        final interagiu = await showMessageOptions(
-                          context,
-                          _contact.phone!,
-                          contactName: _contact.name.split(' ').first,
-                        );
-                        if (!mounted || !interagiu) return;
-                        await _logInteraction(InteractionType.message);
-                      } else {
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(loc.translate('contactDetail_sem_telefone'))),
-                        );
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _QuickLogButton(
-                    icon: Icons.more_horiz,
-                    label: loc.translate('contactDetail_outro'),
-                    onTap: _showOtherInteractionSheet,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            Text(
-              loc.translate('contactDetail_historico'),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 10),
-            if (sortedInteractions.isEmpty)
-              Text(
-                loc.translate('contactDetail_sem_interacoes'),
-                style: Theme.of(context).textTheme.bodySmall,
-              )
-            else
-              for (final interaction in sortedInteractions)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Dismissible(
-                    key: ValueKey('${interaction.date.millisecondsSinceEpoch}-${interaction.type.name}-${sortedInteractions.indexOf(interaction)}'),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade400,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(Icons.delete_outline, color: Colors.white, size: 22),
-                    ),
-                    confirmDismiss: (direction) async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: Text(loc.translate('contactDetail_remover_interacao_titulo')),
-                          content: Text(loc.translate('contactDetail_remover_interacao_msg')),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(false),
-                              child: Text(loc.translate('contactDetail_cancelar')),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(true),
-                              style: TextButton.styleFrom(foregroundColor: Colors.red),
-                              child: Text(loc.translate('contactDetail_remover')),
-                            ),
-                          ],
-                        ),
-                      );
-                      return confirm ?? false;
-                    },
-                    onDismissed: (direction) {
-                      final originalIndex = _contact.interactions.indexOf(interaction);
-                      if (originalIndex != -1) {
-                        _deleteInteraction(originalIndex);
-                      }
-                    },
-                    child: LoahCard(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _interactionIcon(interaction.type, note: interaction.note),
-                            size: 18,
-                            color: colors.accentBlue,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              interaction.type == InteractionType.other && interaction.note != null
-                                  ? interaction.note!
-                                  : loc.translate('interaction_${interaction.type.name}'),
-                              style: const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          Text(
-                            _relativeLabel(interaction.date),
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-          ],
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: children,
+            );
+          },
         ),
       ),
     );
@@ -706,4 +744,3 @@ class _QuickLogButton extends StatelessWidget {
     );
   }
 }
-

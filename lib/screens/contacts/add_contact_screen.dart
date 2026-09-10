@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../core/constants/app_breakpoints.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/services/contact_service.dart';
 import '../../core/theme/app_theme.dart';
@@ -15,6 +16,9 @@ import 'widgets/country_code_picker_sheet.dart';
 /// Only "Nome Completo" is required — photo and e-mail are explicitly
 /// optional, matching how [ContactModel.email]/[avatarUrl] are already
 /// nullable.
+///
+/// Layout: mobile mantém o formulário em largura total (original).
+/// Desktop centra o mesmo formulário numa coluna de largura máxima.
 class AddContactScreen extends StatefulWidget {
   final ContactModel? existingContact;
 
@@ -27,7 +31,7 @@ class AddContactScreen extends StatefulWidget {
 }
 
 class _AddContactScreenState extends State<AddContactScreen> {
-static const _relationshipValues = [
+  static const _relationshipValues = [
     'Familiar',
     'Amigo',
     'Amiga',
@@ -51,7 +55,8 @@ static const _relationshipValues = [
   String _countryDialCode = '+351';
   String? _avatarPath;
   String? _nameError;
-  bool _isSaving = false; // NOVO
+  bool _isSaving = false;
+
   @override
   void initState() {
     super.initState();
@@ -139,15 +144,14 @@ static const _relationshipValues = [
     }
   }
 
-
-Future<void> _submit() async {
+  Future<void> _submit() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       setState(() => _nameError = AppLocales.of(context).translate('addContact_nome_erro'));
       return;
     }
 
-    setState(() => _isSaving = true); // NOVO
+    setState(() => _isSaving = true);
 
     final existing = widget.existingContact;
     final contactId = existing?.id ?? 'contact_${DateTime.now().microsecondsSinceEpoch}';
@@ -205,6 +209,177 @@ Future<void> _submit() async {
       if (mounted) setState(() => _isSaving = false);
     }
   }
+
+  /// Conteúdo do formulário, partilhado entre mobile e desktop.
+  Widget _buildFormContent(BuildContext context, {required AppLocales loc}) {
+    final colors = context.loahColors;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Center(
+          child: Column(
+            children: [
+              GestureDetector(
+                onTap: _pickPhoto,
+                child: Stack(
+                  children: [
+                    ClipOval(
+                      child: Container(
+                        width: 110,
+                        height: 110,
+                        color: colors.cardBackgroundAlt,
+                        child: _avatarPath == null
+                            ? Icon(Icons.person, size: 50, color: context.textSecondary)
+                            : GoalImage(path: _avatarPath!),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: colors.accentBlue,
+                        child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                loc.translate('addContact_toque_foto'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 26),
+
+        _SectionLabel(loc.translate('addContact_nome_label')),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _nameController,
+          onChanged: (_) {
+            if (_nameError != null) setState(() => _nameError = null);
+          },
+          decoration: InputDecoration(
+            hintText: loc.translate('addContact_nome_hint'),
+            errorText: _nameError,
+            filled: true,
+            fillColor: colors.cardBackgroundAlt,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        _SectionLabel(loc.translate('addContact_email_label')),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: InputDecoration(
+            hintText: loc.translate('addContact_email_hint'),
+            filled: true,
+            fillColor: colors.cardBackgroundAlt,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        _SectionLabel(loc.translate('addContact_telefone_label')),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            InkWell(
+              onTap: _pickCountryCode,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                decoration: BoxDecoration(
+                  color: colors.cardBackgroundAlt,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(_countryFlag, style: const TextStyle(fontSize: 16)),
+                    const SizedBox(width: 6),
+                    Text(_countryDialCode, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(width: 4),
+                    Icon(Icons.keyboard_arrow_down, size: 16, color: context.textSecondary),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  hintText: loc.translate('addContact_telefone_hint'),
+                  filled: true,
+                  fillColor: colors.cardBackgroundAlt,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        _SectionLabel(loc.translate('addContact_grau_label')),
+        const SizedBox(height: 8),
+        ChipSelector<String>(
+          options: _relationshipValues
+              .map((v) => ChipOption(loc.translateRelationshipTag(v), v))
+              .toList(),
+          selected: _relationship,
+          onChanged: (v) => setState(() => _relationship = v),
+        ),
+        const SizedBox(height: 28),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _isSaving ? null : _submit,
+            icon: _isSaving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Icon(Icons.save_outlined, size: 18),
+            label: Text(
+              widget.isEditing ? loc.translate('addContact_salvar_alteracoes') : loc.translate('addContact_salvar_contato'),
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colors.accentBlue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocales.of(context);
@@ -214,7 +389,7 @@ Future<void> _submit() async {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? loc.translate('addContact_titulo_editar') : loc.translate('addContact_titulo_novo')),
-               actions: [
+        actions: [
           TextButton(
             onPressed: _isSaving ? null : _submit,
             child: _isSaving
@@ -234,167 +409,28 @@ Future<void> _submit() async {
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Center(
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: _pickPhoto,
-                    child: Stack(
-                      children: [
-                        ClipOval(
-                          child: Container(
-                            width: 110,
-                            height: 110,
-                            color: colors.cardBackgroundAlt,
-                            child: _avatarPath == null
-                                ? Icon(Icons.person, size: 50, color: context.textSecondary)
-                                : GoalImage(path: _avatarPath!),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: CircleAvatar(
-                            radius: 16,
-                            backgroundColor: colors.accentBlue,
-                            child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    loc.translate('addContact_toque_foto'),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 26),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
+            final form = _buildFormContent(context, loc: loc);
 
-            _SectionLabel(loc.translate('addContact_nome_label')),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _nameController,
-              onChanged: (_) {
-                if (_nameError != null) setState(() => _nameError = null);
-              },
-              decoration: InputDecoration(
-              hintText: loc.translate('addContact_nome_hint'),
-                errorText: _nameError,
-                filled: true,
-                fillColor: colors.cardBackgroundAlt,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            _SectionLabel(loc.translate('addContact_email_label')),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                hintText: loc.translate('addContact_email_hint'),
-                filled: true,
-                fillColor: colors.cardBackgroundAlt,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            _SectionLabel(loc.translate('addContact_telefone_label')),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                InkWell(
-                  onTap: _pickCountryCode,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: colors.cardBackgroundAlt,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_countryFlag, style: const TextStyle(fontSize: 16)),
-                        const SizedBox(width: 6),
-                        Text(_countryDialCode, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        const SizedBox(width: 4),
-                        Icon(Icons.keyboard_arrow_down, size: 16, color: context.textSecondary),
-                      ],
-                    ),
+            if (isDesktop) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: form,
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      hintText: loc.translate('addContact_telefone_hint'),
-                      filled: true,
-                      fillColor: colors.cardBackgroundAlt,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
+              );
+            }
 
-_SectionLabel(loc.translate('addContact_grau_label')),
-            const SizedBox(height: 8),
-            
-              ChipSelector<String>(
-              options: _relationshipValues
-                  .map((v) => ChipOption(loc.translateRelationshipTag(v), v))
-                  .toList(),selected: _relationship,
-              onChanged: (v) => setState(() => _relationship = v),
-            ),
-            const SizedBox(height: 28),
-
-                      SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isSaving ? null : _submit,
-                icon: _isSaving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Icon(Icons.save_outlined, size: 18),
-                label: Text(
-                  isEditing ? loc.translate('addContact_salvar_alteracoes') : loc.translate('addContact_salvar_contato'),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colors.accentBlue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),],
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [form],
+            );
+          },
         ),
       ),
     );
