@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/constants/app_breakpoints.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/services/notification_scheduler.dart';
@@ -21,6 +22,11 @@ import 'widgets/task_filter_sheet.dart';
 /// collapsible list of completed items.
 ///
 /// Lê tarefas diretamente do Firestore via [TaskService].
+///
+/// Layout: mobile mantém a lista vertical única original. Desktop
+/// reorganiza "Hoje" e "Próximos dias" lado a lado (fazem mais sentido
+/// lidos em paralelo do que empilhados), com "Concluídos" em largura
+/// total por baixo, já que é usado com menos frequência.
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
 
@@ -38,7 +44,7 @@ class _TasksScreenState extends State<TasksScreen> {
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-/// Formata a data atual no idioma selecionado.
+  /// Formata a data atual no idioma selecionado.
   String _formatDateLocale(DateTime date) {
     final loc = AppLocales.of(context);
     const weekdayKeys = [
@@ -156,13 +162,205 @@ class _TasksScreenState extends State<TasksScreen> {
     if (result != null) setState(() => _filters = result);
   }
 
+  /// Cabeçalho partilhado: data, busca+filtro, chips de filtros ativos.
+  /// Idêntico em mobile e desktop — só muda o que o envolve.
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(_formatDateLocale(DateTime.now()),
+            style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: AppSpacing.md),
+        TaskSearchBar(
+          onChanged: (v) => setState(() => _query = v),
+          onFilterTap: _openFilters,
+        ),
+        if (_filters.isActive) ...[
+          const SizedBox(height: AppSpacing.sm),
+          _ActiveFiltersBar(
+            filters: _filters,
+            onClear: () => setState(() => _filters = const TaskFilters()),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Uma secção de tarefas (título + contagem opcional + lista ou estado
+  /// vazio). Reutilizado por "Hoje" e "Próximos dias" nos dois layouts.
+  Widget _buildTaskSection({
+    required String title,
+    required List<TaskModel> tasks,
+    required String emptyLabel,
+    bool showCount = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: title,
+          trailing: showCount
+              ? CircleAvatar(
+                  radius: 9,
+                  child: Text('${tasks.length}',
+                      style: const TextStyle(fontSize: 10, color: Colors.white)),
+                )
+              : null,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        if (tasks.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              emptyLabel,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          )
+        else
+          for (final task in tasks) ...[
+            TaskListItem(
+              task: task,
+              onToggle: () => _toggle(task),
+              onTap: () => _openTask(task),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+      ],
+    );
+  }
+
+  /// Secção "Concluídos", colapsável — igual nos dois layouts.
+  Widget _buildDoneSection(List<TaskModel> done) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _showDone = !_showDone),
+          child: Row(
+            children: [
+              Text(AppLocales.of(context).translate('tasks_concluidos'),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              Icon(
+                _showDone ? Icons.expand_less : Icons.expand_more,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+        if (_showDone) ...[
+          const SizedBox(height: AppSpacing.md),
+          if (done.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                AppLocales.of(context).translate('tasks_nenhuma_concluida'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            )
+          else
+            for (final task in done) ...[
+              TaskListItem(
+                task: task,
+                onToggle: () => _toggle(task),
+                onTap: () => _openTask(task),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+        ],
+      ],
+    );
+  }
+
+  /// Mobile — lista vertical única, comportamento original intocado.
+  Widget _buildMobileBody(
+    List<TaskModel> today,
+    List<TaskModel> upcoming,
+    List<TaskModel> done,
+    AppLocales loc,
+  ) {
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        _buildHeader(),
+        const SizedBox(height: AppSpacing.lg),
+        _buildTaskSection(
+          title: loc.translate('tasks_hoje'),
+          tasks: today,
+          emptyLabel: loc.translate('tasks_nenhuma_hoje'),
+          showCount: true,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _buildTaskSection(
+          title: loc.translate('tasks_proximos_dias'),
+          tasks: upcoming,
+          emptyLabel: loc.translate('tasks_nenhuma_futura'),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _buildDoneSection(done),
+      ],
+    );
+  }
+
+  /// Desktop — largura máxima centralizada; "Hoje" e "Próximos dias"
+  /// lado a lado; "Concluídos" em largura total por baixo.
+  Widget _buildDesktopBody(
+    List<TaskModel> today,
+    List<TaskModel> upcoming,
+    List<TaskModel> done,
+    AppLocales loc,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.xxxl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: AppSpacing.xxxl),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _buildTaskSection(
+                      title: loc.translate('tasks_hoje'),
+                      tasks: today,
+                      emptyLabel: loc.translate('tasks_nenhuma_hoje'),
+                      showCount: true,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xxxl),
+                  Expanded(
+                    child: _buildTaskSection(
+                      title: loc.translate('tasks_proximos_dias'),
+                      tasks: upcoming,
+                      emptyLabel: loc.translate('tasks_nenhuma_futura'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xxxl),
+              _buildDoneSection(done),
+              const SizedBox(height: AppSpacing.xxxl),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final nav = LoahNavigationController.of(context);
+    final loc = AppLocales.of(context);
 
     return Scaffold(
       drawer: LoahDrawer(currentIndex: nav.currentIndex, onNavigate: nav.navigateTo),
-appBar: LoahAppBar(title: AppLocales.of(context).translate('tasks_minhas_tarefas')),
+      appBar: LoahAppBar(title: loc.translate('tasks_minhas_tarefas')),
       body: SafeArea(
         child: StreamBuilder<QuerySnapshot>(
           stream: _taskService.getTasksStream(),
@@ -172,7 +370,7 @@ appBar: LoahAppBar(title: AppLocales.of(context).translate('tasks_minhas_tarefas
             }
             if (snapshot.hasError) {
               return Center(
-                child: Text('${AppLocales.of(context).translate('tasks_erro_carregar')}${snapshot.error}'),
+                child: Text('${loc.translate('tasks_erro_carregar')}${snapshot.error}'),
               );
             }
 
@@ -227,108 +425,13 @@ appBar: LoahAppBar(title: AppLocales.of(context).translate('tasks_minhas_tarefas
             final upcoming = filtered.where((t) => !t.isDone && !_isDueToday(t)).toList();
             final done = filtered.where((t) => t.isDone).toList();
 
-            return ListView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              children: [
-Text(_formatDateLocale(DateTime.now()),
-                    style: Theme.of(context).textTheme.bodySmall),
-                const SizedBox(height: AppSpacing.md),
-                TaskSearchBar(
-                  onChanged: (v) => setState(() => _query = v),
-                  onFilterTap: _openFilters,
-                ),
-                if (_filters.isActive) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  _ActiveFiltersBar(
-                    filters: _filters,
-                    onClear: () => setState(() => _filters = const TaskFilters()),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.lg),
-                SectionHeader(
-title: AppLocales.of(context).translate('tasks_hoje'),
-                  trailing: CircleAvatar(
-                    radius: 9,
-                    child: Text('${today.length}',
-                        style: const TextStyle(fontSize: 10, color: Colors.white)),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                if (today.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(
-AppLocales.of(context).translate('tasks_nenhuma_hoje'),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  )
-                else
-                  for (final task in today) ...[
-                    TaskListItem(
-                      task: task,
-                      onToggle: () => _toggle(task),
-                      onTap: () => _openTask(task),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
-                const SizedBox(height: AppSpacing.sm),
-SectionHeader(title: AppLocales.of(context).translate('tasks_proximos_dias')),
-                const SizedBox(height: AppSpacing.md),
-                if (upcoming.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(
-AppLocales.of(context).translate('tasks_nenhuma_futura'),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  )
-                else
-                  for (final task in upcoming) ...[
-                    TaskListItem(
-                      task: task,
-                      onToggle: () => _toggle(task),
-                      onTap: () => _openTask(task),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
-                const SizedBox(height: AppSpacing.sm),
-                InkWell(
-                  onTap: () => setState(() => _showDone = !_showDone),
-                  child: Row(
-                    children: [
-Text(AppLocales.of(context).translate('tasks_concluidos'),
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w700)),
-                      Icon(
-                        _showDone ? Icons.expand_less : Icons.expand_more,
-                        size: 20,
-                      ),
-                    ],
-                  ),
-                ),
-                if (_showDone) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  if (done.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text(
-AppLocales.of(context).translate('tasks_nenhuma_concluida'),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    )
-                  else
-                    for (final task in done) ...[
-                      TaskListItem(
-                        task: task,
-                        onToggle: () => _toggle(task),
-                        onTap: () => _openTask(task),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                    ],
-                ],
-              ],
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
+                return isDesktop
+                    ? _buildDesktopBody(today, upcoming, done, loc)
+                    : _buildMobileBody(today, upcoming, done, loc);
+              },
             );
           },
         ),
@@ -380,7 +483,7 @@ class _ActiveFiltersBar extends StatelessWidget {
     for (final priority in filters.priorityFilter) {
       chips.add(_FilterChip(label: _priorityShortLabel(context, priority)));
     }
-if (filters.dateFilter != null) {
+    if (filters.dateFilter != null) {
       final loc = AppLocales.of(context);
       final dateLabels = {
         'hoje': loc.translate('tasks_hoje'),
@@ -408,7 +511,7 @@ if (filters.dateFilter != null) {
                   borderRadius: BorderRadius.circular(100),
                   border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
                 ),
-child: Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.close, size: 12, color: Colors.redAccent),

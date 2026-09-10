@@ -56,20 +56,20 @@ void main() async {
     debugPrint('[main] Analytics init error (non-fatal): $e');
   }
 
-  // ── Firebase Crashlytics ──────────────────────────────────────
-  FlutterError.onError = (errorDetails) {
+  FlutterError.onError = (errorDetails) async {
+    if (kIsWeb) return; // Crashlytics não tem suporte web — nem tentar.
     try {
-      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+      await FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
     } catch (_) {}
   };
 
-  // Passa os erros de zonas assíncronas para o Crashlytics
-  PlatformDispatcher.instance.onError = (error, stack) {
-    try {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    } catch (_) {}
-    return true;
-  };
+PlatformDispatcher.instance.onError = (error, stack) {
+  if (kIsWeb) return true; // idem
+  try {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+  } catch (_) {}
+  return true;
+};
 
   // ── Firestore Offline Persistence ─────────────────────────────
   try {

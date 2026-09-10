@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../core/constants/app_breakpoints.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/theme/app_theme.dart';
@@ -16,6 +17,9 @@ import '../../widgets/chip_selector.dart';
 /// Pass [existingGoal] to edit it in place (fields pre-filled, saving
 /// updates the same goal via [GoalService]); leave it null to create a
 /// brand new goal instead.
+///
+/// Layout: mobile mantém o formulário em largura total (original).
+/// Desktop centra o mesmo formulário numa coluna de largura máxima.
 class AddGoalScreen extends StatefulWidget {
   final GoalModel? existingGoal;
 
@@ -108,7 +112,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     if (picked != null) setState(() => _targetDate = picked);
   }
 
-Future<void> _pickImage() async {
+  Future<void> _pickImage() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: context.loahColors.cardBackground,
@@ -148,6 +152,7 @@ Future<void> _pickImage() async {
     if (raw.isEmpty) return null;
     return double.tryParse(raw);
   }
+
   Future<void> _submit() async {
     final title = _titleController.text.trim();
     if (title.isEmpty) {
@@ -226,9 +231,212 @@ Future<void> _pickImage() async {
     }
   }
 
+  /// Conteúdo do formulário, partilhado entre mobile e desktop.
+  Widget _buildFormContent(BuildContext context, {required bool isEditing, required AppLocales loc}) {
+    final colors = context.loahColors;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Center(
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 34,
+                backgroundColor: colors.accentBlue.withValues(alpha: 0.15),
+                child: Icon(Icons.track_changes_outlined, size: 30, color: colors.accentBlue),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                isEditing
+                    ? loc.translate('addGoal_subtitle_editar')
+                    : loc.translate('addGoal_subtitle_novo'),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colors.accentBlue,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 26),
+
+        _SectionLabel(loc.translate('addGoal_nome_label')),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _titleController,
+          onChanged: (_) {
+            if (_titleError != null) setState(() => _titleError = null);
+          },
+          decoration: InputDecoration(
+            hintText: loc.translate('addGoal_nome_hint'),
+            errorText: _titleError,
+            filled: true,
+            fillColor: colors.cardBackgroundAlt,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        _SectionLabel(loc.translate('addGoal_foto_label')),
+        const SizedBox(height: 8),
+        _ImagePickerField(
+          imagePath: _imagePath,
+          onTap: _pickImage,
+          onRemove: () => setState(() => _imagePath = null),
+        ),
+        const SizedBox(height: 20),
+
+        _SectionLabel(loc.translate('addGoal_categoria_label')),
+        const SizedBox(height: 8),
+        ChipSelector<String>(
+          options: _categories(context),
+          selected: _category,
+          onChanged: (v) => setState(() => _category = v),
+        ),
+        const SizedBox(height: 20),
+
+        _SectionLabel(loc.translate('addGoal_prazo_label')),
+        const SizedBox(height: 8),
+        ChipSelector<GoalTerm>(
+          options: _terms(context),
+          selected: _term,
+          onChanged: (v) => setState(() => _term = v),
+        ),
+        const SizedBox(height: 20),
+
+        _SectionLabel(loc.translate('addGoal_descricao_label')),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _descriptionController,
+          maxLines: 3,
+          decoration: InputDecoration(
+            hintText: loc.translate('addGoal_descricao_hint'),
+            filled: true,
+            fillColor: colors.cardBackgroundAlt,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        _SectionLabel(loc.translate('addGoal_data_label')),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: _pickDate,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            decoration: BoxDecoration(
+              color: colors.cardBackgroundAlt,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today_outlined, size: 18, color: context.textSecondary),
+                const SizedBox(width: 10),
+                Text(
+                  _targetDate == null
+                      ? loc.translate('addGoal_data_hint')
+                      : '${_targetDate!.day.toString().padLeft(2, '0')}/'
+                          '${_targetDate!.month.toString().padLeft(2, '0')}/'
+                          '${_targetDate!.year}',
+                  style: TextStyle(
+                    color: _targetDate == null ? context.textSecondary : null,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        _SectionLabel(loc.translate('addGoal_valor_label')),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _targetValueController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            hintText: loc.translate('addGoal_valor_hint'),
+            prefixText: '${CurrencyFormatter.symbol(context: context)} ',
+            filled: true,
+            fillColor: colors.cardBackgroundAlt,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: colors.accentBlue.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.auto_awesome, size: 16, color: colors.accentBlue),
+                  const SizedBox(width: 8),
+                  Text(
+                    loc.translate('addGoal_dica_titulo'),
+                    style: TextStyle(
+                      color: colors.accentBlue,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                loc.translate('addGoal_dica_body'),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _isSaving ? null : _submit,
+            icon: _isSaving
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.check_circle_outline, size: 18),
+            label: Text(
+              isEditing ? loc.translate('addGoal_salvar') : loc.translate('addGoal_criar'),
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colors.accentBlue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colors = context.loahColors;
     final isEditing = widget.isEditing;
     final loc = AppLocales.of(context);
 
@@ -240,202 +448,28 @@ Future<void> _pickImage() async {
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Center(
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 34,
-                    backgroundColor: colors.accentBlue.withValues(alpha: 0.15),
-                    child: Icon(Icons.track_changes_outlined, size: 30, color: colors.accentBlue),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
+            final form = _buildFormContent(context, isEditing: isEditing, loc: loc);
+
+            if (isDesktop) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: form,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    isEditing
-                        ? loc.translate('addGoal_subtitle_editar')
-                        : loc.translate('addGoal_subtitle_novo'),
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colors.accentBlue,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 26),
-
-            _SectionLabel(loc.translate('addGoal_nome_label')),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _titleController,
-              onChanged: (_) {
-                if (_titleError != null) setState(() => _titleError = null);
-              },
-              decoration: InputDecoration(
-                hintText: loc.translate('addGoal_nome_hint'),
-                errorText: _titleError,
-                filled: true,
-                fillColor: colors.cardBackgroundAlt,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
+              );
+            }
 
-            _SectionLabel(loc.translate('addGoal_foto_label')),
-            const SizedBox(height: 8),
-            _ImagePickerField(
-              imagePath: _imagePath,
-              onTap: _pickImage,
-              onRemove: () => setState(() => _imagePath = null),
-            ),
-            const SizedBox(height: 20),
-
-_SectionLabel(loc.translate('addGoal_categoria_label')),
-            const SizedBox(height: 8),
-            ChipSelector<String>(
-              options: _categories(context),
-              selected: _category,
-              onChanged: (v) => setState(() => _category = v),
-            ),
-            const SizedBox(height: 20),
-
-            _SectionLabel(loc.translate('addGoal_prazo_label')),
-            const SizedBox(height: 8),
-            ChipSelector<GoalTerm>(
-              options: _terms(context),
-              selected: _term,
-              onChanged: (v) => setState(() => _term = v),
-            ),
-            const SizedBox(height: 20),
-
-            _SectionLabel(loc.translate('addGoal_descricao_label')),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _descriptionController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: loc.translate('addGoal_descricao_hint'),
-                filled: true,
-                fillColor: colors.cardBackgroundAlt,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            _SectionLabel(loc.translate('addGoal_data_label')),
-            const SizedBox(height: 8),
-            InkWell(
-              onTap: _pickDate,
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                decoration: BoxDecoration(
-                  color: colors.cardBackgroundAlt,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.calendar_today_outlined, size: 18, color: context.textSecondary),
-                    const SizedBox(width: 10),
-                    Text(
-                      _targetDate == null
-                          ? loc.translate('addGoal_data_hint')
-                          : '${_targetDate!.day.toString().padLeft(2, '0')}/'
-                              '${_targetDate!.month.toString().padLeft(2, '0')}/'
-                              '${_targetDate!.year}',
-                      style: TextStyle(
-                        color: _targetDate == null ? context.textSecondary : null,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            _SectionLabel(loc.translate('addGoal_valor_label')),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _targetValueController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                hintText: loc.translate('addGoal_valor_hint'),
-                prefixText: '${CurrencyFormatter.symbol(context: context)} ',
-                filled: true,
-                fillColor: colors.cardBackgroundAlt,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: colors.accentBlue.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.auto_awesome, size: 16, color: colors.accentBlue),
-                      const SizedBox(width: 8),
-                      Text(
-                        loc.translate('addGoal_dica_titulo'),
-                        style: TextStyle(
-                          color: colors.accentBlue,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    loc.translate('addGoal_dica_body'),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isSaving ? null : _submit,
-                icon: _isSaving
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.check_circle_outline, size: 18),
-                label: Text(
-                  isEditing ? loc.translate('addGoal_salvar') : loc.translate('addGoal_criar'),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colors.accentBlue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
-          ],
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [form],
+            );
+          },
         ),
       ),
     );
@@ -491,7 +525,7 @@ class _ImagePickerField extends StatelessWidget {
             children: [
               Icon(Icons.add_photo_alternate_outlined, size: 26, color: context.textSecondary),
               const SizedBox(height: 6),
-Text(
+              Text(
                 AppLocales.of(context).translate('addGoal_foto_tap'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),

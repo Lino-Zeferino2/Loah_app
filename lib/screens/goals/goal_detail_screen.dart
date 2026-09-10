@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_breakpoints.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/services/goal_service.dart';
 import '../../core/services/task_service.dart';
@@ -19,6 +20,11 @@ import 'widgets/goal_milestone_tile.dart';
 /// any tasks linked to this goal (regardless of its progress mode).
 ///
 /// Lê e escreve metas e tarefas diretamente via services.
+///
+/// Layout: o cabeçalho com foto/anel de progresso fica sempre em
+/// largura total (efeito "banner"), em mobile e desktop. Só o conteúdo
+/// abaixo (chips, título, botões, marcos) fica limitado a uma largura
+/// máxima e centrado em desktop.
 class GoalDetailScreen extends StatefulWidget {
   final GoalModel goal;
 
@@ -46,7 +52,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     if (mounted) setState(() => _milestones = tasks);
   }
 
-void _toggleTask(TaskModel task) async {
+  void _toggleTask(TaskModel task) async {
     final updated = task.copyWith(isDone: !task.isDone);
     try {
       await _taskService.updateTask(updated);
@@ -94,7 +100,7 @@ void _toggleTask(TaskModel task) async {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-builder: (sheetContext) {
+      builder: (sheetContext) {
         final sheetLoc = AppLocales.of(sheetContext);
         return Padding(
           padding: EdgeInsets.only(
@@ -186,7 +192,136 @@ builder: (sheetContext) {
     }
   }
 
-@override
+  double _computeProgress(GoalModel goal, List<TaskModel> tasks) {
+    final taskProgress = tasks.isEmpty
+        ? null
+        : tasks.where((t) => t.isDone).length / tasks.length;
+    switch (goal.progressMode) {
+      case GoalProgressMode.taskChecklist:
+        return taskProgress ?? 0;
+      case GoalProgressMode.manualValue:
+        final valueProgress = goal.manualProgress;
+        if (taskProgress == null) return valueProgress;
+        return (valueProgress + taskProgress) / 2;
+    }
+  }
+
+  /// Conteúdo abaixo do cabeçalho — chips, título, descrição, botões e
+  /// marcos. Devolve a lista de widgets tal como o original (para uso
+  /// direto em SliverChildListDelegate no mobile); o desktop embrulha
+  /// esta mesma lista numa Column centrada.
+  List<Widget> _buildContentChildren({
+    required BuildContext context,
+    required AppLocales loc,
+    required GoalModel goal,
+    required List<TaskModel> milestones,
+    required int doneCount,
+  }) {
+    return [
+      Row(
+        children: [
+          _CategoryChip(label: goal.category, color: goal.progressColor),
+          if (goal.targetDateLabel != null) ...[
+            const SizedBox(width: 10),
+            Icon(Icons.calendar_today_outlined, size: 14, color: context.textSecondary),
+            const SizedBox(width: 4),
+            Text(goal.targetDateLabel!, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ],
+      ),
+      const SizedBox(height: 10),
+      Text(goal.title,
+          style: Theme.of(context)
+              .textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+      if (goal.description != null) ...[
+        const SizedBox(height: 8),
+        Text(goal.description!,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4)),
+      ],
+      if (goal.progressMode == GoalProgressMode.manualValue) ...[
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              loc.translate('goalDetail_valor_atual').replaceFirst('%s', CurrencyFormatter.format(goal.current ?? 0, context: context)).replaceFirst('%s', CurrencyFormatter.format(goal.target ?? 0, context: context)),
+              style: Theme.of(context)
+                  .textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: goal.progressColor),
+            ),
+            TextButton.icon(
+              onPressed: _adjustProgress,
+              icon: Icon(Icons.tune, size: 16, color: goal.progressColor),
+              label: Text(loc.translate('goalDetail_atualizar_valor'),
+                  style: TextStyle(color: goal.progressColor, fontWeight: FontWeight.w600)),
+              style: TextButton.styleFrom(padding: EdgeInsets.zero),
+            ),
+          ],
+        ),
+      ],
+      const SizedBox(height: 18),
+      Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: _editGoal,
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: Text(loc.translate('goalDetail_editar')),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: goal.progressColor, foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _addTask,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(loc.translate('goalDetail_adicionar_tarefa')),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 26),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(loc.translate('goalDetail_marcos_titulo'),
+              style: Theme.of(context)
+                  .textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+          Text(
+            loc.translate('goalDetail_marcos_subtitulo')
+                .replaceFirst('%s', '$doneCount')
+                .replaceFirst('%s', '${milestones.length}'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      if (milestones.isEmpty)
+        Text(loc.translate('goalDetail_nenhuma_tarefa'),
+            style: Theme.of(context).textTheme.bodySmall)
+      else
+        for (final task in milestones)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: GoalMilestoneTile(
+              task: task,
+              accentColor: goal.progressColor,
+              onToggle: () => _toggleTask(task),
+              onTap: () => _openTask(task),
+            ),
+          ),
+      const SizedBox(height: 38),
+    ];
+  }
+
+  @override
   Widget build(BuildContext context) {
     final loc = AppLocales.of(context);
     final goal = _goal;
@@ -207,150 +342,65 @@ builder: (sheetContext) {
                     .replaceFirst('%s', '${milestones.length}'))
             : loc.translate('goalDetail_concluido');
 
+    final contentChildren = _buildContentChildren(
+      context: context,
+      loc: loc,
+      goal: goal,
+      milestones: milestones,
+      doneCount: doneCount,
+    );
+
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-SliverAppBar(
-            pinned: true,
-            expandedHeight: 260,
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            iconTheme: const IconThemeData(color: Colors.white),
-            flexibleSpace: FlexibleSpaceBar(
-              background: _GoalHeader(
-                goal: goal,
-                progress: progress,
-                percent: progressPercent,
-                completedLabel: completedLabel,
-              ),
-            ),
-            actions: [
-              IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
-            ],
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                Row(
-                  children: [
-                    _CategoryChip(label: goal.category, color: goal.progressColor),
-                    if (goal.targetDateLabel != null) ...[
-                      const SizedBox(width: 10),
-                      Icon(Icons.calendar_today_outlined, size: 14, color: context.textSecondary),
-                      const SizedBox(width: 4),
-                      Text(goal.targetDateLabel!, style: Theme.of(context).textTheme.bodySmall),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(goal.title,
-                    style: Theme.of(context)
-                        .textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
-                if (goal.description != null) ...[
-                  const SizedBox(height: 8),
-                  Text(goal.description!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4)),
-                ],
-                if (goal.progressMode == GoalProgressMode.manualValue) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-loc.translate('goalDetail_valor_atual').replaceFirst('%s', CurrencyFormatter.format(goal.current ?? 0, context: context)).replaceFirst('%s', CurrencyFormatter.format(goal.target ?? 0, context: context)),
-                        style: Theme.of(context)
-                            .textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: goal.progressColor),
-                      ),
-                      TextButton.icon(
-                        onPressed: _adjustProgress,
-                        icon: Icon(Icons.tune, size: 16, color: goal.progressColor),
-                        label: Text(loc.translate('goalDetail_atualizar_valor'),
-                            style: TextStyle(color: goal.progressColor, fontWeight: FontWeight.w600)),
-                        style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                      ),
-                    ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
+
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                expandedHeight: 260,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                iconTheme: const IconThemeData(color: Colors.white),
+                flexibleSpace: FlexibleSpaceBar(
+                  background: _GoalHeader(
+                    goal: goal,
+                    progress: progress,
+                    percent: progressPercent,
+                    completedLabel: completedLabel,
                   ),
+                ),
+                actions: [
+                  IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
                 ],
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _editGoal,
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        label: Text(loc.translate('goalDetail_editar')),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: goal.progressColor, foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              if (isDesktop)
+                SliverToBoxAdapter(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 800),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: contentChildren,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _addTask,
-                        icon: const Icon(Icons.add, size: 18),
-                        label: Text(loc.translate('goalDetail_adicionar_tarefa')),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate(contentChildren),
+                  ),
                 ),
-                const SizedBox(height: 26),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(loc.translate('goalDetail_marcos_titulo'),
-                        style: Theme.of(context)
-                            .textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-                    Text(
-                      loc.translate('goalDetail_marcos_subtitulo')
-                          .replaceFirst('%s', '$doneCount')
-                          .replaceFirst('%s', '${milestones.length}'),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (milestones.isEmpty)
-                  Text(loc.translate('goalDetail_nenhuma_tarefa'),
-                      style: Theme.of(context).textTheme.bodySmall)
-                else
-                  for (final task in milestones)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: GoalMilestoneTile(
-                        task: task,
-                        accentColor: goal.progressColor,
-                        onToggle: () => _toggleTask(task),
-                        onTap: () => _openTask(task),
-                      ),
-                    ),
-                const SizedBox(height: 38),
-              ]),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
-  }
-
-  double _computeProgress(GoalModel goal, List<TaskModel> tasks) {
-    final taskProgress = tasks.isEmpty
-        ? null
-        : tasks.where((t) => t.isDone).length / tasks.length;
-    switch (goal.progressMode) {
-      case GoalProgressMode.taskChecklist:
-        return taskProgress ?? 0;
-      case GoalProgressMode.manualValue:
-        final valueProgress = goal.manualProgress;
-        if (taskProgress == null) return valueProgress;
-        return (valueProgress + taskProgress) / 2;
-    }
   }
 }
 

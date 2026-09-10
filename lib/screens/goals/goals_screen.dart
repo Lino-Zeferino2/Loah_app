@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
+import '../../core/constants/app_breakpoints.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/navigation/navigation_controller.dart';
@@ -20,6 +21,12 @@ import 'widgets/goal_term_section.dart';
 /// by time horizon (curto / médio / longo prazo).
 ///
 /// Lê metas do Firestore via [GoalService].
+///
+/// Layout: mobile mantém as 3 secções empilhadas verticalmente (original).
+/// Desktop coloca as 3 secções lado a lado — são categorias paralelas
+/// (mesmo prazo diferente), mais fácil comparar de relance do que rolar
+/// a página três vezes. O card de resumo fica em largura total no topo
+/// nos dois casos.
 class GoalsScreen extends StatefulWidget {
   const GoalsScreen({super.key});
 
@@ -90,6 +97,114 @@ class _GoalsScreenState extends State<GoalsScreen> {
     _loadGoals();
   }
 
+  Widget _buildSummaryCard(AppLocales loc) {
+    if (_goals.isEmpty) return const SizedBox.shrink();
+    return LoahCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(loc.translate('goals_summary_title'),
+              style: Theme.of(context)
+                  .textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text(
+            _buildCompletionSummary(context),
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Mobile — 3 secções empilhadas, comportamento original intocado.
+  Widget _buildMobileBody(AppLocales loc) {
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        _buildSummaryCard(loc),
+        const SizedBox(height: AppSpacing.xl),
+        GoalTermSection(
+          term: GoalTerm.curtoPrazo,
+          goals: _byTerm(GoalTerm.curtoPrazo),
+          allTasks: const [],
+          onGoalTap: _openGoal,
+          cardIcon: Icons.savings_outlined,
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        GoalTermSection(
+          term: GoalTerm.medioPrazo,
+          goals: _byTerm(GoalTerm.medioPrazo),
+          allTasks: const [],
+          onGoalTap: _openGoal,
+          cardIcon: Icons.flight_takeoff_rounded,
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        GoalTermSection(
+          term: GoalTerm.longoPrazo,
+          goals: _byTerm(GoalTerm.longoPrazo),
+          allTasks: const [],
+          onGoalTap: _openGoal,
+          cardIcon: Icons.home_outlined,
+        ),
+      ],
+    );
+  }
+
+  /// Desktop — largura máxima centralizada; resumo em largura total no
+  /// topo; as 3 secções de prazo lado a lado.
+  Widget _buildDesktopBody(AppLocales loc) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.xxxl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1400),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSummaryCard(loc),
+              const SizedBox(height: AppSpacing.xxxl),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: GoalTermSection(
+                      term: GoalTerm.curtoPrazo,
+                      goals: _byTerm(GoalTerm.curtoPrazo),
+                      allTasks: const [],
+                      onGoalTap: _openGoal,
+                      cardIcon: Icons.savings_outlined,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.lg),
+                  Expanded(
+                    child: GoalTermSection(
+                      term: GoalTerm.medioPrazo,
+                      goals: _byTerm(GoalTerm.medioPrazo),
+                      allTasks: const [],
+                      onGoalTap: _openGoal,
+                      cardIcon: Icons.flight_takeoff_rounded,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.lg),
+                  Expanded(
+                    child: GoalTermSection(
+                      term: GoalTerm.longoPrazo,
+                      goals: _byTerm(GoalTerm.longoPrazo),
+                      allTasks: const [],
+                      onGoalTap: _openGoal,
+                      cardIcon: Icons.home_outlined,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xxxl),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final nav = LoahNavigationController.of(context);
@@ -100,50 +215,11 @@ class _GoalsScreenState extends State<GoalsScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadGoals,
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            children: [
-              if (_goals.isNotEmpty)
-                LoahCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(loc.translate('goals_summary_title'),
-                          style: Theme.of(context)
-                              .textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 4),
-                      Text(
-                        _buildCompletionSummary(context),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ),
-              const SizedBox(height: AppSpacing.xl),
-              GoalTermSection(
-                term: GoalTerm.curtoPrazo,
-                goals: _byTerm(GoalTerm.curtoPrazo),
-                allTasks: const [],
-                onGoalTap: _openGoal,
-                cardIcon: Icons.savings_outlined,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              GoalTermSection(
-                term: GoalTerm.medioPrazo,
-                goals: _byTerm(GoalTerm.medioPrazo),
-                allTasks: const [],
-                onGoalTap: _openGoal,
-                cardIcon: Icons.flight_takeoff_rounded,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              GoalTermSection(
-                term: GoalTerm.longoPrazo,
-                goals: _byTerm(GoalTerm.longoPrazo),
-                allTasks: const [],
-                onGoalTap: _openGoal,
-                cardIcon: Icons.home_outlined,
-              ),
-            ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
+              return isDesktop ? _buildDesktopBody(loc) : _buildMobileBody(loc);
+            },
           ),
         ),
       ),
