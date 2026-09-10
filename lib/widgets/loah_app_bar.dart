@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import '../core/constants/app_breakpoints.dart';
 import '../core/theme/app_theme.dart';
 
 /// Top bar used across every screen: hamburger + "Loah" wordmark on the
 /// left, screen-specific actions (bell, avatar, filter...) on the right.
+///
+/// O ícone de hambúrguer só aparece em mobile/tablet — em desktop a
+/// navegação já está sempre visível na sidebar fixa (ver [RootShell]),
+/// então não há drawer nenhum para abrir e o botão desaparece.
 class LoahAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget> actions;
@@ -19,19 +24,23 @@ class LoahAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
+    final isDesktop = AppBreakpoints.isDesktop(context);
+
     return AppBar(
       titleSpacing: 16,
-       automaticallyImplyLeading: false, 
+      automaticallyImplyLeading: false,
       title: Row(
         children: [
-          IconButton(
-            icon: Icon(Icons.menu_rounded, color: colors.accentBlue),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Abrir menu',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-          const SizedBox(width: 12),
+          if (!isDesktop) ...[
+            IconButton(
+              icon: Icon(Icons.menu_rounded, color: colors.accentBlue),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              tooltip: 'Abrir menu',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            const SizedBox(width: 12),
+          ],
           Text(
             title,
             style: Theme.of(context)

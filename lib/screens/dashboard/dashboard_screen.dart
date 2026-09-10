@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/theme/app_colors.dart';
+import '../../core/constants/app_breakpoints.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/navigation/navigation_controller.dart';
@@ -36,6 +37,12 @@ import 'widgets/pending_tasks_card.dart';
 ///
 /// Lê tarefas, metas e finanças do Firestore via services.
 /// O saldo e progresso financeiro são calculados em tempo real.
+///
+/// Layout: em mobile (< [AppBreakpoints.desktop]) mantém a lista vertical
+/// original. Em desktop, o conteúdo é limitado a uma largura máxima e
+/// organizado em 2 colunas (finanças/tarefas à esquerda, metas/reflexão
+/// à direita), e o FAB de "novo item" é omitido (o NewItemCard já cobre
+/// a mesma ação, e um FAB flutuante sobre um grid largo fica deslocado).
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -234,135 +241,225 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final nav = LoahNavigationController.of(context);
-    final loc = AppLocales.of(context);
-    final notificationCount = _unreadCount;
-
-    return Scaffold(
-      drawer: LoahDrawer(
-        currentIndex: nav.currentIndex,
-        onNavigate: nav.navigateTo,
+  void _openNewItemSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      backgroundColor: context.loahColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      appBar: LoahAppBar(
-        actions: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              IconButton(
-                tooltip: loc.translate('common_notificacoes'),
-                onPressed: _openNotifications,
-                icon: const Icon(Icons.notifications_none_rounded),
-              ),
-              if (notificationCount > 0)
-                Positioned(
-                  top: 6,
-                  right: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                    decoration: const BoxDecoration(
-                      color: Colors.redAccent,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '$notificationCount',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
+      builder: (_) => const NewItemModalSheet(),
+    );
+  }
+
+  Widget _buildGreeting(BuildContext context, AppLocales loc) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          loc.translate('dashboard_ola').replaceAll(
+            '%s',
+            AuthService().currentUser?.displayName?.split(' ').first ??
+                loc.translate('dashboard_utilizador'),
           ),
+          style: Theme.of(context)
+              .textTheme
+              .headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          loc.translate('dashboard_subtitulo'),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      ],
+    );
+  }
+
+  /// Layout mobile original — coluna única, sem alterações de comportamento.
+  Widget _buildMobileBody(AppLocales loc) {
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: ListView(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        children: [
+          _buildGreeting(context, loc),
+          const SizedBox(height: AppSpacing.xl),
+          BalanceCard(
+            available: _totalWealth,
+            progressToGoal: _progressToGoal,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          PendingTasksCard(
+            tasks: _standaloneTasks,
+            onToggle: (i) => _toggleTask(i),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          NewItemCard(onCreate: _openNewItemSheet),
+          const SizedBox(height: AppSpacing.lg),
+          GoalsSummaryCard(
+            goals: _goals.take(3).toList(),
+            allTasks: _standaloneTasks,
+            onSeeAll: () => LoahNavigationController.of(context).navigateTo(1),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          DailyReflectionCard(
+            quote: _activeReflection?.localizedText(loc.languageCode) ??
+                loc.translate('reflection_fallback_quote'),
+            imageUrl: _activeReflection?.imageUrl.isNotEmpty == true
+                ? _activeReflection!.imageUrl
+                : 'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800',
+          ),
+          const SizedBox(height: AppSpacing.xxxl * 2),
         ],
       ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadData,
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            children: [
-              Text(
-                loc.translate('dashboard_ola').replaceAll(
-                  '%s',
-                  AuthService().currentUser?.displayName?.split(' ').first ??
-                      loc.translate('dashboard_utilizador'),
+    );
+  }
+
+  /// Layout desktop — largura máxima centralizada, grid de 2 colunas:
+  /// esquerda (mais larga) = finanças/tarefas/novo item; direita = metas
+  /// e reflexão do dia.
+  Widget _buildDesktopBody(AppLocales loc) {
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildGreeting(context, loc),
+                const SizedBox(height: AppSpacing.xxxl),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Coluna esquerda — 60%
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            BalanceCard(
+                              available: _totalWealth,
+                              progressToGoal: _progressToGoal,
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            PendingTasksCard(
+                              tasks: _standaloneTasks,
+                              onToggle: (i) => _toggleTask(i),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            NewItemCard(onCreate: _openNewItemSheet),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
+                      // Coluna direita — 40%
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GoalsSummaryCard(
+                              goals: _goals.take(3).toList(),
+                              allTasks: _standaloneTasks,
+                              onSeeAll: () =>
+                                  LoahNavigationController.of(context).navigateTo(1),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            DailyReflectionCard(
+                              quote: _activeReflection
+                                      ?.localizedText(loc.languageCode) ??
+                                  loc.translate('reflection_fallback_quote'),
+                              imageUrl: _activeReflection?.imageUrl.isNotEmpty ==
+                                      true
+                                  ? _activeReflection!.imageUrl
+                                  : 'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                loc.translate('dashboard_subtitulo'),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              // Card de Finanças com dados reais do Firebase
-              BalanceCard(
-                available: _totalWealth,
-                progressToGoal: _progressToGoal,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              PendingTasksCard(
-                tasks: _standaloneTasks,
-                onToggle: (i) => _toggleTask(i),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              NewItemCard(
-                onCreate: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: false,
-                    backgroundColor: context.loahColors.cardBackground,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
-                    builder: (_) => const NewItemModalSheet(),
-                  );
-                },
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              GoalsSummaryCard(
-                goals: _goals.take(3).toList(),
-                allTasks: _standaloneTasks,
-                onSeeAll: () => nav.navigateTo(1),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              DailyReflectionCard(
-                quote: _activeReflection?.localizedText(loc.languageCode) ??
-                    loc.translate('reflection_fallback_quote'),
-                imageUrl: _activeReflection?.imageUrl.isNotEmpty == true
-                    ? _activeReflection!.imageUrl
-                    : 'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800',
-              ),
-              const SizedBox(height: AppSpacing.xxxl * 2),
-            ],
+                const SizedBox(height: AppSpacing.xxxl),
+              ],
+            ),
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        heroTag: 'dashboard_fab',
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: false,
-            backgroundColor: context.loahColors.cardBackground,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (_) => const NewItemModalSheet(),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocales.of(context);
+    final notificationCount = _unreadCount;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
+        final nav = LoahNavigationController.of(context);
+
+        return Scaffold(
+          drawer: LoahDrawer(
+            currentIndex: nav.currentIndex,
+            onNavigate: nav.navigateTo,
+          ),
+          appBar: LoahAppBar(
+            actions: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    tooltip: loc.translate('common_notificacoes'),
+                    onPressed: _openNotifications,
+                    icon: const Icon(Icons.notifications_none_rounded),
+                  ),
+                  if (notificationCount > 0)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        decoration: const BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '$notificationCount',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          body: SafeArea(
+            child: isDesktop ? _buildDesktopBody(loc) : _buildMobileBody(loc),
+          ),
+          floatingActionButton: isDesktop
+              ? null
+              : FloatingActionButton(
+                  backgroundColor: AppColors.primary,
+                  heroTag: 'dashboard_fab',
+                  onPressed: _openNewItemSheet,
+                  child: const Icon(Icons.add),
+                ),
+        );
+      },
     );
   }
 }

@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart';
+import 'core/constants/app_breakpoints.dart';
 import 'core/currency/currency_controller.dart';
 import 'core/l10n/locale_controller.dart';
 import 'core/navigation/navigation_controller.dart';
@@ -34,6 +35,7 @@ import 'screens/notifications/notifications_screen.dart';
 import 'screens/tasks/tasks_screen.dart';
 import 'screens/tasks/task_detail_screen.dart';
 import 'widgets/loah_bottom_nav.dart';
+import 'widgets/loah_drawer.dart';
 import 'screens/splash/splash_screen.dart';
 
 /// Global navigator key for accessing NavigatorState from anywhere
@@ -80,13 +82,13 @@ void main() async {
   }
 
   // ── FCM Push Notifications ────────────────────────────────────
-// Não bloqueia o arranque do app: em simuladores iOS sem APNS,
-// partes do FCM podem demorar ou nunca resolver. O app deve
-// abrir normalmente mesmo que a inicialização de notificações
-// ainda esteja em curso ou falhe.
-NotificationService().initialize().catchError((e) {
-  debugPrint('[main] Notification init error (non-fatal): $e');
-});
+  // Não bloqueia o arranque do app: em simuladores iOS sem APNS,
+  // partes do FCM podem demorar ou nunca resolver. O app deve
+  // abrir normalmente mesmo que a inicialização de notificações
+  // ainda esteja em curso ou falhe.
+  NotificationService().initialize().catchError((e) {
+    debugPrint('[main] Notification init error (non-fatal): $e');
+  });
 
   // Start periodic checks for local notifications (contact overdue,
   // tasks due, recurring bills, budgets over limit, etc.)
@@ -253,12 +255,18 @@ class _LoahAppState extends State<LoahApp> {
   }
 }
 
-/// Hosts the bottom navigation (4 tabs) plus a 5th drawer-only screen
-/// (Contatos), preserving every screen's state via [IndexedStack].
+/// Hosts navigation (bottom nav on mobile, fixed sidebar on desktop)
+/// plus a 5th drawer-only screen (Contatos), preserving every screen's
+/// state via [IndexedStack].
 ///
-/// Exposes [LoahNavigationController] so the drawer (or any screen) can
-/// switch tabs — including to the drawer-only "Contatos" screen, which
-/// sits outside the bottom nav's index range.
+/// Exposes [LoahNavigationController] so the drawer/sidebar (or any
+/// screen) can switch tabs — including to the drawer-only "Contatos"
+/// screen, which sits outside the bottom nav's index range on mobile.
+///
+/// Breakpoint: abaixo de [AppBreakpoints.desktop], comportamento 100%
+/// igual ao mobile original (Scaffold + LoahBottomNav). A partir daí,
+/// troca para um layout com [LoahDrawer] embutido como sidebar fixa à
+/// esquerda e sem bottom nav.
 class RootShell extends StatefulWidget {
   const RootShell({super.key});
 
@@ -360,15 +368,40 @@ class _RootShellState extends State<RootShell> {
     return LoahNavigationController(
       currentIndex: _index,
       navigateTo: _navigateTo,
-      child: Scaffold(
-        body: IndexedStack(index: _index, children: _screens),
-        // The bottom nav only covers indices 0-3; when Contatos (4) is
-        // open via the drawer, no tab shows as selected — which is the
-        // correct behavior since it isn't one of the 4 bottom tabs.
-        bottomNavigationBar: LoahBottomNav(
-          currentIndex: _index,
-          onTap: _navigateTo,
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
+          final stack = IndexedStack(index: _index, children: _screens);
+
+          if (!isDesktop) {
+            // Mobile/tablet — comportamento original, intocado.
+            return Scaffold(
+              body: stack,
+              // The bottom nav only covers indices 0-3; when Contatos (4) is
+              // open via the drawer, no tab shows as selected — which is the
+              // correct behavior since it isn't one of the 4 bottom tabs.
+              bottomNavigationBar: LoahBottomNav(
+                currentIndex: _index,
+                onTap: _navigateTo,
+              ),
+            );
+          }
+
+          // Desktop — sidebar fixa (LoahDrawer embedded) + conteúdo,
+          // sem bottom nav.
+          return Scaffold(
+            body: Row(
+              children: [
+                LoahDrawer(
+                  embedded: true,
+                  currentIndex: _index,
+                  onNavigate: _navigateTo,
+                ),
+                Expanded(child: stack),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

@@ -31,16 +31,22 @@ import 'theme_toggle_switch.dart';
 /// called with the tapped item's index (0..4) and should close the
 /// drawer + switch the visible screen.
 ///
+/// [embedded] — quando true, o widget é renderizado como painel fixo
+/// (sidebar desktop) em vez de [Drawer] deslizante; nesse modo,
+/// [_close] não faz pop de rota nenhuma, porque não há rota a fechar.
+///
 /// O nome, email e role sao carregados automaticamente do Firebase
 /// Auth + Firestore — nao sao mais parametros estaticos.
 class LoahDrawer extends StatefulWidget {
   final int currentIndex;
   final ValueChanged<int> onNavigate;
+  final bool embedded;
 
   const LoahDrawer({
     super.key,
     required this.currentIndex,
     required this.onNavigate,
+    this.embedded = false,
   });
 
   @override
@@ -57,6 +63,13 @@ class _LoahDrawerState extends State<LoahDrawer> {
   void initState() {
     super.initState();
     _loadUserProfile();
+  }
+
+  /// Fecha o drawer deslizante. Em modo [LoahDrawer.embedded] (sidebar
+  /// fixa desktop) não existe rota de drawer para fechar — chamar
+  /// Navigator.pop() aqui fecharia o próprio ecrã por engano.
+  void _close(BuildContext context) {
+    if (!widget.embedded) Navigator.of(context).pop();
   }
 
   Future<void> _loadUserProfile() async {
@@ -294,478 +307,492 @@ class _LoahDrawerState extends State<LoahDrawer> {
     final themeController = LoahThemeController.of(context);
     final isDark = themeController.themeMode == ThemeMode.dark;
 
-    return Drawer(
-      backgroundColor: colors.cardBackground,
-      child: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // --- Profile header ---
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                child: Row(
-                  children: [
-                    const LoahAvatar(radius: 26),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _loadingProfile
-                              ? SizedBox(
-                                  width: 80,
-                                  height: 14,
-                                  child: LinearProgressIndicator(
-                                    backgroundColor: colors.cardBackgroundAlt,
-                                  ),
-                                )
-                              : Text(
-                                  _userName,
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
+    final content = SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // --- Profile header ---
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Row(
+                children: [
+                  const LoahAvatar(radius: 26),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _loadingProfile
+                            ? SizedBox(
+                                width: 80,
+                                height: 14,
+                                child: LinearProgressIndicator(
+                                  backgroundColor: colors.cardBackgroundAlt,
                                 ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _loadingProfile
-                                        ? SizedBox(
-                                            width: 100,
-                                            height: 12,
-                                            child: LinearProgressIndicator(
-                                              backgroundColor: colors.cardBackgroundAlt,
-                                            ),
-                                          )
-                                        : Text(
-                                            _userEmail,
+                              )
+                            : Text(
+                                _userName,
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _loadingProfile
+                                      ? SizedBox(
+                                          width: 100,
+                                          height: 12,
+                                          child: LinearProgressIndicator(
+                                            backgroundColor: colors.cardBackgroundAlt,
+                                          ),
+                                        )
+                                      : Text(
+                                          _userEmail,
+                                          style: TextStyle(
+                                            color: colors.accentBlue,
+                                            fontSize: 12.5,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                  if (!_loadingProfile && _userRole == 'admin')
+                                    const Padding(
+                                      padding: EdgeInsets.only(top: 4),
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber,
+                                          borderRadius: BorderRadius.all(Radius.circular(6)),
+                                        ),
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          child: Text(
+                                            'Admin',
                                             style: TextStyle(
-                                              color: colors.accentBlue,
-                                              fontSize: 12.5,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                    if (!_loadingProfile && _userRole == 'admin')
-                                      const Padding(
-                                        padding: EdgeInsets.only(top: 4),
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            color: Colors.amber,
-                                            borderRadius: BorderRadius.all(Radius.circular(6)),
-                                          ),
-                                          child: Padding(
-                                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            child: Text(
-                                              'Admin',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w800,
-                                              ),
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w800,
                                             ),
                                           ),
                                         ),
                                       ),
-                                  ],
-                                ),
+                                    ),
+                                ],
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // --- Main navigation ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                children: [
+                  for (var i = 0; i < _navItems.length; i++)
+                    DrawerNavItem(
+                      icon: _navItems[i].icon,
+                      label: AppLocales.of(context).translate(_navItems[i].key),
+                      selected: i == widget.currentIndex,
+                      onTap: () {
+                        _close(context);
+                        widget.onNavigate(i);
+                      },
+                    ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // --- Settings + Support ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  Divider(color: colors.border),
+                  const SizedBox(height: 8),
+                  Text(
+                    AppLocales.of(context).drawerConfiguracoes,
+                    style: TextStyle(
+                      fontSize: 11,
+                      letterSpacing: 0.6,
+                      fontWeight: FontWeight.w600,
+                      color: context.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.cardBackgroundAlt,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isDark
+                              ? Icons.dark_mode_outlined
+                              : Icons.light_mode_outlined,
+                          size: 18,
+                          color: context.textSecondary,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            AppLocales.of(context).drawerTema,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
-                        ],
-                      ),
+                        ),
+                        ThemeToggleSwitch(
+                          isDark: isDark,
+                          onChanged: themeController.toggleTheme,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
+                  ),
+                  const SizedBox(height: 10),
 
-              // --- Main navigation ---
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  children: [
-                    for (var i = 0; i < _navItems.length; i++)
-                      DrawerNavItem(
-                        icon: _navItems[i].icon,
-                        label: AppLocales.of(context).translate(_navItems[i].key),
-                        selected: i == widget.currentIndex,
-                        onTap: () {
-                          Navigator.of(context).pop(); // close drawer
-                          widget.onNavigate(i);
-                        },
-                      ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // --- Settings + Support ---
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
-                    Divider(color: colors.border),
-                    const SizedBox(height: 8),
-                    Text(
-                      AppLocales.of(context).drawerConfiguracoes,
-                      style: TextStyle(
-                        fontSize: 11,
-                        letterSpacing: 0.6,
-                        fontWeight: FontWeight.w600,
-                        color: context.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colors.cardBackgroundAlt,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => _showLanguagePicker(context),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Row(
                         children: [
                           Icon(
-                            isDark
-                                ? Icons.dark_mode_outlined
-                                : Icons.light_mode_outlined,
+                            Icons.language,
                             size: 18,
                             color: context.textSecondary,
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              AppLocales.of(context).drawerTema,
+                              AppLocales.of(context).drawerIdioma,
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),
-                          ThemeToggleSwitch(
-                            isDark: isDark,
-                            onChanged: themeController.toggleTheme,
+                          Text(
+                            LocaleController.of(context).locale.languageCode == 'en'
+                                ? 'English'
+                                : 'Português',
+                            style: TextStyle(
+                              color: colors.accentBlue,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 18,
+                            color: colors.accentBlue,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
-
-                    InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () => _showLanguagePicker(context),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.language,
-                              size: 18,
-                              color: context.textSecondary,
+                  ),
+                  const SizedBox(height: 4),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => _showCurrencyPicker(context),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.attach_money,
+                            size: 18,
+                            color: context.textSecondary,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              AppLocales.of(context).translate('drawer_moeda'),
+                              style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                AppLocales.of(context).drawerIdioma,
-                                style: const TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                            Text(
-                              LocaleController.of(context).locale.languageCode == 'en'
-                                  ? 'English'
-                                  : 'Português',
-                              style: TextStyle(
-                                color: colors.accentBlue,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Icon(
-                              Icons.chevron_right,
-                              size: 18,
+                          ),
+                          Text(
+                            CurrencyController.of(context).currencyCode,
+                            style: TextStyle(
                               color: colors.accentBlue,
+                              fontWeight: FontWeight.w600,
                             ),
-                          ],
-                        ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 18,
+                            color: colors.accentBlue,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () => _showCurrencyPicker(context),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.attach_money,
-                              size: 18,
-                              color: context.textSecondary,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                AppLocales.of(context).translate('drawer_moeda'),
-                                style: const TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                            Text(
-                              CurrencyController.of(context).currencyCode,
-                              style: TextStyle(
-                                color: colors.accentBlue,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Icon(
-                              Icons.chevron_right,
-                              size: 18,
-                              color: colors.accentBlue,
-                            ),
-                          ],
-                        ),
-                      ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Divider(color: colors.border),
+                  const SizedBox(height: 8),
+                  // --- Support section ---
+                  Text(
+                    AppLocales.of(context).drawerSuporte,
+                    style: TextStyle(
+                      fontSize: 11,
+                      letterSpacing: 0.6,
+                      fontWeight: FontWeight.w600,
+                      color: context.textSecondary,
                     ),
+                  ),
+                  const SizedBox(height: 10),
 
-                    const SizedBox(height: 14),
-
-                    Divider(color: colors.border),
-                    const SizedBox(height: 8),
-                    // --- Support section ---
-                    Text(
-                      AppLocales.of(context).drawerSuporte,
-                      style: TextStyle(
-                        fontSize: 11,
-                        letterSpacing: 0.6,
-                        fontWeight: FontWeight.w600,
-                        color: context.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    Column(
-                      children: [
-                        DrawerNavItem(
-                          icon: Icons.help_center_outlined,
-                          label: AppLocales.of(context).drawerAjuda,
-                          selected: false,
-                          onTap: () {
-                            Navigator.of(context).pop(); // close drawer
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const HelpCenterScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        DrawerNavItem(
-                          icon: Icons.info_outline,
-                          label: AppLocales.of(context).drawerSobre,
-                          selected: false,
-                          onTap: () {
-                            Navigator.of(context).pop(); // close drawer
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const AboutLoahScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        DrawerNavItem(
-                          icon: Icons.description_outlined,
-                          label: AppLocales.of(context).drawerTermos,
-                          selected: false,
-                          onTap: () {
-                            Navigator.of(context).pop(); // close drawer
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const TermsPrivacyScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-
-                    // ── Admin section (only visible for admin users) ──
-                    if (_userRole == 'admin') ...[
-                      const SizedBox(height: 12),
-                      Divider(color: colors.border),
-                      const SizedBox(height: 8),
-                      Text(
-                        AppLocales.of(context).drawerAdmin,
-                        style: TextStyle(
-                          fontSize: 11,
-                          letterSpacing: 0.6,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.amber.shade700,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
+                  Column(
+                    children: [
                       DrawerNavItem(
-                        icon: Icons.people_outline,
-                        label: AppLocales.of(context).drawerGerirUtilizadores,
+                        icon: Icons.help_center_outlined,
+                        label: AppLocales.of(context).drawerAjuda,
                         selected: false,
                         onTap: () {
-                          Navigator.of(context).pop(); // close drawer
+                          _close(context);
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  const ManageUsersScreen(),
+                              builder: (_) => const HelpCenterScreen(),
                             ),
                           );
                         },
                       ),
                       DrawerNavItem(
-                        icon: Icons.auto_stories_outlined,
-                        label: AppLocales.of(context).drawerGerirReflexoes,
+                        icon: Icons.info_outline,
+                        label: AppLocales.of(context).drawerSobre,
                         selected: false,
                         onTap: () {
-                          Navigator.of(context).pop(); // close drawer
+                          _close(context);
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  const ManageReflectionsScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      DrawerNavItem(
-                        icon: Icons.support_agent_outlined,
-                        label: AppLocales.of(context).drawerGerirAjuda,
-                        selected: false,
-                        onTap: () {
-                          Navigator.of(context).pop(); // close drawer
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const ManageHelpCenterScreen(),
+                              builder: (_) => const AboutLoahScreen(),
                             ),
                           );
                         },
                       ),
                       DrawerNavItem(
                         icon: Icons.description_outlined,
-                        label: AppLocales.of(context).drawerGerirSobre,
+                        label: AppLocales.of(context).drawerTermos,
                         selected: false,
                         onTap: () {
-                          Navigator.of(context).pop(); // close drawer
+                          _close(context);
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  const ManageAboutLoahScreen(),
+                              builder: (_) => const TermsPrivacyScreen(),
                             ),
                           );
                         },
                       ),
                     ],
+                  ),
 
+                  // ── Admin section (only visible for admin users) ──
+                  if (_userRole == 'admin') ...[
                     const SizedBox(height: 12),
                     Divider(color: colors.border),
                     const SizedBox(height: 8),
                     Text(
-                      AppLocales.of(context).drawerConta,
+                      AppLocales.of(context).drawerAdmin,
                       style: TextStyle(
                         fontSize: 11,
                         letterSpacing: 0.6,
                         fontWeight: FontWeight.w600,
-                        color: context.textSecondary,
+                        color: Colors.amber.shade700,
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Column(
-                      children: [
-                        DrawerNavItem(
-                          icon: Icons.person_outline,
-                          label: AppLocales.of(context).drawerEditarPerfil,
-                          selected: false,
-                          onTap: () {
-                            Navigator.of(context).pop();
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const ProfileScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        DrawerNavItem(
-                          icon: Icons.lock_outline,
-                          label: AppLocales.of(context).drawerAlterarSenha,
-                          selected: false,
-                          onTap: () {
-                            Navigator.of(context).pop();
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const ChangePasswordScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                    DrawerNavItem(
+                      icon: Icons.people_outline,
+                      label: AppLocales.of(context).drawerGerirUtilizadores,
+                      selected: false,
+                      onTap: () {
+                        _close(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ManageUsersScreen(),
+                          ),
+                        );
+                      },
                     ),
+                    DrawerNavItem(
+                      icon: Icons.auto_stories_outlined,
+                      label: AppLocales.of(context).drawerGerirReflexoes,
+                      selected: false,
+                      onTap: () {
+                        _close(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ManageReflectionsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    DrawerNavItem(
+                      icon: Icons.support_agent_outlined,
+                      label: AppLocales.of(context).drawerGerirAjuda,
+                      selected: false,
+                      onTap: () {
+                        _close(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ManageHelpCenterScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    DrawerNavItem(
+                      icon: Icons.description_outlined,
+                      label: AppLocales.of(context).drawerGerirSobre,
+                      selected: false,
+                      onTap: () {
+                        _close(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ManageAboutLoahScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
 
-                    const SizedBox(height: 12),
-SizedBox(
-  width: double.infinity,
-  child: OutlinedButton.icon(
-    onPressed: () async {
-      Navigator.of(context).pop(); // close drawer
+                  const SizedBox(height: 12),
+                  Divider(color: colors.border),
+                  const SizedBox(height: 8),
+                  Text(
+                    AppLocales.of(context).drawerConta,
+                    style: TextStyle(
+                      fontSize: 11,
+                      letterSpacing: 0.6,
+                      fontWeight: FontWeight.w600,
+                      color: context.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Column(
+                    children: [
+                      DrawerNavItem(
+                        icon: Icons.person_outline,
+                        label: AppLocales.of(context).drawerEditarPerfil,
+                        selected: false,
+                        onTap: () {
+                          // CORRIGIDO: estava Navigator.pop() direto — em
+                          // modo embedded isso fechava a rota errada.
+                          _close(context);
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      DrawerNavItem(
+                        icon: Icons.lock_outline,
+                        label: AppLocales.of(context).drawerAlterarSenha,
+                        selected: false,
+                        onTap: () {
+                          // CORRIGIDO: idem — usava Navigator.pop() direto.
+                          _close(context);
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ChangePasswordScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
 
-      // Termina a instância do Firestore por completo — isso garante
-      // (ao contrário de disableNetwork, que só suspende) que todas
-      // as streams ativas do RootShell antigo sejam efetivamente
-      // canceladas antes de prosseguirmos. disableNetwork() sozinho
-      // deixava as streams "pausadas" esperando a rede voltar, o que
-      // causava permission-denied quando a rede era reativada durante
-      // um signup/login seguinte com um usuário diferente.
-      try {
-        await FirebaseFirestore.instance.terminate();
-      } catch (e) {
-        debugPrint('[Logout] Erro ao terminar Firestore: $e');
-      }
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        _close(context);
 
-      await AuthService().signOut();
+                        // Termina a instância do Firestore por completo — isso
+                        // garante (ao contrário de disableNetwork, que só
+                        // suspende) que todas as streams ativas do RootShell
+                        // antigo sejam efetivamente canceladas antes de
+                        // prosseguirmos. disableNetwork() sozinho deixava as
+                        // streams "pausadas" esperando a rede voltar, o que
+                        // causava permission-denied quando a rede era
+                        // reativada durante um signup/login seguinte com um
+                        // usuário diferente.
+                        try {
+                          await FirebaseFirestore.instance.terminate();
+                        } catch (e) {
+                          debugPrint('[Logout] Erro ao terminar Firestore: $e');
+                        }
 
-      if (!context.mounted) return;
-      await Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
-    },
-    icon: const Icon(Icons.logout, size: 18, color: Colors.redAccent),
-    label: Text(
-      AppLocales.of(context).drawerSair,
-      style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
-    ),
-    style: OutlinedButton.styleFrom(
-      side: const BorderSide(color: Colors.redAccent),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ),
-  ),
-),
-                    const SizedBox(height: 14),
+                        await AuthService().signOut();
 
-                    Center(
-                      child: Text(
-                        'Loah v1.0.0 • Made by Lino Zeferino',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          color: context.textSecondary,
-                        ),
+                        if (!context.mounted) return;
+                        await Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      },
+                      icon: const Icon(Icons.logout, size: 18, color: Colors.redAccent),
+                      label: Text(
+                        AppLocales.of(context).drawerSair,
+                        style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.redAccent),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  Center(
+                    child: Text(
+                      'Loah v1.0.0 • Made by Lino Zeferino',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: context.textSecondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
+    );
+
+    if (widget.embedded) {
+      return Container(
+        width: 280,
+        decoration: BoxDecoration(
+          color: colors.cardBackground,
+          border: Border(right: BorderSide(color: colors.border)),
+        ),
+        child: content,
+      );
+    }
+
+    return Drawer(
+      backgroundColor: colors.cardBackground,
+      child: content,
     );
   }
 }

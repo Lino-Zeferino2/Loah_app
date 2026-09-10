@@ -9,7 +9,16 @@ class AuthService {
   AuthService._internal();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  // CORRIGIDO: era `final GoogleSignIn _googleSignIn = GoogleSignIn();`
+  // — inicializava no construtor de AuthService, chamado logo na
+  // SplashScreen. Qualquer falha de configuração do Google (client id
+  // em falta/errado, domínio não autorizado) travava o arranque do
+  // app inteiro, para todos os utilizadores, mesmo quem só quer
+  // entrar com email/senha. Agora só é criado quando efetivamente
+  // usado (signInWithGoogle ou signOut).
+  GoogleSignIn? _googleSignInInstance;
+  GoogleSignIn get _googleSignIn => _googleSignInInstance ??= GoogleSignIn();
 
   /// Stream de mudancas no estado do usuario autenticado.
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -218,8 +227,14 @@ class AuthService {
 
   /// Faz logout.
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
+    // CORRIGIDO: protegido com try/catch — se o GoogleSignIn nunca foi
+    // usado nesta sessão (login por email/senha) ou estiver mal
+    // configurado, signOut() não deve impedir o logout do Firebase Auth.
+    try {
+      await _googleSignIn.signOut();
+    } catch (e) {
+      // Não fatal: o utilizador pode nunca ter usado Google Sign-In.
+    }
     await _auth.signOut();
   }
 }
-
