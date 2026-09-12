@@ -19,9 +19,13 @@ class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
-
+ bool _webPermissionRequested = false; // evita pedir 2x na mesma sessão
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final NotificationRepository _repository = NotificationRepository();
+
+  /// Substitui pela tua VAPID key (Firebase Console → Project Settings
+  /// → Cloud Messaging → Web configuration → "Generate key pair").
+  static const String _webVapidKey = 'BAEcIv5BOCF1I7cwO2xPziyRrM4yAQmMNBvKlsACkKEmbaqKkxnfqs2IZZVP5-utiqpT6DYRiXVr0k8G11iiEvI';
 
   /// Local notifications plugin for displaying push payloads while
   /// the app is in the foreground.
@@ -43,99 +47,95 @@ class NotificationService {
     _onNotificationTap = onTap;
   }
 
-  /// Initialize FCM: request permissions, get token, set up handlers.
-  ///
-  /// Call this once in [main] after [Firebase.initializeApp].
+  /// Chamado uma vez no main(). Configura listeners e (mobile) já pede
+  /// permissão como antes. NA WEB, não pede permissão aqui — só
+  /// regista os listeners de mensagens.
   Future<void> initialize() async {
     if (_initialized) return;
 
-    // ── 1. Local notifications setup ──────────────────────────────
-    _localNotifications = FlutterLocalNotificationsPlugin();
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-    const initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
+    if (!kIsWeb) {
+      _localNotifications = FlutterLocalNotificationsPlugin();
+      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+      await _localNotifications.initialize(
+        const InitializationSettings(android: androidSettings, iOS: iosSettings),
+        onDidReceiveNotificationResponse: _onLocalNotificationTap,
+      );
 
-    await _localNotifications.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: _onLocalNotificationTap,
-    );
+      // Mobile continua a pedir permissão e a obter o token no arranque,
+      // tal como já funcionava — não mexemos nisto.
+      final messagingSettings = await _messaging.requestPermission(
+        alert: true, announcement: true, badge: true, carPlay: true,
+        criticalAlert: true, provisional: false, sound: true,
+      );
+      debugPrint('[NotificationService] Permission: ${messagingSettings.authorizationStatus}');
 
-    // ── 2. Request permissions (iOS) ──────────────────────────────
-    final messagingSettings = await _messaging.requestPermission(
-      alert: true,
-      announcement: true,
-      badge: true,
-      carPlay: true,
-      criticalAlert: true,
-      provisional: false,
-      sound: true,
-    );
-    debugPrint(
-      '[NotificationService] Permission: ${messagingSettings.authorizationStatus}',
-    );
-
-    // ── 3. Get & register the FCM token ──────────────────────────
-    // No iOS, o token FCM depende do APNS token, que só chega depois
-    // de o sistema registar o device para push. Em simuladores esse
-    // APNS token pode nunca chegar — sem esta checagem, getToken()
-    // lança exceção e derruba o app inteiro (main() faz await nisto).
-    // No Android este bloco continua a funcionar exatamente igual.
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      final apnsToken = await _messaging.getAPNSToken();
-      if (apnsToken == null) {
-        debugPrint(
-          '[NotificationService] APNS token ainda não disponível '
-          '(normal em simulador). A saltar registo de FCM token.',
-        );
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final apnsToken = await _messaging.getAPNSToken();
+        if (apnsToken != null) {
+          try {
+            _currentToken = await _messaging.getToken();
+            await _saveTokenToFirestore(_currentToken);
+          } catch (e) {
+            debugPrint('[NotificationService] Erro ao obter FCM token: $e');
+          }
+        }
       } else {
         try {
           _currentToken = await _messaging.getToken();
-          debugPrint('[NotificationService] FCM Token: $_currentToken');
           await _saveTokenToFirestore(_currentToken);
         } catch (e) {
           debugPrint('[NotificationService] Erro ao obter FCM token: $e');
         }
       }
-    } else {
-      try {
-        _currentToken = await _messaging.getToken();
-        debugPrint('[NotificationService] FCM Token: $_currentToken');
-        await _saveTokenToFirestore(_currentToken);
-      } catch (e) {
-        debugPrint('[NotificationService] Erro ao obter FCM token: $e');
-      }
     }
+    // kIsWeb == true: NÃO faz nada de permissão aqui. Fica para
+    // requestWebPermissionAndToken(), chamado a partir de um clique.
 
-    // Listen for token refresh
     _messaging.onTokenRefresh.listen((newToken) {
-      debugPrint('[NotificationService] Token refreshed: $newToken');
       _currentToken = newToken;
       _saveTokenToFirestore(newToken);
     });
 
-    // ── 4. Foreground messages ────────────────────────────────────
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-
-    // ── 5. Background/terminated tap handling ─────────────────────
     FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
-    // Check if the app was opened from a terminated notification
     final initialMessage = await _messaging.getInitialMessage();
-    if (initialMessage != null) {
-      _handleNotificationTap(initialMessage);
-    }
+    if (initialMessage != null) _handleNotificationTap(initialMessage);
 
     _initialized = true;
     debugPrint('[NotificationService] Initialized successfully.');
   }
 
+  /// Chama isto NO INÍCIO de um handler de clique (login/criar conta),
+  /// antes de qualquer await — é isso que mantém o pedido "dentro" do
+  /// gesto do utilizador aos olhos do browser.
+  Future<void> requestWebPermissionAndToken() async {
+    if (!kIsWeb || _webPermissionRequested) return;
+    _webPermissionRequested = true;
+
+    try {
+      final settings = await _messaging.requestPermission(
+        alert: true, badge: true, sound: true, provisional: false,
+      );
+      debugPrint('[NotificationService][Web] Permission: ${settings.authorizationStatus}');
+
+      if (settings.authorizationStatus == AuthorizationStatus.denied) {
+        debugPrint('[NotificationService][Web] Utilizador recusou.');
+        return;
+      }
+
+      _currentToken = await _messaging.getToken(vapidKey: _webVapidKey);
+      debugPrint('[NotificationService][Web] Token: $_currentToken');
+      await _saveTokenToFirestore(_currentToken);
+    } catch (e) {
+      debugPrint('[NotificationService][Web] Erro: $e');
+    }
+  }
   /// Saves the current FCM token to the user's Firestore document
   /// under /users/{userId}/fcmTokens/{tokenId}.
   Future<void> _saveTokenToFirestore(String? token) async {
@@ -152,11 +152,11 @@ class NotificationService {
           .doc(token)
           .set({
         'token': token,
-        'platform': 
-          // ignore: undefined_prefixed_name
-          defaultTargetPlatform == TargetPlatform.android
-              ? 'android'
-              : 'ios',
+        'platform': kIsWeb
+            ? 'web'
+            : (defaultTargetPlatform == TargetPlatform.android
+                ? 'android'
+                : 'ios'),
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -181,13 +181,18 @@ class NotificationService {
       await _repository.addNotification(appNotification);
     }
 
-    // Show local notification
-    await _showLocalNotification(
-      id: message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
-      title: notification.title ?? '',
-      body: notification.body ?? '',
-      payload: jsonEncode(data),
-    );
+    // No Web não há flutter_local_notifications — o próprio browser
+    // já mostra o banner nativo via FCM quando a página está em
+    // background; em foreground, deixamos só o registo em Firestore
+    // (a UI da app trata a exibição, ex: badge/lista).
+    if (!kIsWeb) {
+      await _showLocalNotification(
+        id: message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
+        title: notification.title ?? '',
+        body: notification.body ?? '',
+        payload: jsonEncode(data),
+      );
+    }
   }
 
   /// Shows a local notification (used for foreground messages).
@@ -217,7 +222,6 @@ class NotificationService {
 
     await _localNotifications.show(id, title, body, details, payload: payload);
   }
-
 
   /// Called when the user taps a push notification while the app is
   /// in background or has been opened from terminated state.
@@ -283,7 +287,6 @@ class NotificationService {
       message: notification.body ?? data['message'] as String? ?? '',
       timestamp: DateTime.now(),
       relatedId: data['relatedId'] as String?,
-      // FCM data payloads are always strings; parse safely.
       progress: _parseProgress(data['progress']),
     );
   }

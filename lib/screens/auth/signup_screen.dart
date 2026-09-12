@@ -2,12 +2,13 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform, kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:loah_app/core/constants/app_breakpoints.dart';
 import 'package:loah_app/core/l10n/app_localizations.dart';
 import 'package:loah_app/core/services/auth_service.dart';
+import 'package:loah_app/core/services/notification_service.dart' show NotificationService;
 import 'package:loah_app/core/services/user_service.dart';
 import 'package:loah_app/screens/auth/email_verification_screen.dart';
 import 'package:loah_app/screens/contacts/widgets/country_code_picker_sheet.dart';
@@ -125,7 +126,9 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _showTermsError = !_acceptedTerms);
     if (!formValid || !_acceptedTerms) return;
 
-    setState(() => _submitting = true);
+    if (kIsWeb) NotificationService().requestWebPermissionAndToken();
+
+  setState(() => _submitting = true);
 
     try {
       final userCredential = await _authService.signUpWithEmail(
@@ -216,10 +219,11 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Future<void> _handleGoogleSignUp() async {
-    final loc = AppLocales.of(context);
-    try {
-      final userCredential = await _authService.signInWithGoogle();
+ Future<void> _handleGoogleSignUp() async {
+  final loc = AppLocales.of(context);
+  if (kIsWeb) NotificationService().requestWebPermissionAndToken();
+  try {
+    final userCredential = await _authService.signInWithGoogle();
       if (!mounted) return;
       final user = userCredential.user;
       if (user != null) {
@@ -268,6 +272,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _handleAppleSignUp() async {
     final loc = AppLocales.of(context);
+     if (kIsWeb) NotificationService().requestWebPermissionAndToken();
     // Verifica se a plataforma é Android
     if (defaultTargetPlatform == TargetPlatform.android) {
       if (!mounted) return;

@@ -1,0 +1,10 @@
+[
+  {
+    "origin": [
+      "https://loahapp.web.app",
+      "https://loahapp.firebaseapp.com"
+    ],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600
+  }
+]

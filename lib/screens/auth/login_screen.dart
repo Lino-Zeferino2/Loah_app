@@ -2,7 +2,6 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:loah_app/core/constants/app_breakpoints.dart';
@@ -14,7 +13,8 @@ import 'package:loah_app/screens/auth/email_verification_screen.dart';
 import 'password_recovery_screen.dart';
 import 'signup_screen.dart';
 import 'widgets/wave_lines/wave_card_header.dart';
-
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:loah_app/core/services/notification_service.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -70,9 +70,11 @@ class _LoginScreenState extends State<LoginScreen> {
     if (form == null) return;
     if (!form.validate()) return;
 
-    setState(() => _submitting = true);
+    // Dispara já — sem await — para ficar dentro do gesto do clique.
+    if (kIsWeb) NotificationService().requestWebPermissionAndToken();
 
-    try {
+    setState(() => _submitting = true);
+  try {
       final userCredential = await _authService.signInWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -159,6 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleGoogleLogin() async {
+    if (kIsWeb) NotificationService().requestWebPermissionAndToken();
     try {
       final userCredential = await _authService.signInWithGoogle();
       if (!mounted) return;
