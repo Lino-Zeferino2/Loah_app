@@ -1,69 +1,118 @@
-# Loah — App Flutter
+# <img src="assets/images/logo.png" height="60"> Loah App
 
-> Aplicação modular em **Flutter/Dart** para gestão pessoal: Dashboard, Metas, Tarefas, Finanças e Contactos. Arquitetura limpa, tema claro/escuro, i18n e backend Firebase.
+> **App pessoal inteligente de finanças, metas, tarefas e contactos.**
+
+[![Flutter](https://img.shields.io/badge/Flutter-3.3+-02569B?logo=flutter)](https://flutter.dev)
+[![Firebase](https://img.shields.io/badge/Firebase-Backend-FFCA28?logo=firebase)](https://firebase.google.com)
+[![Dart](https://img.shields.io/badge/Dart-2.0+-00B4AB?logo=dart)](https://dart.dev)
 
 ---
 
-## 🚀 Como rodar
+## 📸 Preview
+
+<p align="center">
+  <img src="assets/images/preview1.jpg" width="45%" />
+  <img src="assets/images/preview2.jpg" width="45%" />
+</p>
+
+---
+
+## ✨ Sobre o Loah
+
+Loah é uma aplicação **Flutter** multiplataforma (Android, iOS e Web) que centraliza a vida pessoal em um só lugar. Com design moderno, animações suaves e integração total com **Firebase**, permite ao utilizador gerenciar:
+
+- 💰 **Finanças** — gastos, rendimentos, categorias, relatórios
+- 🎯 **Metas** — objetivos de longo prazo com progresso visual
+- ✅ **Tarefas** — lista inteligente com prioridades e notificações
+- 👥 **Contactos** — gestão de contactos com sincronização
+
+---
+
+## 🛠 Stack Tecnológica
+
+<div align="center">
+
+| Categoria | Tecnologia | Badge |
+|---|---|---|
+| **Frontend** | Flutter & Dart | ![Flutter](https://img.shields.io/badge/Flutter-02569B?logo=flutter) |
+| **UI / Design** | Material 3, Google Fonts, FontAwesome | ![Material](https://img.shields.io/badge/Material_3-6200EE) |
+| **Backend** | Firebase (Auth, Firestore, Storage, FCM) | ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?logo=firebase) |
+| **Notificações** | flutter_local_notifications + FCM | ![Notify](https://img.shields.io/badge/Notifications-4A90E2) |
+| **Web** | Flutter Web + PWA (manifest, service worker) | ![Web](https://img.shields.io/badge/Web-PWA-4285F4) |
+
+</div>
+
+---
+
+## 🚀 Funcionalidades
+
+### 💳 Finanças
+- Registo de transações com categorias personalizadas
+- Gráficos de saldo e evolução mensal
+- Orçamento por categoria
+
+### 🎯 Metas
+- Criação de objetivos com data limite
+- Barras de progresso animadas
+- Notificações de marco atingido
+
+### ✅ Tarefas
+- Listas com prioridade alta/média/baixa
+- Filtros por data, estado e categoria
+- Sincronização em tempo real (Firestore)
+
+### 👥 Contactos
+- Importação e gestão de contactos
+- Pesquisa rápida
+- Integração com Firebase Auth
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+loahapp/
+├── lib/                  # Código fonte Flutter
+│   ├── main.dart
+│   ├── screens/
+│   ├── widgets/
+│   └── services/
+├── web/                  # PWA (manifest, service worker)
+├── android/ / ios/       # Configurações nativas
+├── functions/            # Cloud Functions (Firebase)
+├── assets/               # Imagens, fontes, logos
+└── firebase.json         # Configuração Firebase
+```
+
+---
+
+## 🏃 Como Executar
 
 ```bash
+# Instalar dependências
 flutter pub get
+
+# Executar local (Android / iOS / Web)
 flutter run
-```
 
-Requer **Flutter 3.x** (Dart >= 3.3).
-
-Para backend Firebase configure `google-services.json` / `GoogleService-Info.plist` e aplique regras:
-
-```bash
-firebase deploy --only firestore:rules,storage:rules,functions
+# Executar web com hot reload
+flutter run -d chrome
 ```
 
 ---
 
-## 📱 Funcionalidades
+## 🖼 Logo & Imagens
 
-| Módulo | Descrição |
-|--------|-----------|
-| **Dashboard** | Visão consolidada de metas, tarefas e saldos |
-| **Metas** | Definição e acompanhamento de objetivos |
-| **Tarefas** | Lista de tarefas com prioridades e prazos |
-| **Finanças** | Controle de receitas e despesas |
-| **Contactos** | Gestão de contactos |
-| **Notificações** | Push via Firebase Messaging |
-
----
-
-## 🎨 Design
-
-- Tema dinâmico claro/escuro (`LoahThemeController`)
-- i18n PT / EN (`LocaleController`)
-- Widgets reutilizáveis e arquitetura modular
-
----
-
-## 🏗 Arquitetura
-
-Dados persistidos no **Cloud Firestore** (por utilizador autenticado). Serviços em `lib/core/services/` (`FinanceService`, `GoalService`, `TaskService`, `ContactService`) fazem CRUD e reagem em tempo real.
-
----
-
-## 🖼 Capturas / Screenshots
-
-Interface responsiva com tema escuro, dashboard consolidado e navegação por módulos.
-
-## 👤 Créditos
-
-- **Desenvolvimento:** ZefCorp / Lino Zeferino
-- **Tech:** Flutter 3.x, Firebase (Auth, Firestore, Storage, Functions, Messaging)
-- **Arquitetura:** Serviços modulares (`lib/core/services/`)
-
-## 🏷 Versão
-
-`main` — Versão web estável (Dashboard, Metas, Tarefas, Login/Signup, Notificações).
+<p align="center">
+  <img src="assets/images/logo.png" height="80" alt="Loah Logo" />
+</p>
 
 ---
 
 ## 📄 Licença
 
-Projeto privado — Lino Zeferino.
+MIT License — veja [LICENSE](LICENSE) para detalhes.
+
+---
+
+*Feito com ❤️ pela equipa Loah • 2026*
