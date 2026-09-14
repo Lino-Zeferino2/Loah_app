@@ -78,6 +78,51 @@ class _AssetsScreenState extends State<AssetsScreen> {
     }
   }
 
+  // ── Exclusão de ativo ──────────────────────────────────────────
+  // NOVO: pede sempre confirmação antes de excluir. Reaproveita as
+  // strings 'addAsset_excluir_*' que já existiam (originalmente usadas
+  // apenas dentro do AddAssetScreen), garantindo a mesma redação em
+  // toda a app.
+  Future<bool> _confirmDeleteAsset(AssetModel asset) async {
+    final loc = AppLocales.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(loc.translate('addAsset_excluir_titulo')),
+        content: Text(loc.translate('addAsset_excluir_msg')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(loc.translate('addAsset_cancelar')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: Text(loc.translate('addAsset_excluir_confirmar')),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
+  Future<void> _deleteAsset(AssetModel asset) async {
+    // Remove localmente já (o Dismissible já animou a saída do card).
+    setState(() => _assets.removeWhere((a) => a.id == asset.id));
+    try {
+      await _financeService.deleteAsset(asset.id);
+    } catch (e) {
+      // Se falhar no servidor, recarrega para restaurar o estado real.
+      if (mounted) {
+        final loc = AppLocales.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${loc.translate('addAsset_erro_excluir')}$e')),
+        );
+        _loadData();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.loahColors;
@@ -131,10 +176,28 @@ class _AssetsScreenState extends State<AssetsScreen> {
                     )
                   else
                     for (final a in _assets) ...[
-                      AssetCard(
-                        asset: a,
-                        onTap: () {},
-                        onQuickUpdate: () => _quickUpdate(a),
+                      Dismissible(
+                        key: ValueKey(a.id),
+                        direction: DismissDirection.endToStart,
+                        confirmDismiss: (_) => _confirmDeleteAsset(a),
+                        onDismissed: (_) => _deleteAsset(a),
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.white,
+                          ),
+                        ),
+                        child: AssetCard(
+                          asset: a,
+                          onTap: () {},
+                          onQuickUpdate: () => _quickUpdate(a),
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                     ],
@@ -155,4 +218,3 @@ class _AssetsScreenState extends State<AssetsScreen> {
     );
   }
 }
-

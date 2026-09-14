@@ -1,6 +1,5 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -132,11 +131,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       setState(() => _saving = true);
 
-      // Upload to Firebase Storage
-      final file = File(pickedFile.path);
-      final storageRef = FirebaseStorage.instance
-          .ref('profilePhotos/$_uid/${DateTime.now().millisecondsSinceEpoch}.jpg');
-      await storageRef.putFile(file);
+      // NOVO: em vez de File(pickedFile.path) + putFile(), lemos os
+      // bytes do XFile e usamos putData(). putFile() usa dart:io File,
+      // que não está implementado no target Web (é isso que causava o
+      // "UnimplementedError: putFile() is not implemented"). putData()
+      // com Uint8List funciona igual em Android, iOS e Web.
+      final bytes = await pickedFile.readAsBytes();
+      final storageRef = FirebaseStorage.instance.ref(
+        'profilePhotos/$_uid/${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
+      await storageRef.putData(
+        bytes,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
       final downloadUrl = await storageRef.getDownloadURL();
 
       // Update Firestore
@@ -188,7 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-Future<void> _saveProfile() async {
+  Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
     if (_uid == null) return;
 
@@ -575,7 +582,7 @@ Future<void> _saveProfile() async {
                       ),
                       const SizedBox(height: 32),
 
-// ── Delete Account Button ──
+                      // ── Delete Account Button ──
                       const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
@@ -598,7 +605,7 @@ Future<void> _saveProfile() async {
                           ),
                         ),
                       ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       // ── Save Button ──
                       SizedBox(
                         width: double.infinity,
