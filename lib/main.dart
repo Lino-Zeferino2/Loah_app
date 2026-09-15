@@ -72,6 +72,10 @@ PlatformDispatcher.instance.onError = (error, stack) {
 };
 
   // ── Firestore Offline Persistence ─────────────────────────────
+  // NOTA: persistenceEnabled se aplica igualmente a Android, iOS e
+  // Web nesta versão do plugin — não é preciso nenhuma verificação
+  // de kIsWeb separada. Um único assignment de Settings basta para
+  // todas as plataformas.
   try {
     FirebaseFirestore.instance.settings = const Settings(
       persistenceEnabled: true,

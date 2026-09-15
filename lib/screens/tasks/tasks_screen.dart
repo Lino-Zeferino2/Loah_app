@@ -23,6 +23,12 @@ import 'widgets/task_filter_sheet.dart';
 ///
 /// Lê tarefas diretamente do Firestore via [TaskService].
 ///
+/// Esta tela é uma das tabs do shell principal (Dashboard, Metas,
+/// Tarefas, Finanças, Contactos) — por isso usa LoahDrawer e
+/// LoahNavigationController, tal como as outras tabs. NÃO deve ser
+/// aberta com Navigator.push; para navegar até aqui a partir de outra
+/// tab, usa LoahNavigationController.of(context).navigateTo(<índice>).
+///
 /// Layout: mobile mantém a lista vertical única original. Desktop
 /// reorganiza "Hoje" e "Próximos dias" lado a lado (fazem mais sentido
 /// lidos em paralelo do que empilhados), com "Concluídos" em largura

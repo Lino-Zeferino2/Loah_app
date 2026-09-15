@@ -24,6 +24,9 @@ import '../../widgets/loah_drawer.dart';
 import 'widgets/new_item_modal_sheet.dart';
 import '../../models/task_model.dart';
 import '../../models/goal_model.dart';
+import '../../models/transaction_model.dart';
+import '../../models/account_model.dart';
+import '../../models/asset_model.dart';
 import '../../models/reflection_model.dart';
 import '../../core/services/reflection_service.dart';
 import 'widgets/balance_card.dart';
@@ -35,8 +38,18 @@ import 'widgets/pending_tasks_card.dart';
 /// "Loah - Dashboard": the home screen with a greeting, balance summary,
 /// pending tasks, a quick-add card, goal progress and a daily reflection.
 ///
-/// Lê tarefas, metas e finanças do Firestore via services.
-/// O saldo e progresso financeiro são calculados em tempo real.
+/// NOVO: os dados (transações, contas, ativos, tarefas, metas) agora
+/// vêm de streams em tempo real (.snapshots()), não de buscas únicas.
+/// Com a persistência offline do Firestore ativa (ver nota no
+/// main.dart), isto tem dois efeitos:
+///   1. Se o dispositivo já tiver dados em cache, eles aparecem
+///      instantaneamente, mesmo sem rede.
+///   2. Quando a rede volta, o Firestore reconecta sozinho e emite um
+///      novo snapshot — a tela atualiza automaticamente, sem precisar
+///      de nenhum "recarregar" manual.
+/// Enquanto o primeiro snapshot de cada fonte ainda não chegou (nem do
+/// cache nem do servidor), mostramos um skeleton de carregamento em
+/// vez de conteúdo com valores a zero.
 ///
 /// Layout: em mobile (< [AppBreakpoints.desktop]) mantém a lista vertical
 /// original. Em desktop, o conteúdo é limitado a uma largura máxima e
@@ -57,18 +70,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final NotificationRepository _notificationRepo = NotificationRepository();
   final ReflectionService _reflectionService = ReflectionService();
 
+  // Limites de itens exibidos no card de "Tarefas Pendentes" no
+  // dashboard — 3 no mobile, 6 no desktop.
+  static const int _mobileTaskLimit = 3;
+  static const int _desktopTaskLimit = 6;
+
+  // ── Dados brutos vindos dos streams ─────────────────────────────
+  List<TransactionModel> _transactions = [];
+  List<AccountModel> _accounts = [];
+  List<AssetModel> _assets = [];
   List<TaskModel> _standaloneTasks = [];
   List<GoalModel> _goals = [];
+
+  // ── Valores derivados (recalculados a cada novo snapshot) ───────
   double _totalWealth = 0;
   double _progressToGoal = 0;
+
+  // ── Flags: já chegou o primeiro snapshot de cada fonte? ──────────
+  bool _txnLoaded = false;
+  bool _acctLoaded = false;
+  bool _assetLoaded = false;
+  bool _tasksLoaded = false;
+  bool _goalsLoaded = false;
+
+  bool get _loading =>
+      !_txnLoaded || !_acctLoaded || !_assetLoaded || !_tasksLoaded || !_goalsLoaded;
+
   int _unreadCount = 0;
   ReflectionModel? _activeReflection;
+
   StreamSubscription? _notificationSub;
+  StreamSubscription<List<TransactionModel>>? _txnSub;
+  StreamSubscription<List<AccountModel>>? _acctSub;
+  StreamSubscription<List<AssetModel>>? _assetSub;
+  StreamSubscription<QuerySnapshot>? _taskSub;
+  StreamSubscription<QuerySnapshot>? _goalSub;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _subscribeToData();
+    _loadReflection();
     _notificationSub = _notificationRepo.getUnreadCountStream().listen((count) {
       if (mounted) setState(() => _unreadCount = count);
     });
@@ -77,59 +119,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _notificationSub?.cancel();
+    _txnSub?.cancel();
+    _acctSub?.cancel();
+    _assetSub?.cancel();
+    _taskSub?.cancel();
+    _goalSub?.cancel();
     super.dispose();
   }
 
-  Future<bool> _loadFinanceData() async {
-    if (!mounted || FirebaseAuth.instance.currentUser == null) return false;
-    try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        debugPrint('Dashboard - Sem usuário autenticado');
-        return false;
-      }
+  void _subscribeToData() {
+    if (FirebaseAuth.instance.currentUser == null) return;
 
-      final txns = await _financeService.getAllTransactions();
-      final accts = await _financeService.getAllAccounts();
+    _txnSub = _financeService.getTransactionsListStream().listen((data) {
+      _transactions = data;
+      _txnLoaded = true;
+      _recomputeFinance();
+    });
 
-      double assetsValue = 0;
-      try {
-        final assets = await _financeService.getAllAssets();
-        assetsValue = assets.fold<double>(0.0, (sum, a) => sum + a.currentValue);
-      } catch (e) {
-        debugPrint('Dashboard - Erro ao carregar ativos: $e');
-      }
+    _acctSub = _financeService.getAccountsListStream().listen((data) {
+      _accounts = data;
+      _acctLoaded = true;
+      _recomputeFinance();
+    });
 
-      final accountsBalance = AccountBalance.totalOf(accts, txns);
-      final totalWealth = accountsBalance + assetsValue;
+    _assetSub = _financeService.getAssetsListStream().listen((data) {
+      _assets = data;
+      _assetLoaded = true;
+      _recomputeFinance();
+    });
 
-      final monthlyIncome = FinanceSummary.monthlyIncome(txns);
-      final monthlyExpense = FinanceSummary.monthlyExpense(txns);
-
-      final progress = monthlyIncome > 0
-          ? (monthlyExpense / monthlyIncome).clamp(0.0, 1.0)
-          : 0.0;
-
-      if (mounted) {
-        setState(() {
-          _totalWealth = totalWealth;
-          _progressToGoal = progress;
-        });
-      }
-      return true;
-    } catch (e) {
-      debugPrint('Dashboard - Erro ao carregar finanças: $e');
-      return false;
-    }
-  }
-
-  Future<void> _loadData() async {
-    if (!mounted || FirebaseAuth.instance.currentUser == null) return;
-    await _loadFinanceData();
-
-    try {
-      final tasksSnapshot = await _taskService.getTasksStream().first;
-      final standalone = tasksSnapshot.docs
+    _taskSub = _taskService.getTasksStream().listen((snapshot) {
+      final standalone = snapshot.docs
           .map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             return TaskModel(
@@ -164,11 +184,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   : null,
             );
           })
-          .where((t) => t.goalId == null)
+          // Só tarefas avulsas (sem meta) e ainda não concluídas.
+          .where((t) => t.goalId == null && !t.isDone)
           .toList();
 
-      final goalsSnapshot = await _goalService.getGoalsStream().first;
-      final goals = goalsSnapshot.docs.map((doc) {
+      if (mounted) {
+        setState(() {
+          _standaloneTasks = standalone;
+          _tasksLoaded = true;
+        });
+      }
+    });
+
+    _goalSub = _goalService.getGoalsStream().listen((snapshot) {
+      final goals = snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         return GoalModel(
           id: doc.id,
@@ -202,14 +231,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (mounted) {
         setState(() {
-          _standaloneTasks = standalone;
           _goals = goals;
+          _goalsLoaded = true;
         });
       }
-    } catch (e) {
-      debugPrint('Dashboard - Erro ao carregar tasks/goals: $e');
-    }
+    });
+  }
 
+  void _recomputeFinance() {
+    final accountsBalance = AccountBalance.totalOf(_accounts, _transactions);
+    final assetsValue = _assets.fold<double>(0.0, (sum, a) => sum + a.currentValue);
+    final totalWealth = accountsBalance + assetsValue;
+
+    final monthlyIncome = FinanceSummary.monthlyIncome(_transactions);
+    final monthlyExpense = FinanceSummary.monthlyExpense(_transactions);
+    final progress = monthlyIncome > 0
+        ? (monthlyExpense / monthlyIncome).clamp(0.0, 1.0)
+        : 0.0;
+
+    if (mounted) {
+      setState(() {
+        _totalWealth = totalWealth;
+        _progressToGoal = progress;
+      });
+    }
+  }
+
+  Future<void> _loadReflection() async {
     try {
       final reflections = await _reflectionService.getAllActiveReflections();
       if (mounted) {
@@ -230,8 +278,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final task = _standaloneTasks[index];
     final updated = task.copyWith(isDone: !task.isDone);
     _taskService.updateTask(updated);
+    // Remoção otimista — o stream de tarefas também vai confirmar isto
+    // no próximo snapshot, mas isto evita esperar o round-trip.
     setState(() {
-      _standaloneTasks[index] = updated;
+      _standaloneTasks.removeAt(index);
     });
   }
 
@@ -251,6 +301,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       builder: (_) => const NewItemModalSheet(),
     );
+  }
+
+  // Troca para a tab de Tarefas dentro do shell (não usa Navigator.push
+  // — TasksScreen é uma tab do shell, não uma rota secundária).
+  void _openAllTasks() {
+    LoahNavigationController.of(context).navigateTo(2); // ajusta o índice se "Tarefas" não for a tab 2
+  }
+
+  // Os streams já mantêm os dados sincronizados sozinhos; o "pull to
+  // refresh" aqui é só feedback visual — não há nada para buscar
+  // manualmente.
+  Future<void> _onRefresh() async {
+    await Future.delayed(const Duration(milliseconds: 400));
   }
 
   Widget _buildGreeting(BuildContext context, AppLocales loc) {
@@ -277,10 +340,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _buildPendingTasksSection(int limit) {
+    final visibleTasks = _standaloneTasks.take(limit).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PendingTasksCard(
+          tasks: visibleTasks,
+          onToggle: (i) => _toggleTask(i),
+        ),
+        if (_standaloneTasks.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _openAllTasks,
+              child: Text(AppLocales.of(context).translate('goals_summary_ver_todas')),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   /// Layout mobile original — coluna única, sem alterações de comportamento.
   Widget _buildMobileBody(AppLocales loc) {
     return RefreshIndicator(
-      onRefresh: _loadData,
+      onRefresh: _onRefresh,
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
@@ -291,10 +377,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             progressToGoal: _progressToGoal,
           ),
           const SizedBox(height: AppSpacing.lg),
-          PendingTasksCard(
-            tasks: _standaloneTasks,
-            onToggle: (i) => _toggleTask(i),
-          ),
+          _buildPendingTasksSection(_mobileTaskLimit),
           const SizedBox(height: AppSpacing.lg),
           NewItemCard(onCreate: _openNewItemSheet),
           const SizedBox(height: AppSpacing.lg),
@@ -317,12 +400,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// Layout desktop — largura máxima centralizada, grid de 2 colunas:
-  /// esquerda (mais larga) = finanças/tarefas/novo item; direita = metas
-  /// e reflexão do dia.
+  /// Layout desktop — largura máxima centralizada, grid de 2 colunas.
   Widget _buildDesktopBody(AppLocales loc) {
     return RefreshIndicator(
-      onRefresh: _loadData,
+      onRefresh: _onRefresh,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(AppSpacing.xxxl),
@@ -338,7 +419,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Coluna esquerda — 60%
                       Expanded(
                         flex: 3,
                         child: Column(
@@ -349,17 +429,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               progressToGoal: _progressToGoal,
                             ),
                             const SizedBox(height: AppSpacing.lg),
-                            PendingTasksCard(
-                              tasks: _standaloneTasks,
-                              onToggle: (i) => _toggleTask(i),
-                            ),
+                            _buildPendingTasksSection(_desktopTaskLimit),
                             const SizedBox(height: AppSpacing.lg),
                             NewItemCard(onCreate: _openNewItemSheet),
                           ],
                         ),
                       ),
                       const SizedBox(width: AppSpacing.lg),
-                      // Coluna direita — 40%
                       Expanded(
                         flex: 2,
                         child: Column(
@@ -448,7 +524,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           body: SafeArea(
-            child: isDesktop ? _buildDesktopBody(loc) : _buildMobileBody(loc),
+            child: _loading
+                ? (isDesktop ? const _DashboardDesktopSkeleton() : const _DashboardMobileSkeleton())
+                : (isDesktop ? _buildDesktopBody(loc) : _buildMobileBody(loc)),
           ),
           floatingActionButton: isDesktop
               ? null
@@ -460,6 +538,147 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
         );
       },
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SKELETON DE CARREGAMENTO
+// ═══════════════════════════════════════════════════════════════════
+
+/// Bloco cinza com uma animação de "respiração" (opacidade sobe e desce
+/// em loop), usado como placeholder enquanto os dados reais não chegam.
+class _ShimmerBox extends StatefulWidget {
+  final double height;
+  final double? width;
+  final BorderRadius borderRadius;
+
+  const _ShimmerBox({
+    required this.height,
+    this.width,
+    this.borderRadius = const BorderRadius.all(Radius.circular(16)),
+  });
+
+  @override
+  State<_ShimmerBox> createState() => _ShimmerBoxState();
+}
+
+class _ShimmerBoxState extends State<_ShimmerBox> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final base = context.loahColors.cardBackgroundAlt;
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Container(
+          height: widget.height,
+          width: widget.width,
+          decoration: BoxDecoration(
+            color: base.withValues(alpha: 0.35 + (_controller.value * 0.3)),
+            borderRadius: widget.borderRadius,
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Skeleton do layout mobile — mesma ordem visual do conteúdo real.
+class _DashboardMobileSkeleton extends StatelessWidget {
+  const _DashboardMobileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: const [
+        _ShimmerBox(height: 22, width: 180),
+        SizedBox(height: 8),
+        _ShimmerBox(height: 14, width: 240),
+        SizedBox(height: AppSpacing.xl),
+        _ShimmerBox(height: 140),
+        SizedBox(height: AppSpacing.lg),
+        _ShimmerBox(height: 200),
+        SizedBox(height: AppSpacing.lg),
+        _ShimmerBox(height: 70),
+        SizedBox(height: AppSpacing.lg),
+        _ShimmerBox(height: 170),
+        SizedBox(height: AppSpacing.lg),
+        _ShimmerBox(height: 120),
+      ],
+    );
+  }
+}
+
+/// Skeleton do layout desktop — 2 colunas, mesma proporção do real.
+class _DashboardDesktopSkeleton extends StatelessWidget {
+  const _DashboardDesktopSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.xxxl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ShimmerBox(height: 22, width: 180),
+              SizedBox(height: 8),
+              _ShimmerBox(height: 14, width: 240),
+              SizedBox(height: AppSpacing.xxxl),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        children: [
+                          _ShimmerBox(height: 140),
+                          SizedBox(height: AppSpacing.lg),
+                          _ShimmerBox(height: 220),
+                          SizedBox(height: AppSpacing.lg),
+                          _ShimmerBox(height: 70),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.lg),
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        children: [
+                          _ShimmerBox(height: 170),
+                          SizedBox(height: AppSpacing.lg),
+                          _ShimmerBox(height: 120),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

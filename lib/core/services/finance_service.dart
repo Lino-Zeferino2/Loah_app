@@ -34,6 +34,18 @@ class FinanceService {
         .snapshots();
   }
 
+  // NOVO: versão tipada e contínua (em tempo real) do stream acima.
+  // Reaproveita _transactionFromDoc, então não duplica lógica de
+  // mapeamento. Com a persistência offline do Firestore ativa, o
+  // primeiro evento chega do cache local (mesmo sem rede) e eventos
+  // seguintes chegam automaticamente quando o servidor sincroniza —
+  // não é preciso recarregar nada manualmente.
+  Stream<List<TransactionModel>> getTransactionsListStream() {
+    return getTransactionsStream().map(
+      (snap) => snap.docs.map(_transactionFromDoc).toList(),
+    );
+  }
+
   TransactionModel _transactionFromDoc(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return TransactionModel(
@@ -87,6 +99,13 @@ class FinanceService {
 
   Stream<QuerySnapshot> getAccountsStream() {
     return _accountsCollection.snapshots();
+  }
+
+  // NOVO: versão tipada e contínua.
+  Stream<List<AccountModel>> getAccountsListStream() {
+    return getAccountsStream().map(
+      (snap) => snap.docs.map(_accountFromDoc).toList(),
+    );
   }
 
   AccountModel _accountFromDoc(DocumentSnapshot doc) {
@@ -154,6 +173,13 @@ class FinanceService {
 
   Stream<QuerySnapshot> getAssetsStream() {
     return _assetsCollection.snapshots();
+  }
+
+  // NOVO: versão tipada e contínua.
+  Stream<List<AssetModel>> getAssetsListStream() {
+    return getAssetsStream().map(
+      (snap) => snap.docs.map(_assetFromDoc).toList(),
+    );
   }
 
   AssetModel _assetFromDoc(DocumentSnapshot doc) {
@@ -329,4 +355,3 @@ class FinanceService {
     return snapshot.docs.map((doc) => _recurringFromDoc(doc)).toList();
   }
 }
-
